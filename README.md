@@ -550,7 +550,7 @@ fix/*     →  Bug fixes
 *Full Stack Web Developer — MERN Stack Specialist*
 
 [![GitHub](https://img.shields.io/badge/GitHub-Neaz--mq-181717?style=for-the-badge&logo=github)](https://github.com/Neaz-mq)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin)](https://linkedin.com)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/neaz-morshed/)
 
 *Building BagBliss BD — where fashion meets technology in Bangladesh* 🇧🇩
 
