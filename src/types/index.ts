@@ -250,7 +250,7 @@ export type SortOption =
   | 'popular'
   | 'rating'
 
-
+// ── UI State Types ───────────────────────────
 
 export interface ToastType {
   type: 'success' | 'error' | 'loading'
