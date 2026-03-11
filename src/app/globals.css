@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Nunito:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================
    BAGBLISS BD — Design System v1.0
@@ -9,29 +9,29 @@
 
 @theme {
   /* ── Brand Colors ── */
-  --color-primary: #1A1A2E;
+  --color-primary: #1a1a2e;
   --color-primary-light: #2d2d4e;
   --color-primary-dark: #0f0f1a;
 
-  --color-accent: #E91E8C;
+  --color-accent: #e91e8c;
   --color-accent-light: #ff4db3;
   --color-accent-dark: #b5156d;
 
-  --color-gold: #C9A84C;
+  --color-gold: #c9a84c;
   --color-gold-light: #e8c96e;
   --color-gold-dark: #a07e30;
 
   /* ── Surface Colors ── */
-  --color-surface: #FDFAF7;
-  --color-surface-dark: #12121F;
-  --color-card: #FFFFFF;
+  --color-surface: #fdfaf7;
+  --color-surface-dark: #12121f;
+  --color-card: #ffffff;
   --color-card-dark: #1e1e35;
 
   /* ── Text Colors ── */
-  --color-text-primary: #1A1A2E;
+  --color-text-primary: #1a1a2e;
   --color-text-secondary: #6b7280;
   --color-text-muted: #9ca3af;
-  --color-text-inverse: #FDFAF7;
+  --color-text-inverse: #fdfaf7;
 
   /* ── Semantic Colors ── */
   --color-success: #22c55e;
@@ -52,11 +52,11 @@
   --radius-full: 9999px;
 
   /* ── Shadows ── */
-  --shadow-sm: 0 1px 3px rgba(26,26,46,0.08);
-  --shadow-md: 0 4px 16px rgba(26,26,46,0.12);
-  --shadow-lg: 0 8px 32px rgba(26,26,46,0.16);
-  --shadow-accent: 0 4px 24px rgba(233,30,140,0.25);
-  --shadow-gold: 0 4px 24px rgba(201,168,76,0.25);
+  --shadow-sm: 0 1px 3px rgba(26, 26, 46, 0.08);
+  --shadow-md: 0 4px 16px rgba(26, 26, 46, 0.12);
+  --shadow-lg: 0 8px 32px rgba(26, 26, 46, 0.16);
+  --shadow-accent: 0 4px 24px rgba(233, 30, 140, 0.25);
+  --shadow-gold: 0 4px 24px rgba(201, 168, 76, 0.25);
 
   /* ── Transitions ── */
   --transition-fast: 150ms ease;
@@ -72,7 +72,9 @@
    BASE STYLES
    ============================================ */
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -98,19 +100,36 @@ body {
    TYPOGRAPHY
    ============================================ */
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
   font-weight: 600;
   line-height: 1.2;
   color: var(--color-text-primary);
 }
 
-h1 { font-size: clamp(2.5rem, 6vw, 5rem); }
-h2 { font-size: clamp(2rem, 4vw, 3.5rem); }
-h3 { font-size: clamp(1.5rem, 3vw, 2.5rem); }
-h4 { font-size: clamp(1.25rem, 2vw, 1.75rem); }
-h5 { font-size: 1.25rem; }
-h6 { font-size: 1rem; }
+h1 {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+}
+h2 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}
+h3 {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+}
+h4 {
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+}
+h5 {
+  font-size: 1.25rem;
+}
+h6 {
+  font-size: 1rem;
+}
 
 p {
   font-family: var(--font-body);
@@ -320,20 +339,19 @@ p {
 
 /* Skeleton loader */
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
   border-radius: var(--radius-md);
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ============================================
@@ -341,35 +359,74 @@ p {
    ============================================ */
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeInLeft {
-  from { opacity: 0; transform: translateX(-24px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes pulse-accent {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(233, 30, 140, 0.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(233, 30, 140, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(233, 30, 140, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(233, 30, 140, 0);
+  }
 }
 
-.animate-fade-in { animation: fadeIn 0.5s ease forwards; }
-.animate-fade-in-left { animation: fadeInLeft 0.5s ease forwards; }
-.animate-scale-in { animation: scaleIn 0.3s ease forwards; }
-.animate-pulse-accent { animation: pulse-accent 2s infinite; }
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+.animate-fade-in-left {
+  animation: fadeInLeft 0.5s ease forwards;
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s ease forwards;
+}
+.animate-pulse-accent {
+  animation: pulse-accent 2s infinite;
+}
 
 /* Staggered animations */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+.stagger-4 {
+  animation-delay: 0.4s;
+}
 
 /* ============================================
    RESPONSIVE UTILITIES
@@ -411,5 +468,7 @@ p {
    ============================================ */
 
 @media print {
-  .no-print { display: none !important; }
+  .no-print {
+    display: none !important;
+  }
 }
