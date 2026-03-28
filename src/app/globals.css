@@ -785,3 +785,12 @@ p {
 .w-full {
   width: 100%;
 }
+
+/* Auth terms text */
+.auth-terms {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
