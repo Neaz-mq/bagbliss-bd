@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
+import Navbar from '@/components/layout/Navbar'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -43,7 +44,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <Navbar />
+          <div className="navbar-spacer" />
+          {children}
+          <div style={{ height: '5rem' }} />
+        </SessionProvider>
         <Toaster
           position="top-center"
           toastOptions={{
