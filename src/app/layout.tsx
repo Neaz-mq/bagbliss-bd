@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import Navbar from '@/components/layout/Navbar'
+import CartDrawer from '@/components/cart/CartDrawer'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <SessionProvider>
           <Navbar />
+          <CartDrawer />
           <div className="navbar-spacer" />
           {children}
           <div style={{ height: '5rem' }} />
