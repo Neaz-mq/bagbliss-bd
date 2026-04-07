@@ -21,7 +21,6 @@ import {
 import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
 
-// ── Nav Links ─────────────────────────────────
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Shop', href: '/shop' },
@@ -29,7 +28,6 @@ const NAV_LINKS = [
   { label: 'Flash Sale', href: '/shop?filter=flash-sale' },
 ]
 
-// ── Navbar Component ──────────────────────────
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -43,9 +41,18 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isMounted, setIsMounted] = useState(false)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  // Mount check — fixes hydration error with persisted Zustand store
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsMounted(true)
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Scroll effect
   useEffect(() => {
@@ -143,7 +150,7 @@ export default function Navbar() {
               aria-label="Wishlist"
             >
               <Heart size={20} />
-              {wishlistCount > 0 && (
+              {isMounted && wishlistCount > 0 && (
                 <span className="navbar-badge">{wishlistCount}</span>
               )}
             </Link>
@@ -155,7 +162,7 @@ export default function Navbar() {
               aria-label="Cart"
             >
               <ShoppingBag size={20} />
-              {cartCount > 0 && (
+              {isMounted && cartCount > 0 && (
                 <span className="navbar-badge navbar-badge-accent">
                   {cartCount}
                 </span>
@@ -329,7 +336,7 @@ export default function Navbar() {
         <button onClick={openCart} className="mobile-nav-item mobile-nav-cart">
           <div className="mobile-nav-cart-btn">
             <ShoppingBag size={24} color="white" />
-            {cartCount > 0 && (
+            {isMounted && cartCount > 0 && (
               <span className="mobile-nav-cart-badge">{cartCount}</span>
             )}
           </div>
@@ -343,7 +350,11 @@ export default function Navbar() {
         </Link>
         <Link
           href={session ? '/account' : '/login'}
-          className={`mobile-nav-item ${pathname === '/account' || pathname === '/login' ? 'mobile-nav-item-active' : ''}`}
+          className={`mobile-nav-item ${
+            pathname === '/account' || pathname === '/login'
+              ? 'mobile-nav-item-active'
+              : ''
+          }`}
         >
           <User size={22} />
           <span>{session ? 'Account' : 'Sign In'}</span>
