@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   X,
@@ -40,7 +40,6 @@ function CartItem({
 
   return (
     <div className="cart-item">
-      {/* Product Image */}
       <div className="cart-item-image">
         {item.product.mainImage?.url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -59,18 +58,8 @@ function CartItem({
                 strokeLinecap="round"
                 fill="none"
               />
-              <rect
-                x="10"
-                y="32"
-                width="60"
-                height="48"
-                rx="8"
-                fill="#E91E8C"
-              />
-              <path
-                d="M10 48 Q40 36 70 48 L70 32 Q40 22 10 32 Z"
-                fill="#b5156d"
-              />
+              <rect x="10" y="32" width="60" height="48" rx="8" fill="#E91E8C" />
+              <path d="M10 48 Q40 36 70 48 L70 32 Q40 22 10 32 Z" fill="#b5156d" />
               <circle cx="40" cy="50" r="5" fill="#C9A84C" />
               <circle cx="40" cy="50" r="2.5" fill="#1A1A2E" />
             </svg>
@@ -78,7 +67,6 @@ function CartItem({
         )}
       </div>
 
-      {/* Product Info */}
       <div className="cart-item-info">
         <div className="cart-item-header">
           <div>
@@ -106,7 +94,6 @@ function CartItem({
         </div>
 
         <div className="cart-item-footer">
-          {/* Quantity */}
           <div className="cart-quantity">
             <button
               onClick={handleDecrease}
@@ -124,8 +111,6 @@ function CartItem({
               <Plus size={13} />
             </button>
           </div>
-
-          {/* Price */}
           <p className="cart-item-price">
             {CURRENCY_SYMBOL}
             {(item.price * item.quantity).toLocaleString()}
@@ -140,8 +125,19 @@ function CartItem({
 export default function CartDrawer() {
   const { items, isOpen, closeCart, getSubtotal, clearCart } = useCartStore()
   const drawerRef = useRef<HTMLDivElement>(null)
-  const subtotal = getSubtotal()
-  const itemCount = items.reduce((t, i) => t + i.quantity, 0)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // ── Mount check — fixes hydration mismatch ──
+  useEffect(() => {
+    const timer = setTimeout(() => setIsMounted(true), 0)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Derived values — safe after mount
+  const subtotal = isMounted ? getSubtotal() : 0
+  const itemCount = isMounted
+    ? items.reduce((t, i) => t + i.quantity, 0)
+    : 0
   const shippingFee =
     subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_INSIDE_DHAKA
   const total = subtotal + shippingFee
@@ -150,7 +146,10 @@ export default function CartDrawer() {
   // Close on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
+      if (
+        drawerRef.current &&
+        !drawerRef.current.contains(e.target as Node)
+      ) {
         closeCart()
       }
     }
@@ -193,7 +192,7 @@ export default function CartDrawer() {
           <div className="cart-header-left">
             <ShoppingBag size={22} strokeWidth={1.5} />
             <h2 className="cart-title">My Cart</h2>
-            {itemCount > 0 && (
+            {isMounted && itemCount > 0 && (
               <span className="cart-count-badge">{itemCount}</span>
             )}
           </div>
@@ -207,7 +206,7 @@ export default function CartDrawer() {
         </div>
 
         {/* Free Shipping Progress */}
-        {subtotal > 0 && subtotal < FREE_SHIPPING_THRESHOLD && (
+        {isMounted && subtotal > 0 && subtotal < FREE_SHIPPING_THRESHOLD && (
           <div className="cart-shipping-progress">
             <div className="cart-shipping-text">
               <Tag size={13} />
@@ -224,14 +223,17 @@ export default function CartDrawer() {
               <div
                 className="cart-progress-fill"
                 style={{
-                  width: `${Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100)}%`,
+                  width: `${Math.min(
+                    (subtotal / FREE_SHIPPING_THRESHOLD) * 100,
+                    100
+                  )}%`,
                 }}
               />
             </div>
           </div>
         )}
 
-        {subtotal >= FREE_SHIPPING_THRESHOLD && (
+        {isMounted && subtotal >= FREE_SHIPPING_THRESHOLD && subtotal > 0 && (
           <div className="cart-free-shipping">
             🎉 You&apos;ve unlocked free delivery!
           </div>
@@ -239,8 +241,7 @@ export default function CartDrawer() {
 
         {/* Cart Items */}
         <div className="cart-items-container">
-          {items.length === 0 ? (
-            /* Empty State */
+          {!isMounted || items.length === 0 ? (
             <div className="cart-empty">
               <div className="cart-empty-icon">
                 <ShoppingBag size={48} strokeWidth={1} />
@@ -258,7 +259,6 @@ export default function CartDrawer() {
               </button>
             </div>
           ) : (
-            /* Items List */
             <div className="cart-items-list">
               {items.map((item) => (
                 <CartItem
@@ -270,10 +270,9 @@ export default function CartDrawer() {
           )}
         </div>
 
-        {/* Footer — only show when cart has items */}
-        {items.length > 0 && (
+        {/* Footer */}
+        {isMounted && items.length > 0 && (
           <div className="cart-footer">
-            {/* Order Summary */}
             <div className="cart-summary">
               <div className="cart-summary-row">
                 <span>Subtotal ({itemCount} items)</span>
@@ -284,7 +283,9 @@ export default function CartDrawer() {
               </div>
               <div className="cart-summary-row">
                 <span>Delivery</span>
-                <span className={shippingFee === 0 ? 'cart-summary-free' : ''}>
+                <span
+                  className={shippingFee === 0 ? 'cart-summary-free' : ''}
+                >
                   {shippingFee === 0
                     ? 'FREE'
                     : `${CURRENCY_SYMBOL}${shippingFee}`}
@@ -300,7 +301,6 @@ export default function CartDrawer() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="cart-actions">
               <Link
                 href="/checkout"
@@ -319,7 +319,6 @@ export default function CartDrawer() {
               </Link>
             </div>
 
-            {/* Clear Cart */}
             <button
               onClick={() => {
                 if (confirm('Clear all items from cart?')) clearCart()
