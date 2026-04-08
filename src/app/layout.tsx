@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import Navbar from '@/components/layout/Navbar'
 import CartDrawer from '@/components/cart/CartDrawer'
+import Footer from '@/components/layout/Footer'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -50,7 +51,7 @@ export default function RootLayout({
           <CartDrawer />
           <div className="navbar-spacer" />
           {children}
-          <div style={{ height: '5rem' }} />
+          <Footer />
         </SessionProvider>
         <Toaster
           position="top-center"
