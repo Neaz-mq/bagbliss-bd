@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import {
   ShoppingBag,
@@ -30,6 +30,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const { data: session } = useSession()
   const cartCount = useCartStore((s) => s.getItemCount())
@@ -45,6 +46,22 @@ export default function Navbar() {
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  // ── Active link check (supports query params) ──
+  const isLinkActive = (href: string) => {
+    const [hrefPath, hrefQuery] = href.split('?')
+    if (hrefQuery) {
+      const params = new URLSearchParams(hrefQuery)
+      return (
+        pathname === hrefPath &&
+        [...params.entries()].every(
+          ([key, val]) => searchParams.get(key) === val
+        )
+      )
+    }
+    // For plain paths (e.g. "/" or "/shop"), only active if no query params
+    return pathname === href && searchParams.toString() === ''
+  }
 
   // Mount check — fixes hydration error with persisted Zustand store
   useEffect(() => {
@@ -124,7 +141,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`navbar-link ${
-                  pathname === link.href ? 'navbar-link-active' : ''
+                  isLinkActive(link.href) ? 'navbar-link-active' : ''
                 }`}
               >
                 {link.label}
@@ -297,7 +314,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`navbar-mobile-link ${
-                  pathname === link.href ? 'navbar-mobile-link-active' : ''
+                  isLinkActive(link.href) ? 'navbar-mobile-link-active' : ''
                 }`}
               >
                 {link.label}
@@ -321,14 +338,14 @@ export default function Navbar() {
       <nav className="mobile-bottom-nav">
         <Link
           href="/"
-          className={`mobile-nav-item ${pathname === '/' ? 'mobile-nav-item-active' : ''}`}
+          className={`mobile-nav-item ${pathname === '/' && searchParams.toString() === '' ? 'mobile-nav-item-active' : ''}`}
         >
           <Home size={22} />
           <span>Home</span>
         </Link>
         <Link
           href="/shop"
-          className={`mobile-nav-item ${pathname === '/shop' ? 'mobile-nav-item-active' : ''}`}
+          className={`mobile-nav-item ${pathname === '/shop' && searchParams.toString() === '' ? 'mobile-nav-item-active' : ''}`}
         >
           <Grid3X3 size={22} />
           <span>Shop</span>

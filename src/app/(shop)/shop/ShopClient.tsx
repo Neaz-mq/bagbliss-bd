@@ -2,25 +2,15 @@
 
 import { useState, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-
 import {
-  SlidersHorizontal,
-  X,
-  ChevronDown,
-  Grid2X2,
-  LayoutList,
-  Search,
-  ShoppingBag,
-  ArrowUpDown,
-  Tag,
-
+  SlidersHorizontal, X, ChevronDown,
+  Grid2X2, LayoutList, Search, ShoppingBag, ArrowUpDown, Tag,
 } from 'lucide-react'
-
 import ShopFilters from './ShopFilters'
 import ShopActiveFilters from './ShopActiveFilters'
 import ShopProductCard from './ShopProductCard'
 
-// ── Types ─────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────
 export interface Product {
   _id: string
   name: string
@@ -49,22 +39,16 @@ export interface FilterState {
   inStockOnly: boolean
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────
 const SORT_OPTIONS = [
-  { value: 'newest', label: 'Newest First' },
-  { value: 'price-asc', label: 'Price: Low to High' },
+  { value: 'newest',     label: 'Newest First' },
+  { value: 'price-asc',  label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'popular', label: 'Most Popular' },
-  { value: 'rating', label: 'Top Rated' },
+  { value: 'popular',    label: 'Most Popular' },
+  { value: 'rating',     label: 'Top Rated' },
 ]
 
-const CATEGORIES = [
-  'All',
-  'Mini Crossbody',
-  'Chain Strap',
-  'Leather',
-  'Canvas',
-  'Party & Evening',
-]
+const CATEGORIES = ['All', 'Mini Crossbody', 'Chain Strap', 'Leather', 'Canvas', 'Party & Evening']
 
 const MOCK_PRODUCTS: Product[] = [
   {
@@ -144,52 +128,66 @@ const MOCK_PRODUCTS: Product[] = [
 const ITEMS_PER_PAGE = 12
 
 export default function ShopClient() {
-  const router = useRouter()
+  const router       = useRouter()
   const searchParams = useSearchParams()
 
-  // ── State ──────────────────────────────────
-  const [products] = useState<Product[]>(MOCK_PRODUCTS)
-  const [isLoading] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [isSortOpen, setIsSortOpen] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  // ── Pure UI state (not URL-driven) ──────────────────────────────────────
+  const [isLoading]      = useState(false)
+  const [isSidebarOpen,  setIsSidebarOpen]  = useState(false)
+  const [viewMode,       setViewMode]       = useState<'grid' | 'list'>('grid')
+  const [isSortOpen,     setIsSortOpen]     = useState(false)
+  const [currentPage,    setCurrentPage]    = useState(1)
 
-  // ── Read from URL ──────────────────────────
-  const sortFromUrl = searchParams.get('sort') || 'newest'
-  const categoryFromUrl = searchParams.get('category') || ''
-  const searchFromUrl = searchParams.get('search') || ''
-  const filterFromUrl = searchParams.get('filter') || ''
+  // ── Derive everything from URL (reactive to navbar links) ───────────────
+  // This is the key fix: instead of useState(searchParams.get(...))
+  // we useMemo so values update whenever searchParams changes.
+  const sort = useMemo(
+    () => searchParams.get('sort') || 'newest',
+    [searchParams]
+  )
 
-  const [sort, setSort] = useState(sortFromUrl)
-  const [searchQuery, setSearchQuery] = useState(searchFromUrl)
-  const [filters, setFilters] = useState<FilterState>({
-    categories: categoryFromUrl ? [categoryFromUrl.replace(/-/g, ' ')] : [],
-    priceMin: null,
-    priceMax: null,
-    colors: [],
-    onSaleOnly: filterFromUrl === 'flash-sale',
-    inStockOnly: false,
-  })
+  const searchQuery = useMemo(
+    () => searchParams.get('search') || '',
+    [searchParams]
+  )
 
-  // ── Sync URL on filter/sort change ────────
-  const updateUrl = useCallback((newSort: string, newFilters: FilterState, newSearch: string) => {
-    const params = new URLSearchParams()
-    if (newSort && newSort !== 'newest') params.set('sort', newSort)
-    if (newFilters.categories.length === 1) {
-      params.set('category', newFilters.categories[0].toLowerCase().replace(/\s+/g, '-'))
+  // Local search input state — keeps the input controlled while typing
+  const [localSearch, setLocalSearch] = useState(searchQuery)
+
+  const filters = useMemo<FilterState>(() => {
+    const category  = searchParams.get('category') || ''
+    const filterVal = searchParams.get('filter')   || ''
+    return {
+      categories: category ? [category.replace(/-/g, ' ')] : [],
+      priceMin:   null,
+      priceMax:   null,
+      colors:     [],
+      onSaleOnly: filterVal === 'flash-sale',
+      inStockOnly: false,
     }
-    if (newFilters.onSaleOnly) params.set('filter', 'flash-sale')
-    if (newSearch) params.set('search', newSearch)
-    const query = params.toString()
-    router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
-  }, [router])
+  }, [searchParams])
 
-  // ── Filter & Sort Products ─────────────────
+  // ── URL writer (single source of truth) ────────────────────────────────
+  const pushUrl = useCallback(
+    (newSort: string, newFilters: FilterState, newSearch: string) => {
+      const params = new URLSearchParams()
+      if (newSort && newSort !== 'newest') params.set('sort', newSort)
+      if (newFilters.categories.length === 1) {
+        params.set('category', newFilters.categories[0].toLowerCase().replace(/\s+/g, '-'))
+      }
+      if (newFilters.onSaleOnly)  params.set('filter', 'flash-sale')
+      if (newSearch.trim())       params.set('search', newSearch.trim())
+      const query = params.toString()
+      router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
+      setCurrentPage(1)
+    },
+    [router]
+  )
+
+  // ── Filter & Sort ───────────────────────────────────────────────────────
   const filteredProducts = useMemo(() => {
-    let result = [...products]
+    let result = [...MOCK_PRODUCTS]
 
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(
@@ -200,102 +198,64 @@ export default function ShopClient() {
       )
     }
 
-    // Categories
     if (filters.categories.length > 0) {
       result = result.filter((p) =>
-        filters.categories.some(
-          (c) => c.toLowerCase() === p.category.toLowerCase()
-        )
+        filters.categories.some((c) => c.toLowerCase() === p.category.toLowerCase())
       )
     }
 
-    // Price
-    if (filters.priceMin !== null) {
-      result = result.filter((p) => p.price >= filters.priceMin!)
-    }
-    if (filters.priceMax !== null) {
-      result = result.filter((p) => p.price <= filters.priceMax!)
-    }
+    if (filters.priceMin !== null) result = result.filter((p) => p.price >= filters.priceMin!)
+    if (filters.priceMax !== null) result = result.filter((p) => p.price <= filters.priceMax!)
 
-    // Colors
     if (filters.colors.length > 0) {
-      result = result.filter((p) =>
-        p.colors?.some((c) => filters.colors.includes(c))
-      )
+      result = result.filter((p) => p.colors?.some((c) => filters.colors.includes(c)))
     }
 
-    // Sale only
-    if (filters.onSaleOnly) {
-      result = result.filter((p) => p.isOnSale)
-    }
+    if (filters.onSaleOnly)  result = result.filter((p) => p.isOnSale)
+    if (filters.inStockOnly) result = result.filter((p) => p.stock > 0)
 
-    // In stock
-    if (filters.inStockOnly) {
-      result = result.filter((p) => p.stock > 0)
-    }
-
-    // Sort
     switch (sort) {
-      case 'price-asc':
-        result.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        result.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        result.sort((a, b) => (b.rating || 0) - (a.rating || 0))
-        break
-      case 'popular':
-        result.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))
-        break
+      case 'price-asc':  result.sort((a, b) => a.price - b.price); break
+      case 'price-desc': result.sort((a, b) => b.price - a.price); break
+      case 'rating':     result.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break
+      case 'popular':    result.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)); break
       default:
-        result.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
 
     return result
-  }, [products, searchQuery, filters, sort])
+  }, [searchQuery, filters, sort])
 
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)
+  const totalPages        = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)
   const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
 
+  // ── Handlers ───────────────────────────────────────────────────────────
   const handleFilterChange = (newFilters: FilterState) => {
-    setFilters(newFilters)
-    setCurrentPage(1)
-    updateUrl(sort, newFilters, searchQuery)
+    pushUrl(sort, newFilters, searchQuery)
   }
 
   const handleSortChange = (newSort: string) => {
-    setSort(newSort)
     setIsSortOpen(false)
-    setCurrentPage(1)
-    updateUrl(newSort, filters, searchQuery)
+    pushUrl(newSort, filters, searchQuery)
   }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setCurrentPage(1)
-    updateUrl(sort, filters, searchQuery)
+    pushUrl(sort, filters, localSearch)
+  }
+
+  const handleSearchClear = () => {
+    setLocalSearch('')
+    pushUrl(sort, filters, '')
   }
 
   const clearAllFilters = () => {
-    const empty: FilterState = {
-      categories: [],
-      priceMin: null,
-      priceMax: null,
-      colors: [],
-      onSaleOnly: false,
-      inStockOnly: false,
-    }
-    setFilters(empty)
-    setSearchQuery('')
-    setSort('newest')
-    setCurrentPage(1)
+    setLocalSearch('')
     router.replace('/shop', { scroll: false })
+    setCurrentPage(1)
   }
 
   const hasActiveFilters =
@@ -307,12 +267,11 @@ export default function ShopClient() {
     filters.inStockOnly ||
     searchQuery.trim() !== ''
 
-  const currentSortLabel =
-    SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Sort'
+  const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Sort'
 
   return (
     <div className="shop-page mobile-nav-spacing">
-      {/* ── Shop Hero ──────────────────────── */}
+      {/* ── Hero ────────────────────────────────────────────────────────── */}
       <div className="shop-hero">
         <div className="container-bagbliss">
           <div className="shop-hero-content">
@@ -328,33 +287,26 @@ export default function ShopClient() {
             </p>
           </div>
 
-          {/* Search Bar */}
           <form onSubmit={handleSearch} className="shop-search-form">
             <Search size={18} className="shop-search-icon" />
             <input
               type="text"
               placeholder="Search bags, colors, styles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="shop-search-input"
             />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => { setSearchQuery(''); setCurrentPage(1) }}
-                className="shop-search-clear"
-              >
+            {localSearch && (
+              <button type="button" onClick={handleSearchClear} className="shop-search-clear">
                 <X size={16} />
               </button>
             )}
-            <button type="submit" className="shop-search-btn">
-              Search
-            </button>
+            <button type="submit" className="shop-search-btn">Search</button>
           </form>
         </div>
       </div>
 
-      {/* ── Category Pills ────────────────── */}
+      {/* ── Category Pills ──────────────────────────────────────────────── */}
       <div className="shop-category-bar">
         <div className="container-bagbliss">
           <div className="shop-category-pills">
@@ -386,14 +338,10 @@ export default function ShopClient() {
       </div>
 
       <div className="container-bagbliss">
-        {/* ── Toolbar ───────────────────────── */}
+        {/* ── Toolbar ─────────────────────────────────────────────────── */}
         <div className="shop-toolbar">
           <div className="shop-toolbar-left">
-            {/* Filter toggle (mobile) */}
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="shop-filter-toggle"
-            >
+            <button onClick={() => setIsSidebarOpen(true)} className="shop-filter-toggle">
               <SlidersHorizontal size={16} />
               Filters
               {hasActiveFilters && (
@@ -401,15 +349,14 @@ export default function ShopClient() {
                   {[
                     filters.categories.length,
                     filters.colors.length,
-                    filters.priceMin !== null ? 1 : 0,
-                    filters.priceMax !== null ? 1 : 0,
-                    filters.onSaleOnly ? 1 : 0,
+                    filters.priceMin  !== null ? 1 : 0,
+                    filters.priceMax  !== null ? 1 : 0,
+                    filters.onSaleOnly  ? 1 : 0,
                     filters.inStockOnly ? 1 : 0,
                   ].reduce((a, b) => a + b, 0)}
                 </span>
               )}
             </button>
-
             <p className="shop-results-count">
               <strong>{filteredProducts.length}</strong> products found
             </p>
@@ -418,10 +365,7 @@ export default function ShopClient() {
           <div className="shop-toolbar-right">
             {/* Sort */}
             <div className="shop-sort-wrapper">
-              <button
-                onClick={() => setIsSortOpen(!isSortOpen)}
-                className="shop-sort-btn"
-              >
+              <button onClick={() => setIsSortOpen(!isSortOpen)} className="shop-sort-btn">
                 <ArrowUpDown size={15} />
                 {currentSortLabel}
                 <ChevronDown size={14} className={isSortOpen ? 'rotate-180' : ''} />
@@ -444,7 +388,7 @@ export default function ShopClient() {
               )}
             </div>
 
-            {/* View Mode */}
+            {/* View mode */}
             <div className="shop-view-toggle">
               <button
                 onClick={() => setViewMode('grid')}
@@ -464,7 +408,7 @@ export default function ShopClient() {
           </div>
         </div>
 
-        {/* ── Active Filters ─────────────────── */}
+        {/* ── Active Filters ──────────────────────────────────────────── */}
         {hasActiveFilters && (
           <ShopActiveFilters
             filters={filters}
@@ -475,19 +419,16 @@ export default function ShopClient() {
             onRemoveColor={(color) =>
               handleFilterChange({ ...filters, colors: filters.colors.filter((c) => c !== color) })
             }
-            onRemovePrice={() =>
-              handleFilterChange({ ...filters, priceMin: null, priceMax: null })
-            }
+            onRemovePrice={() => handleFilterChange({ ...filters, priceMin: null, priceMax: null })}
             onRemoveSale={() => handleFilterChange({ ...filters, onSaleOnly: false })}
             onRemoveStock={() => handleFilterChange({ ...filters, inStockOnly: false })}
-            onRemoveSearch={() => { setSearchQuery(''); updateUrl(sort, filters, '') }}
+            onRemoveSearch={() => { setLocalSearch(''); pushUrl(sort, filters, '') }}
             onClearAll={clearAllFilters}
           />
         )}
 
-        {/* ── Layout ────────────────────────── */}
+        {/* ── Layout ──────────────────────────────────────────────────── */}
         <div className="shop-layout">
-          {/* Sidebar (desktop) */}
           <aside className="shop-sidebar">
             <ShopFilters
               filters={filters}
@@ -496,12 +437,12 @@ export default function ShopClient() {
             />
           </aside>
 
-          {/* Products */}
           <main className="shop-main">
             {isLoading ? (
               <div className={viewMode === 'grid' ? 'products-grid' : 'shop-list'}>
                 {[...Array(8)].map((_, i) => (
-                  <div key={i} className="skeleton product-skeleton-card" style={{ height: '360px', borderRadius: '1.25rem' }} />
+                  <div key={i} className="skeleton product-skeleton-card"
+                    style={{ height: '360px', borderRadius: '1.25rem' }} />
                 ))}
               </div>
             ) : paginatedProducts.length === 0 ? (
@@ -510,12 +451,8 @@ export default function ShopClient() {
                   <ShoppingBag size={40} strokeWidth={1.5} />
                 </div>
                 <h3 className="shop-empty-title">No bags found</h3>
-                <p className="shop-empty-subtitle">
-                  Try adjusting your filters or search query.
-                </p>
-                <button onClick={clearAllFilters} className="btn-primary">
-                  Clear All Filters
-                </button>
+                <p className="shop-empty-subtitle">Try adjusting your filters or search query.</p>
+                <button onClick={clearAllFilters} className="btn-primary">Clear All Filters</button>
               </div>
             ) : (
               <>
@@ -530,7 +467,6 @@ export default function ShopClient() {
                   ))}
                 </div>
 
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="shop-pagination">
                     <button
@@ -543,11 +479,7 @@ export default function ShopClient() {
                     <div className="shop-page-numbers">
                       {[...Array(totalPages)].map((_, i) => {
                         const page = i + 1
-                        if (
-                          page === 1 ||
-                          page === totalPages ||
-                          Math.abs(page - currentPage) <= 1
-                        ) {
+                        if (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1) {
                           return (
                             <button
                               key={page}
@@ -578,23 +510,16 @@ export default function ShopClient() {
         </div>
       </div>
 
-      {/* ── Mobile Filter Drawer ──────────── */}
+      {/* ── Mobile Filter Drawer ────────────────────────────────────────── */}
       {isSidebarOpen && (
         <>
-          <div
-            className="shop-drawer-backdrop"
-            onClick={() => setIsSidebarOpen(false)}
-          />
+          <div className="shop-drawer-backdrop" onClick={() => setIsSidebarOpen(false)} />
           <div className="shop-filter-drawer">
             <div className="shop-drawer-header">
               <h3 className="shop-drawer-title">
-                <SlidersHorizontal size={18} />
-                Filters
+                <SlidersHorizontal size={18} /> Filters
               </h3>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="shop-drawer-close"
-              >
+              <button onClick={() => setIsSidebarOpen(false)} className="shop-drawer-close">
                 <X size={20} />
               </button>
             </div>
