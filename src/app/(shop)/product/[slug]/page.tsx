@@ -32,8 +32,7 @@ const MOCK_PRODUCT: IProduct = {
   description: `This stunning Pearl Mini Crossbody Bag is the perfect accessory for the modern Bangladeshi woman. Crafted with premium PU leather and featuring an elegant pearl-finish exterior, this bag combines luxury with everyday functionality.
 
 The adjustable strap allows you to wear it across the body or on the shoulder, making it versatile for any occasion — from college to casual outings to evening events.`,
-  shortDescription:
-    'Premium pearl-finish mini crossbody bag — perfect for daily use.',
+  shortDescription: 'Premium pearl-finish mini crossbody bag — perfect for daily use.',
   price: 1200,
   discountPrice: 950,
   category: 'Mini Crossbody',
@@ -63,8 +62,7 @@ const MOCK_REVIEWS = [
     name: 'Fatima Rahman',
     avatar: 'F',
     rating: 5,
-    comment:
-      'Absolutely love this bag! The quality is amazing for the price. Got so many compliments at college.',
+    comment: 'Absolutely love this bag! The quality is amazing for the price. Got so many compliments at college.',
     date: '2 days ago',
     verified: true,
   },
@@ -73,8 +71,7 @@ const MOCK_REVIEWS = [
     name: 'Nadia Islam',
     avatar: 'N',
     rating: 5,
-    comment:
-      'Super cute and spacious enough for my essentials. Fast delivery too! Will order again.',
+    comment: 'Super cute and spacious enough for my essentials. Fast delivery too! Will order again.',
     date: '1 week ago',
     verified: true,
   },
@@ -83,8 +80,7 @@ const MOCK_REVIEWS = [
     name: 'Sadia Akter',
     avatar: 'S',
     rating: 4,
-    comment:
-      'Beautiful bag, exactly as shown. The strap is adjustable which is great. Slightly smaller than expected.',
+    comment: 'Beautiful bag, exactly as shown. The strap is adjustable which is great. Slightly smaller than expected.',
     date: '2 weeks ago',
     verified: true,
   },
@@ -197,9 +193,7 @@ export default function ProductDetailPage() {
   const product = MOCK_PRODUCT
   const [selectedColor, setSelectedColor] = useState(product.colors[0])
   const [quantity, setQuantity] = useState(1)
-  const [activeTab, setActiveTab] = useState<
-    'description' | 'reviews' | 'shipping'
-  >('description')
+  const [activeTab, setActiveTab] = useState<'description' | 'reviews' | 'shipping'>('description')
   const [isAdding, setIsAdding] = useState(false)
 
   const { addItem, openCart } = useCartStore()
@@ -208,15 +202,14 @@ export default function ProductDetailPage() {
 
   const currentPrice = product.discountPrice || product.price
   const discountPercent = product.discountPrice
-    ? Math.round(
-        ((product.price - product.discountPrice) / product.price) * 100
-      )
+    ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0
 
   // All images for gallery
-  const allImages = [product.mainImage, ...(selectedColor.images || [])].filter(
-    Boolean
-  )
+  const allImages = [
+    product.mainImage,
+    ...(selectedColor.images || []),
+  ].filter(Boolean)
 
   const handleAddToCart = async () => {
     setIsAdding(true)
@@ -233,9 +226,7 @@ export default function ProductDetailPage() {
 
   const handleWishlist = () => {
     toggleItem(product._id)
-    toast.success(
-      wishlisted ? 'Removed from wishlist' : '❤️ Added to wishlist!'
-    )
+    toast.success(wishlisted ? 'Removed from wishlist' : '❤️ Added to wishlist!')
   }
 
   const handleShare = async () => {
@@ -257,13 +248,9 @@ export default function ProductDetailPage() {
       <div className="breadcrumb-bar">
         <div className="container-bagbliss">
           <nav className="breadcrumb">
-            <Link href="/" className="breadcrumb-link">
-              Home
-            </Link>
+            <Link href="/" className="breadcrumb-link">Home</Link>
             <ChevronRight size={14} />
-            <Link href="/shop" className="breadcrumb-link">
-              Shop
-            </Link>
+            <Link href="/shop" className="breadcrumb-link">Shop</Link>
             <ChevronRight size={14} />
             <Link
               href={`/shop?category=${product.category}`}
@@ -282,7 +269,10 @@ export default function ProductDetailPage() {
         <div className="product-detail-grid">
           {/* Left — Gallery */}
           <div className="product-detail-gallery">
-            <ProductGallery images={allImages} productName={product.name} />
+            <ProductGallery
+              images={allImages}
+              productName={product.name}
+            />
           </div>
 
           {/* Right — Product Info */}
@@ -317,20 +307,20 @@ export default function ProductDetailPage() {
               <span className="detail-rating-count">
                 ({product.ratings.count} reviews)
               </span>
-              <span className="detail-sold">· {product.soldCount} sold</span>
+              <span className="detail-sold">
+                · {product.soldCount} sold
+              </span>
             </div>
 
             {/* Price */}
             <div className="product-detail-price">
               <span className="detail-price-current">
-                {CURRENCY_SYMBOL}
-                {currentPrice.toLocaleString()}
+                {CURRENCY_SYMBOL}{currentPrice.toLocaleString()}
               </span>
               {product.discountPrice && (
                 <>
                   <span className="detail-price-original">
-                    {CURRENCY_SYMBOL}
-                    {product.price.toLocaleString()}
+                    {CURRENCY_SYMBOL}{product.price.toLocaleString()}
                   </span>
                   <span className="detail-price-discount">
                     Save {discountPercent}%
@@ -431,10 +421,7 @@ export default function ProductDetailPage() {
               >
                 {isAdding ? (
                   <>
-                    <span
-                      className="spinner"
-                      style={{ width: '18px', height: '18px' }}
-                    />
+                    <span className="spinner" style={{ width: '18px', height: '18px' }} />
                     Adding...
                   </>
                 ) : (
@@ -499,16 +486,13 @@ export default function ProductDetailPage() {
                 <div className="detail-meta-item">
                   <span className="detail-meta-label">Dimensions:</span>
                   <span className="detail-meta-value">
-                    {product.dimensions.length} × {product.dimensions.width} ×{' '}
-                    {product.dimensions.height} cm
+                    {product.dimensions.length} × {product.dimensions.width} × {product.dimensions.height} cm
                   </span>
                 </div>
                 {product.weight && (
                   <div className="detail-meta-item">
                     <span className="detail-meta-label">Weight:</span>
-                    <span className="detail-meta-value">
-                      {product.weight} kg
-                    </span>
+                    <span className="detail-meta-value">{product.weight} kg</span>
                   </div>
                 )}
                 <div className="detail-meta-item">
@@ -593,10 +577,10 @@ export default function ProductDetailPage() {
                                 star === 5
                                   ? '70%'
                                   : star === 4
-                                    ? '20%'
-                                    : star === 3
-                                      ? '7%'
-                                      : '3%',
+                                  ? '20%'
+                                  : star === 3
+                                  ? '7%'
+                                  : '3%',
                             }}
                           />
                         </div>
@@ -610,7 +594,9 @@ export default function ProductDetailPage() {
                   {MOCK_REVIEWS.map((review) => (
                     <div key={review.id} className="review-card">
                       <div className="review-header">
-                        <div className="review-avatar">{review.avatar}</div>
+                        <div className="review-avatar">
+                          {review.avatar}
+                        </div>
                         <div className="review-meta">
                           <div className="review-name-row">
                             <span className="review-name">{review.name}</span>
