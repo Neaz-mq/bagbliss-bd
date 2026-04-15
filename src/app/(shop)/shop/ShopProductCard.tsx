@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Heart, ShoppingBag, Eye, Star } from 'lucide-react'
+import { Heart, ShoppingBag, Eye, Star, Zap } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
+import { IProduct } from '@/types'
 import toast from 'react-hot-toast'
 import type { Product } from './ShopClient'
 import type { MouseEvent } from 'react'
@@ -16,211 +17,320 @@ interface Props {
   index: number
 }
 
-const BagPlaceholder = ({ product }: { product: Product }) => (
-  <div className="product-image-placeholder">
-    <div className="product-placeholder-bag">
-      <svg viewBox="0 0 200 200" fill="none">
-        <defs>
-          <linearGradient id={`grad-${product._id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e91e8c" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#c9a84c" stopOpacity="0.15" />
-          </linearGradient>
-        </defs>
-        <ellipse cx="100" cy="185" rx="60" ry="8" fill="rgba(0,0,0,0.06)" />
-        <rect x="30" y="90" width="140" height="100" rx="16" fill={`url(#grad-${product._id})`} />
+// ── Bag Placeholder ───────────────────────────
+const BagPlaceholder = ({ seed }: { seed: string }) => {
+  const hues = ['#f9e4f0', '#fdf3e0', '#e8eaf6', '#e0f4ea', '#fff3e0']
+  const bg = hues[seed.charCodeAt(0) % hues.length]
+  return (
+    <div className="shop-card-placeholder" style={{ background: bg }} aria-hidden>
+      <svg viewBox="0 0 120 130" fill="none" width="72" height="80">
+        <path
+          d="M38 52 Q38 28 60 28 Q82 28 82 52"
+          stroke="#C9A84C" strokeWidth="5" strokeLinecap="round" fill="none"
+        />
+        <rect x="18" y="52" width="84" height="64" rx="14" fill="#E91E8C" opacity="0.18" />
+        <rect x="18" y="52" width="84" height="64" rx="14" stroke="#E91E8C" strokeWidth="1.5" />
+        <path d="M18 72 Q60 56 102 72 L102 52 Q60 38 18 52 Z" fill="#E91E8C" opacity="0.12" />
+        <circle cx="60" cy="74" r="8" fill="#C9A84C" opacity="0.5" />
+        <circle cx="60" cy="74" r="4" fill="#1A1A2E" opacity="0.3" />
       </svg>
     </div>
-  </div>
-)
+  )
+}
+
+// ── Stars ─────────────────────────────────────
+function Stars({ rating }: { rating: number }) {
+  return (
+    <div className="shop-card-stars">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s} size={11}
+          fill={s <= Math.round(rating) ? '#C9A84C' : 'none'}
+          color={s <= Math.round(rating) ? '#C9A84C' : '#d1d5db'}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── Convert ShopClient.Product → IProduct ─────
+function toIProduct(p: Product): IProduct {
+  return {
+    _id:              p._id,
+    name:             p.name,
+    slug:             p.slug,
+    description:      p.name,
+    shortDescription: p.name,
+    // If there's an originalPrice the displayed price is the sale price
+    price:            p.originalPrice ?? p.price,
+    discountPrice:    p.originalPrice ? p.price : undefined,
+    category:         p.category,
+    tags:             p.tags ?? [],
+    colors: (p.colors ?? []).map((hex) => ({
+      name:   hex,
+      hex,
+      images: [],
+      stock:  p.stock,
+    })),
+    mainImage: {
+      url:          p.images?.[0] ?? '',
+      cloudinaryId: '',
+      alt:          p.name,
+    },
+    status:      'active',
+    isFeatured:  p.isFeatured  ?? false,
+    isFlashSale: p.isOnSale    ?? false,
+    soldCount:   p.reviewCount ?? 0,
+    stock:       p.stock,
+    ratings: {
+      average: p.rating       ?? 0,
+      count:   p.reviewCount  ?? 0,
+    },
+    createdAt: p.createdAt,
+    updatedAt: p.createdAt,
+  }
+}
 
 export default function ShopProductCard({ product, viewMode, index }: Props) {
   const [isHovered, setIsHovered] = useState(false)
-  const [isAdding, setIsAdding] = useState(false)
+  const [isAdding, setIsAdding]   = useState(false)
 
-  const addItem = useCartStore((s) => s.addItem)
-  const openCart = useCartStore((s) => s.openCart)
-  const toggleWishlistItem = useWishlistStore((s) => s.toggleItem)
+  const addItem    = useCartStore((s) => s.addItem)
+  const openCart   = useCartStore((s) => s.openCart)
+  const toggleWish = useWishlistStore((s) => s.toggleItem)
+  const inWishlist = useWishlistStore((s) => s.items.includes(product._id))
 
-  const inWishlist = useWishlistStore((s) =>
-    s.items.includes(product._id)
-  )
-
-  const handleAddToCart = async (e: MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+  const handleAddToCart = (e: MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     e.preventDefault()
     e.stopPropagation()
-
     if (isAdding || product.stock === 0) return
+
     setIsAdding(true)
-
     addItem({
-      _id: product._id,
-      name: product.name,
-      price: product.price,
-      image: product.images?.[0] || '',
-      color: product.colors?.[0],
-      quantity: 1
+      product:       toIProduct(product),
+      quantity:      1,
+      selectedColor: product.colors?.[0] ?? 'Default',
+      price:         product.price,
     })
-
-    toast.success(`${product.name} added to cart!`)
-
-    setTimeout(() => {
-      setIsAdding(false)
-      openCart()
-    }, 600)
+    toast.success(`🛍️ ${product.name} added to cart!`)
+    setTimeout(() => { setIsAdding(false); openCart() }, 500)
   }
 
   const handleWishlist = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
-
-    toggleWishlistItem(product._id)
-
-    toast.success(
-      inWishlist ? 'Removed from wishlist' : 'Added to wishlist!'
-    )
+    toggleWish(product._id)
+    toast.success(inWishlist ? 'Removed from wishlist' : '❤️ Added to wishlist!')
   }
 
-  const priceFormatted = `৳${product.price.toLocaleString('en-BD')}`
-  const originalFormatted = product.originalPrice
+  const price    = `৳${product.price.toLocaleString('en-BD')}`
+  const original = product.originalPrice
     ? `৳${product.originalPrice.toLocaleString('en-BD')}`
     : null
 
+  // ── LIST VIEW ──────────────────────────────────────────────────────────
   if (viewMode === 'list') {
     return (
       <div
-        className={`shop-list-card ${isHovered ? 'hovered' : ''}`}
+        className="shop-list-card"
         style={{ animationDelay: `${index * 0.05}s` }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Link href={`/product/${product.slug}`} className="shop-list-image">
+        {/* Image */}
+        <Link href={`/product/${product.slug}`} className="shop-list-img-wrap">
           {product.images?.[0] ? (
             <Image
               src={product.images[0]}
               alt={product.name}
-              width={300}
-              height={300}
-              className="product-image"
+              fill
+              sizes="(max-width: 640px) 100px, 130px"
+              className="shop-list-img"
+              style={{
+                transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+                transition: 'transform 0.4s ease',
+              }}
             />
           ) : (
-            <BagPlaceholder product={product} />
+            <BagPlaceholder seed={product._id} />
           )}
-
           {product.isOnSale && product.discountPercent && (
-            <div className="product-badge product-badge-sale">
-              -{product.discountPercent}%
-            </div>
+            <span className="shop-card-badge-sale">-{product.discountPercent}%</span>
           )}
         </Link>
 
+        {/* Info */}
         <div className="shop-list-info">
-          <p className="product-category">{product.category}</p>
-
+          <p className="shop-card-category">{product.category}</p>
           <Link href={`/product/${product.slug}`} className="shop-list-name">
             {product.name}
           </Link>
-
-          <div className="product-rating">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                size={13}
-                fill={i < Math.round(product.rating || 0) ? '#c9a84c' : 'none'}
-                color={i < Math.round(product.rating || 0) ? '#c9a84c' : '#ccc'}
-              />
-            ))}
-            <span className="review-count">({product.reviewCount || 0})</span>
-          </div>
-
-          <div className="product-price-row">
-            <span className="current-price">{priceFormatted}</span>
-            {originalFormatted && (
-              <span className="original-price">{originalFormatted}</span>
+          {(product.rating ?? 0) > 0 && (
+            <div className="shop-card-rating">
+              <Stars rating={product.rating!} />
+              <span className="shop-card-review-count">({product.reviewCount ?? 0})</span>
+            </div>
+          )}
+          <div className="shop-card-price-row">
+            <span className="shop-card-price">{price}</span>
+            {original && <span className="shop-card-original">{original}</span>}
+            {product.isOnSale && product.discountPercent && (
+              <span className="shop-card-save">Save {product.discountPercent}%</span>
             )}
           </div>
+          {product.stock <= 5 && product.stock > 0 && (
+            <p className="shop-card-low-stock">Only {product.stock} left!</p>
+          )}
+        </div>
 
-          <div className="shop-list-actions">
-            <button type="button" className="action-btn" onClick={handleWishlist}>
-              <Heart
-                size={18}
-                fill={inWishlist ? '#e91e8c' : 'none'}
-                color={inWishlist ? '#e91e8c' : 'currentColor'}
-              />
-            </button>
-
-            <Link href={`/product/${product.slug}`} className="action-btn">
-              <Eye size={18} />
-            </Link>
-
-            <button
-              type="button"
-              className="add-to-cart-btn"
-              onClick={handleAddToCart}
-              disabled={product.stock === 0 || isAdding}
-            >
-              <ShoppingBag size={18} className="mr-2" />
-              {isAdding
-                ? 'Adding...'
-                : product.stock === 0
-                ? 'Out of Stock'
-                : 'Add to Cart'}
-            </button>
-          </div>
+        {/* Actions */}
+        <div className="shop-list-actions">
+          <button
+            onClick={handleWishlist}
+            className={`shop-icon-btn ${inWishlist ? 'shop-icon-btn-active' : ''}`}
+            aria-label="Wishlist"
+          >
+            <Heart size={18} fill={inWishlist ? 'currentColor' : 'none'} />
+          </button>
+          <Link href={`/product/${product.slug}`} className="shop-icon-btn" aria-label="View">
+            <Eye size={18} />
+          </Link>
+          <button
+            onClick={handleAddToCart}
+            disabled={product.stock === 0 || isAdding}
+            className="shop-list-cart-btn"
+          >
+            {isAdding ? <span className="shop-spinner" /> : <ShoppingBag size={16} />}
+            {product.stock === 0 ? 'Out of Stock' : isAdding ? 'Adding…' : 'Add to Cart'}
+          </button>
         </div>
       </div>
     )
   }
 
+  // ── GRID VIEW ──────────────────────────────────────────────────────────
   return (
     <div
-      className={`product-card ${isHovered ? 'hovered' : ''}`}
-      style={{ animationDelay: `${index * 0.05}s` }}
+      className="shop-grid-card"
+      style={{ animationDelay: `${index * 0.06}s` }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="product-card-image-wrapper">
-        <Link href={`/product/${product.slug}`}>
-          {product.images?.[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              width={400}
-              height={400}
-              className="product-grid-image"
-            />
-          ) : (
-            <BagPlaceholder product={product} />
+      {/* Image block */}
+      <Link href={`/product/${product.slug}`} className="shop-grid-img-wrap">
+        {product.images?.[0] ? (
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="shop-grid-img"
+            style={{
+              transform: isHovered ? 'scale(1.07)' : 'scale(1)',
+              transition: 'transform 0.5s ease',
+            }}
+          />
+        ) : (
+          <BagPlaceholder seed={product._id} />
+        )}
+
+        {/* Badges */}
+        <div className="shop-card-badges">
+          {product.isFeatured && (
+            <span className="shop-card-badge-featured">✨ Featured</span>
           )}
-        </Link>
+          {product.isOnSale && product.discountPercent && (
+            <span className="shop-card-badge-sale">-{product.discountPercent}%</span>
+          )}
+        </div>
 
-        <div className="grid-hover-actions">
-          <button type="button" className="grid-action-btn" onClick={handleWishlist}>
-            <Heart size={18} fill={inWishlist ? '#e91e8c' : 'none'} />
-          </button>
+        {/* Low stock */}
+        {product.stock <= 5 && product.stock > 0 && (
+          <div className="shop-card-low-stock-tag">
+            <Zap size={11} /> Only {product.stock} left
+          </div>
+        )}
 
+        {/* Hover actions */}
+        <div className={`shop-grid-actions ${isHovered ? 'shop-grid-actions-visible' : ''}`}>
           <button
-            type="button"
-            className="grid-add-btn"
+            onClick={handleWishlist}
+            className={`shop-icon-btn ${inWishlist ? 'shop-icon-btn-active' : ''}`}
+            aria-label="Wishlist"
+          >
+            <Heart size={17} fill={inWishlist ? 'currentColor' : 'none'} />
+          </button>
+          <button
             onClick={handleAddToCart}
             disabled={product.stock === 0 || isAdding}
+            className="shop-icon-btn shop-icon-btn-cart"
+            aria-label="Add to cart"
           >
-            {isAdding ? <span className="loader" /> : <ShoppingBag size={18} />}
+            {isAdding
+              ? <span className="shop-spinner shop-spinner-sm" />
+              : <ShoppingBag size={17} />}
           </button>
+          <Link href={`/product/${product.slug}`} className="shop-icon-btn" aria-label="Quick view">
+            <Eye size={17} />
+          </Link>
         </div>
-      </div>
+      </Link>
 
-      <div className="product-card-details">
-        <Link href={`/product/${product.slug}`}>
-          <h3 className="product-grid-name">{product.name}</h3>
+      {/* Info block */}
+      <div className="shop-grid-info">
+        <p className="shop-card-category">{product.category}</p>
+        <Link href={`/product/${product.slug}`} className="shop-grid-name">
+          {product.name}
         </Link>
-
-        <div className="product-grid-price">
-          <span className="price-main">{priceFormatted}</span>
-          {originalFormatted && (
-            <span className="price-old">{originalFormatted}</span>
-          )}
+        {(product.rating ?? 0) > 0 && (
+          <div className="shop-card-rating">
+            <Stars rating={product.rating!} />
+            <span className="shop-card-review-count">({product.reviewCount ?? 0})</span>
+          </div>
+        )}
+        <div className="shop-card-price-row">
+          <span className="shop-card-price">{price}</span>
+          {original && <span className="shop-card-original">{original}</span>}
         </div>
+        {(product.colors?.length ?? 0) > 0 && (
+          <div className="shop-card-colors">
+            {product.colors!.slice(0, 5).map((hex) => (
+              <span
+                key={hex}
+                className="shop-card-color-dot"
+                style={{
+                  background: hex,
+                  border:
+                    hex === '#f5f5f0' || hex === '#ffffff'
+                      ? '1.5px solid #e5e7eb'
+                      : '1.5px solid transparent',
+                }}
+                title={hex}
+              />
+            ))}
+            {(product.colors?.length ?? 0) > 5 && (
+              <span className="shop-card-colors-more">
+                +{product.colors!.length - 5}
+              </span>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Add to Cart footer */}
+      <button
+        onClick={handleAddToCart}
+        disabled={product.stock === 0 || isAdding}
+        className="shop-grid-atc-btn"
+      >
+        {isAdding ? (
+          <><span className="shop-spinner shop-spinner-sm" /> Adding…</>
+        ) : product.stock === 0 ? (
+          'Out of Stock'
+        ) : (
+          <><ShoppingBag size={15} /> Add to Cart</>
+        )}
+      </button>
     </div>
   )
 }
