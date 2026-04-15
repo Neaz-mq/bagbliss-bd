@@ -208,7 +208,7 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
     )
   }
 
-  // ── GRID VIEW ──────────────────────────────────────────────────────────
+ // ── GRID VIEW ──────────────────────────────────────────────────────────
   return (
     <div
       className="shop-grid-card"
@@ -216,23 +216,25 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Image block */}
-      <Link href={`/product/${product.slug}`} className="shop-grid-img-wrap">
-        {product.images?.[0] ? (
-          <Image
-            src={product.images[0]}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="shop-grid-img"
-            style={{
-              transform: isHovered ? 'scale(1.07)' : 'scale(1)',
-              transition: 'transform 0.5s ease',
-            }}
-          />
-        ) : (
-          <BagPlaceholder seed={product._id} />
-        )}
+      {/* Image block container */}
+      <div className="shop-grid-img-container" style={{ position: 'relative', overflow: 'hidden' }}>
+        <Link href={`/product/${product.slug}`} className="shop-grid-img-wrap">
+          {product.images?.[0] ? (
+            <Image
+              src={product.images[0]}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="shop-grid-img"
+              style={{
+                transform: isHovered ? 'scale(1.07)' : 'scale(1)',
+                transition: 'transform 0.5s ease',
+              }}
+            />
+          ) : (
+            <BagPlaceholder seed={product._id} />
+          )}
+        </Link>
 
         {/* Badges */}
         <div className="shop-card-badges">
@@ -251,7 +253,7 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
           </div>
         )}
 
-        {/* Hover actions */}
+        {/* Hover actions - MOVED OUTSIDE THE IMAGE LINK */}
         <div className={`shop-grid-actions ${isHovered ? 'shop-grid-actions-visible' : ''}`}>
           <button
             onClick={handleWishlist}
@@ -274,7 +276,7 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
             <Eye size={17} />
           </Link>
         </div>
-      </Link>
+      </div>
 
       {/* Info block */}
       <div className="shop-grid-info">
