@@ -150,22 +150,56 @@ export default function CheckoutPage() {
   }, [items, placed, router])
 
   const onSubmit = async (data: CheckoutForm) => {
-    if (step === 1) { setStep(2); return }
+  if (step === 1) { setStep(2); return }
 
-    setIsPlacing(true)
-    // Capture the total NOW — before clearCart() zeroes out items
-    const snapshot = total
-    const id = `BB${Date.now().toString().slice(-6)}`
-    // Replace with your real order API call, e.g.:
-    // await createOrder({ ...data, items, total: snapshot, delivery, payment })
-    await new Promise((r) => setTimeout(r, 1800))
-    setOrderTotal(snapshot)
-    setOrderId(id)
+  setIsPlacing(true)
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map((item) => ({
+          productId: item.product._id,
+          name:      item.product.name,
+          price:     item.price,
+          quantity:  item.quantity,
+          color:     item.selectedColor,
+          image:     item.product.mainImage?.url ?? '',
+        })),
+        shipping: {
+          fullName:   data.fullName,
+          phone:      data.phone,
+          email:      data.email ?? '',
+          division:   data.division,
+          district:   data.district,
+          thana:      data.thana,
+          address:    data.address,
+          postalCode: data.postalCode ?? '',
+        },
+        delivery:    delivery,
+        deliveryFee: freeShipping ? 0 : deliveryFee,
+        payment:     payment,
+        subtotal:    subtotal,
+        total:       total,
+        orderNote:   data.orderNote ?? '',
+      }),
+    })
+
+    const json = await res.json()
+    if (!json.success) throw new Error(json.error)
+
+    setOrderTotal(total)
+    setOrderId(json.order.orderNumber)
     clearCart()
     setPlaced(true)
-    setIsPlacing(false)
     toast.success(`🎉 Order placed for ${data.fullName}!`)
+  } catch (err) {
+    console.error(err)
+    toast.error('Failed to place order. Please try again.')
+  } finally {
+    setIsPlacing(false)
   }
+}
 
   // ── Order Placed confirmation ──────────────────────────────────────────
   if (placed) {
