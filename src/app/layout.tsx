@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import Navbar from '@/components/layout/Navbar'
@@ -14,10 +15,10 @@ export const metadata: Metadata = {
   description:
     "Bangladesh's most trendy mini crossbody bag store. Shop premium imported bags with fast delivery across Bangladesh.",
   keywords: [
-    'mini crossbody bag',
-    'bags bangladesh',
-    'girls bag',
-    'fashion bag bd',
+    'mini crossbody bag bangladesh',
+    'bags bd',
+    'girls bag dhaka',
+    'fashion bag bangladesh',
     'imported bags dhaka',
   ],
   authors: [{ name: 'BagBliss BD' }],
@@ -47,8 +48,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <SessionProvider>
-          <Navbar />
-          <CartDrawer />
+          <Suspense fallback={null}>
+            <Navbar />
+            <CartDrawer />
+          </Suspense>
           <div className="navbar-spacer" />
           {children}
           <Footer />

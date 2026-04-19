@@ -4,6 +4,8 @@
 
 export const APP_NAME = 'BagBliss BD'
 export const APP_URL = 'https://bagbliss.com.bd'
+export const SITE_NAME = 'BagBliss BD'
+export const SITE_URL = 'https://bagbliss.com.bd'
 export const APP_DESCRIPTION =
   "Bangladesh's most trendy mini crossbody bag store"
 
@@ -61,7 +63,18 @@ export const SORT_OPTIONS = [
   { label: 'Top Rated', value: 'rating' },
 ] as const
 
-// ── BD Cities ────────────────────────────────
+// ── BD Cities / Divisions ────────────────────
+export const BD_DIVISIONS = [
+  'Dhaka',
+  'Chittagong',
+  'Sylhet',
+  'Rajshahi',
+  'Khulna',
+  'Barishal',
+  'Mymensingh',
+  'Rangpur',
+] as const
+
 export const BD_CITIES = [
   'Dhaka',
   'Chittagong',
@@ -91,5 +104,62 @@ export const ROUTES = {
   account: '/account',
   orders: '/account/orders',
   profile: '/account/profile',
+  addresses: '/account/addresses',
+  settings: '/account/settings',
   admin: '/admin',
+} as const
+
+// ── Payment Methods ──────────────────────────
+export const PAYMENT_METHODS = [
+  { id: 'cod', label: 'Cash on Delivery', icon: '💵' },
+  { id: 'bkash', label: 'bKash', icon: '📱' },
+  { id: 'nagad', label: 'Nagad', icon: '📱' },
+  { id: 'card', label: 'Card (VISA/MC)', icon: '💳' },
+] as const
+
+// ── Delivery Options ─────────────────────────
+export const DELIVERY_OPTIONS = [
+  {
+    id: 'standard',
+    label: 'Standard Delivery',
+    time: '3–5 business days',
+    fee: SHIPPING_OUTSIDE_DHAKA,
+  },
+  {
+    id: 'express',
+    label: 'Express Delivery',
+    time: '1–2 business days',
+    fee: 150,
+  },
+] as const
+
+// ── Social Links ─────────────────────────────
+export const SOCIAL_LINKS = {
+  facebook: 'https://facebook.com/bagblissbd',
+  instagram: 'https://instagram.com/bagblissbd',
+  youtube: 'https://youtube.com/@bagblissbd',
+} as const
+
+// ── Contact ──────────────────────────────────
+export const CONTACT = {
+  phone: '+880 1XXX-XXXXXX',
+  email: 'hello@bagbliss.com.bd',
+  address: 'Dhaka, Bangladesh',
+} as const
+
+// ── SEO Defaults ─────────────────────────────
+export const SEO = {
+  title: 'BagBliss BD — Premium Mini Crossbody Bags Bangladesh',
+  description:
+    "Bangladesh's most trendy mini crossbody bag store. Premium imported bags at prices you'll love. Fast delivery across all 64 districts.",
+  keywords: [
+    'mini crossbody bag bangladesh',
+    'bags bd',
+    'girls bag dhaka',
+    'fashion bag bangladesh',
+    'imported bags',
+    'bagbliss',
+    'ব্যাগ বাংলাদেশ',
+  ],
+  ogImage: 'https://bagbliss.com.bd/og-image.jpg',
 } as const
