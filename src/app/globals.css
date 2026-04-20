@@ -9289,52 +9289,69 @@ p {
   border-color: var(--color-error);
 }
 
+
 /* ============================================
    ADMIN PANEL OVERRIDES
-   Resets global storefront styles inside admin
+   Paste at the very bottom of globals.css
    ============================================ */
 
 .admin-panel {
   font-family: var(--font-body);
+  background: #f8fafc;
 }
 
-/* Reset heading fonts — global h1-h6 forces Cormorant Garamond */
+/* Reset ALL heading fonts inside admin */
 .admin-panel h1,
 .admin-panel h2,
 .admin-panel h3,
 .admin-panel h4,
 .admin-panel h5,
 .admin-panel h6 {
-  font-family: var(--font-body);
-  font-size: revert;
-  line-height: revert;
-  color: revert;
+  font-family: var(--font-body) !important;
+  font-size: revert !important;
+  line-height: revert !important;
+  color: revert !important;
+  letter-spacing: normal !important;
 }
 
-/* Reset paragraph color override */
+/* Reset paragraph color */
 .admin-panel p {
+  color: revert !important;
+  line-height: revert !important;
+  font-family: var(--font-body) !important;
+}
+
+/* Reset anchor styles */
+.admin-panel a {
   color: revert;
-  line-height: revert;
+  text-decoration: none;
 }
 
-/* Fix ৳ taka symbol — use monospace for currency */
-.admin-panel .font-bold,
-.admin-panel [class*="text-2xl"],
-.admin-panel [class*="text-slate-900"] {
-  font-family: var(--font-body);
-}
-
-/* Prevent global card hover transform from affecting admin cards */
-.admin-panel .card {
-  transform: none;
-}
+/* Reset global card hover */
+.admin-panel .card,
 .admin-panel .card:hover {
-  transform: none;
-  box-shadow: none;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-/* Scrollbar for admin sidebar */
-.admin-panel aside {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.15) transparent;
+/* Reset body background bleed */
+.admin-panel {
+  color: #1e293b;
+}
+
+/* Sidebar scrollbar */
+.admin-panel aside::-webkit-scrollbar {
+  width: 3px;
+}
+.admin-panel aside::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 99px;
+}
+
+/* Smooth hover transitions on all admin interactive elements */
+.admin-panel button,
+.admin-panel a {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
 }
