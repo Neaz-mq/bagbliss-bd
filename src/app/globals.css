@@ -9355,3 +9355,74 @@ p {
   transition-duration: 150ms;
   transition-timing-function: ease;
 }
+
+/* ============================================
+   ADMIN PANEL OVERRIDES — replace existing block
+   ============================================ */
+
+.admin-panel {
+  font-family: var(--font-body) !important;
+  background: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+/* Reset ALL heading fonts inside admin */
+.admin-panel h1,
+.admin-panel h2,
+.admin-panel h3,
+.admin-panel h4,
+.admin-panel h5,
+.admin-panel h6 {
+  font-family: var(--font-body) !important;
+  font-size: revert !important;
+  line-height: revert !important;
+  color: revert !important;
+  letter-spacing: normal !important;
+}
+
+/* Reset paragraph styles */
+.admin-panel p {
+  font-family: var(--font-body) !important;
+  color: revert !important;
+  line-height: revert !important;
+}
+
+/* ⚠ DO NOT reset anchor color — sidebar links need their own colors */
+
+/* Reset global card hover — admin has its own hover styles */
+.admin-panel .card,
+.admin-panel .card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Sidebar scrollbar */
+.admin-panel aside::-webkit-scrollbar {
+  width: 3px;
+}
+.admin-panel aside::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 99px;
+}
+ 
+/* Override global h1 clamp that makes headings huge */
+.admin-panel h1 { font-size: 1.25rem !important; }
+.admin-panel h2 { font-size: 1rem !important; }
+.admin-panel h3 { font-size: 0.9rem !important; }
+
+/* Override global p color: var(--color-text-secondary) */
+.admin-panel main p {
+  color: inherit !important;
+}
+
+/* Sidebar specific - keep white/transparent text */
+.admin-panel aside p {
+  color: inherit !important;
+  font-family: var(--font-body) !important;
+  line-height: inherit !important;
+}
+
+/* Override global body bg bleeding into admin */
+.admin-panel > div {
+  background: transparent;
+}
