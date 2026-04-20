@@ -9288,3 +9288,53 @@ p {
   background: rgba(239, 68, 68, 0.08);
   border-color: var(--color-error);
 }
+
+/* ============================================
+   ADMIN PANEL OVERRIDES
+   Resets global storefront styles inside admin
+   ============================================ */
+
+.admin-panel {
+  font-family: var(--font-body);
+}
+
+/* Reset heading fonts — global h1-h6 forces Cormorant Garamond */
+.admin-panel h1,
+.admin-panel h2,
+.admin-panel h3,
+.admin-panel h4,
+.admin-panel h5,
+.admin-panel h6 {
+  font-family: var(--font-body);
+  font-size: revert;
+  line-height: revert;
+  color: revert;
+}
+
+/* Reset paragraph color override */
+.admin-panel p {
+  color: revert;
+  line-height: revert;
+}
+
+/* Fix ৳ taka symbol — use monospace for currency */
+.admin-panel .font-bold,
+.admin-panel [class*="text-2xl"],
+.admin-panel [class*="text-slate-900"] {
+  font-family: var(--font-body);
+}
+
+/* Prevent global card hover transform from affecting admin cards */
+.admin-panel .card {
+  transform: none;
+}
+.admin-panel .card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Scrollbar for admin sidebar */
+.admin-panel aside {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
