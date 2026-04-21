@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ShoppingBag, Package,
   Users, Tag, Zap, Settings, X,
-  TrendingUp, ChevronRight,
+  ShoppingCart, ExternalLink,
 } from 'lucide-react'
 
 const NAV_GROUPS = [
@@ -54,7 +54,7 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}
@@ -68,71 +68,109 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
         `}
         style={{
           width: '260px',
-          background: 'linear-gradient(180deg, #0d1117 0%, #0f172a 100%)',
-          borderRight: '1px solid rgba(255,255,255,0.06)',
+          background: '#0d1117',
+          borderRight: '1px solid rgba(255,255,255,0.07)',
         }}
       >
 
-        {/* ── Logo ─────────────────────────────── */}
-        <div
-          className="flex items-center justify-between px-6 py-5"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center justify-center flex-shrink-0"
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #e91e8c 0%, #f43f5e 100%)',
-                boxShadow: '0 4px 12px rgba(233,30,140,0.4)',
-              }}
-            >
-              <TrendingUp size={18} color="white" />
+        {/* ── Logo header ──────────────────────── */}
+        <div style={{
+          padding: '16px 16px 14px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          flexShrink: 0,
+        }}>
+          {/* Top row: icon + brand + close */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+
+            {/* App icon */}
+            <div style={{
+              width: '36px',
+              height: '36px',
+              minWidth: '36px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #e91e8c 0%, #f43f5e 100%)',
+              boxShadow: '0 4px 12px rgba(233,30,140,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <ShoppingCart size={17} color="white" strokeWidth={2.2} />
             </div>
-            <div>
-              <p style={{ color: 'white', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1, margin: 0 }}>
-                BagBliss
+
+            {/* Brand text — flex:1 so it takes remaining space */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '0.92rem',
+                margin: 0,
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+              }}>
+                BagBliss BD
               </p>
-              <p style={{ color: '#e91e8c', fontWeight: 600, fontSize: '0.7rem', marginTop: '3px', letterSpacing: '0.02em', margin: 0 }}>
+              <p style={{
+                color: 'rgba(244, 114, 182, 0.85)',
+                fontWeight: 600,
+                fontSize: '0.62rem',
+                margin: '3px 0 0',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}>
                 Admin Panel
               </p>
             </div>
+
+            {/* Close button — only on mobile, clearly visible */}
+            <button
+              onClick={onClose}
+              className="lg:hidden"
+              style={{
+                width: '32px',
+                height: '32px',
+                minWidth: '32px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'rgba(255,255,255,0.7)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={16} strokeWidth={2.5} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="lg:hidden flex items-center justify-center rounded-lg transition-colors hover:bg-white/10"
-            style={{ width: '30px', height: '30px', color: 'rgba(255,255,255,0.4)' }}
-          >
-            <X size={16} />
-          </button>
         </div>
 
         {/* ── Navigation ───────────────────────── */}
-        <nav
-          className="flex-1 overflow-y-auto py-5 px-4"
-          style={{ scrollbarWidth: 'none' }}
-        >
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label} style={{ marginBottom: '28px' }}>
-
-              {/* Group label */}
+        <nav style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '14px 10px',
+          scrollbarWidth: 'none',
+        }}>
+          {NAV_GROUPS.map((group, gi) => (
+            <div
+              key={group.label}
+              style={{ marginBottom: gi < NAV_GROUPS.length - 1 ? '22px' : 0 }}
+            >
+              {/* Section label — brighter so it's readable */}
               <p style={{
-                fontSize: '0.65rem',
+                fontSize: '0.62rem',
                 fontWeight: 700,
-                letterSpacing: '0.1em',
+                letterSpacing: '0.09em',
                 textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.2)',
-                paddingLeft: '12px',
-                marginBottom: '6px',
-                margin: '0 0 6px 0',
+                color: 'rgba(255,255,255,0.28)',
+                padding: '0 10px',
+                marginBottom: '5px',
               }}>
                 {group.label}
               </p>
 
               {/* Nav items */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 {group.items.map(({ href, label, icon: Icon, exact, badge }) => {
                   const active = isActive(href, exact)
                   return (
@@ -140,72 +178,58 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
                       key={href}
                       href={href}
                       onClick={onClose}
-                      className="admin-nav-link"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        padding: '11px 12px',
-                        borderRadius: '10px',
+                        gap: '10px',
+                        padding: '9px 10px 9px 14px',
+                        borderRadius: '8px',
                         fontSize: '0.875rem',
-                        fontWeight: active ? 600 : 500,
+                        fontWeight: active ? 600 : 400,
                         textDecoration: 'none',
                         position: 'relative',
-                        color: active ? 'white' : 'rgba(255,255,255,0.45)',
-                        background: active
-                          ? 'linear-gradient(135deg, rgba(233,30,140,0.18) 0%, rgba(244,63,94,0.08) 100%)'
-                          : 'transparent',
-                        boxShadow: active
-                          ? 'inset 0 0 0 1px rgba(233,30,140,0.22)'
-                          : 'none',
-                        transition: 'all 0.15s ease',
+                        /* Active = white text. Inactive = clearly visible, not near-invisible */
+                        color: active ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                        background: active ? 'rgba(233,30,140,0.15)' : 'transparent',
+                        transition: 'all 0.12s ease',
                       }}
                     >
                       {/* Active left bar */}
                       {active && (
                         <span style={{
                           position: 'absolute',
-                          left: 0,
-                          top: '50%',
+                          left: 0, top: '50%',
                           transform: 'translateY(-50%)',
-                          width: '3px',
-                          height: '20px',
+                          width: '3px', height: '18px',
                           borderRadius: '0 3px 3px 0',
                           background: 'linear-gradient(to bottom, #e91e8c, #f43f5e)',
                         }} />
                       )}
 
-                      {/* Icon */}
                       <Icon
-                        size={18}
+                        size={17}
                         style={{
-                          color: active ? '#f472b6' : 'rgba(255,255,255,0.3)',
+                          /* Active = pink. Inactive = clearly visible */
+                          color: active ? '#f472b6' : 'rgba(255,255,255,0.45)',
                           flexShrink: 0,
-                          transition: 'color 0.15s',
                         }}
                       />
 
-                      {/* Label */}
                       <span style={{ flex: 1 }}>{label}</span>
 
-                      {/* Badge */}
                       {badge && (
                         <span style={{
                           fontSize: '0.6rem',
-                          fontWeight: 800,
+                          fontWeight: 700,
                           padding: '2px 7px',
-                          borderRadius: '6px',
+                          borderRadius: '5px',
                           background: 'rgba(233,30,140,0.25)',
                           color: '#fb7185',
-                          letterSpacing: '0.03em',
+                          letterSpacing: '0.04em',
+                          flexShrink: 0,
                         }}>
                           {badge}
                         </span>
-                      )}
-
-                      {/* Chevron */}
-                      {active && !badge && (
-                        <ChevronRight size={14} style={{ color: 'rgba(255,255,255,0.25)' }} />
                       )}
                     </Link>
                   )
@@ -215,41 +239,59 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
           ))}
         </nav>
 
-        {/* ── Store Status ─────────────────────── */}
-        <div
-          className="px-4 py-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
-        >
+        {/* ── Footer — Store Status ─────────────── */}
+        <div style={{
+          padding: '10px 12px 14px',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          flexShrink: 0,
+        }}>
           <div style={{
-            borderRadius: '12px',
-            padding: '14px',
-            background: 'rgba(233,30,140,0.07)',
-            border: '1px solid rgba(233,30,140,0.16)',
+            borderRadius: '10px',
+            padding: '12px 14px',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <p style={{ fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-                Store Live
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '7px',
+            }}>
+              <span style={{
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.7)',
+              }}>
+                Store Status
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{
-                  width: '7px', height: '7px', borderRadius: '50%',
-                  background: '#34d399',
-                  boxShadow: '0 0 6px rgba(52,211,153,0.6)',
+                  width: '7px', height: '7px',
+                  borderRadius: '50%',
+                  background: '#22c55e',
+                  boxShadow: '0 0 7px rgba(34,197,94,0.7)',
                   display: 'inline-block',
                 }} />
-                <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 600 }}>Online</span>
+                <span style={{ fontSize: '0.72rem', color: '#4ade80', fontWeight: 600 }}>
+                  Live
+                </span>
               </div>
             </div>
+
             <Link
               href="/"
               target="_blank"
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
                 fontSize: '0.72rem',
-                color: 'rgba(255,255,255,0.3)',
+                color: 'rgba(255,255,255,0.38)',
                 textDecoration: 'none',
               }}
             >
-              bagbliss-bd.vercel.app ↗
+              <span>bagbliss-bd.vercel.app</span>
+              <ExternalLink size={11} />
             </Link>
           </div>
         </div>

@@ -1,10 +1,11 @@
 import {
   ShoppingBag, Package, Users, TrendingUp,
   ArrowUpRight, ArrowDownRight, Clock, ChevronRight,
-  Zap, BarChart3,
+  Zap, BarChart3, Activity,
 } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import Link from 'next/link'
+import QuickActions from '@/components/admin/QuickActions'
 
 interface RecentOrder {
   _id: string
@@ -26,12 +27,12 @@ interface StatsData {
 
 type StatusKey = 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'pending'
 
-const STATUS_CONFIG: Record<StatusKey, { bg: string; text: string; dot: string; label: string }> = {
-  pending:    { bg: '#fef9c3', text: '#854d0e', dot: '#eab308', label: 'Pending' },
-  processing: { bg: '#fce7f3', text: '#9d174d', dot: '#e91e8c', label: 'Processing' },
-  shipped:    { bg: '#dbeafe', text: '#1e40af', dot: '#3b82f6', label: 'Shipped' },
-  delivered:  { bg: '#dcfce7', text: '#166534', dot: '#22c55e', label: 'Delivered' },
-  cancelled:  { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444', label: 'Cancelled' },
+const STATUS_CONFIG: Record<StatusKey, { bg: string; text: string; dot: string; border: string; label: string }> = {
+  pending:    { bg: 'rgba(234,179,8,0.08)',   text: '#b45309', dot: '#f59e0b', border: 'rgba(234,179,8,0.2)',   label: 'Pending' },
+  processing: { bg: 'rgba(233,30,140,0.08)',  text: '#be185d', dot: '#e91e8c', border: 'rgba(233,30,140,0.2)', label: 'Processing' },
+  shipped:    { bg: 'rgba(59,130,246,0.08)',  text: '#1d4ed8', dot: '#3b82f6', border: 'rgba(59,130,246,0.2)', label: 'Shipped' },
+  delivered:  { bg: 'rgba(34,197,94,0.08)',   text: '#15803d', dot: '#22c55e', border: 'rgba(34,197,94,0.2)',  label: 'Delivered' },
+  cancelled:  { bg: 'rgba(239,68,68,0.08)',   text: '#b91c1c', dot: '#ef4444', border: 'rgba(239,68,68,0.2)',  label: 'Cancelled' },
 }
 
 const STAT_CARDS = [
@@ -39,8 +40,9 @@ const STAT_CARDS = [
     label: 'Total Revenue',
     key: 'totalRevenue',
     icon: TrendingUp,
+    accent: '#e91e8c',
+    accentBg: 'rgba(233,30,140,0.1)',
     gradient: 'linear-gradient(135deg, #e91e8c 0%, #f43f5e 100%)',
-    glow: 'rgba(233,30,140,0.25)',
     isCurrency: true,
     change: '+12.5%',
     up: true,
@@ -50,8 +52,9 @@ const STAT_CARDS = [
     label: 'Total Orders',
     key: 'totalOrders',
     icon: ShoppingBag,
+    accent: '#6366f1',
+    accentBg: 'rgba(99,102,241,0.1)',
     gradient: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
-    glow: 'rgba(99,102,241,0.2)',
     isCurrency: false,
     change: '+8.2%',
     up: true,
@@ -61,8 +64,9 @@ const STAT_CARDS = [
     label: 'Active Products',
     key: 'totalProducts',
     icon: Package,
+    accent: '#a855f7',
+    accentBg: 'rgba(168,85,247,0.1)',
     gradient: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
-    glow: 'rgba(139,92,246,0.2)',
     isCurrency: false,
     change: '+3',
     up: true,
@@ -72,8 +76,9 @@ const STAT_CARDS = [
     label: 'Customers',
     key: 'totalCustomers',
     icon: Users,
+    accent: '#10b981',
+    accentBg: 'rgba(16,185,129,0.1)',
     gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    glow: 'rgba(16,185,129,0.2)',
     isCurrency: false,
     change: '+18.7%',
     up: true,
@@ -99,140 +104,179 @@ export default async function AdminDashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      {/* ── Page Header ────────────────────────────── */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
+      {/* ── Page Header ──────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start',
+        justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px',
+        padding: '4px 0 8px',
+      }}>
         <div>
-          <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#e91e8c', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-            Admin Dashboard
-          </p>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
-            {greeting}, {firstName} 👋
+          {/* Live pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              background: 'rgba(233,30,140,0.08)',
+              border: '1px solid rgba(233,30,140,0.18)',
+              borderRadius: '999px', padding: '3px 12px 3px 8px',
+            }}>
+              <span style={{
+                width: '6px', height: '6px', borderRadius: '50%',
+                background: '#e91e8c', boxShadow: '0 0 6px rgba(233,30,140,0.8)',
+                display: 'inline-block',
+              }} />
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#e91e8c', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Live Dashboard
+              </span>
+            </div>
+          </div>
+
+          <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', lineHeight: 1.15 }}>
+            {greeting}, {firstName} 
           </h1>
-          <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0.3rem 0 0' }}>
+          <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: '6px 0 0', fontWeight: 400 }}>
             Here&apos;s what&apos;s happening with your store today.
           </p>
         </div>
+
         <Link
           href="/admin/orders"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg transition-all hover:opacity-90 hover:-translate-y-0.5"
-          style={{ background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', boxShadow: '0 4px 14px rgba(233,30,140,0.35)' }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            padding: '10px 20px', borderRadius: '12px',
+            fontSize: '0.85rem', fontWeight: 700, color: 'white',
+            textDecoration: 'none',
+            background: 'linear-gradient(135deg, #e91e8c, #f43f5e)',
+            boxShadow: '0 4px 16px rgba(233,30,140,0.4), 0 1px 0 rgba(255,255,255,0.15) inset',
+          }}
         >
-          <Zap size={14} />
+          <Zap size={14} strokeWidth={2.5} />
           View Orders
-          <ArrowUpRight size={14} />
+          <ArrowUpRight size={14} strokeWidth={2.5} />
         </Link>
       </div>
 
-      {/* ── Stat Cards ─────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {STAT_CARDS.map(({ label, key, icon: Icon, gradient, glow, isCurrency, change, up, desc }) => {
+      {/* ── Stat Cards ───────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '16px',
+      }}>
+        {STAT_CARDS.map(({ label, key, icon: Icon, accent, accentBg, gradient, isCurrency, change, up, desc }) => {
           const raw = stats?.[key as keyof StatsData] ?? 0
           const value = isCurrency
             ? `৳${Number(raw).toLocaleString('en-BD')}`
-            : raw
+            : String(raw)
+
           return (
-            <div
-              key={label}
-              style={{
-                background: 'white',
-                borderRadius: '1.25rem',
-                padding: '1.5rem',
-                border: '1px solid #f1f5f9',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Subtle glow blob */}
+            <div key={label} style={{
+              background: '#ffffff', borderRadius: '20px', padding: '24px',
+              border: '1px solid #f1f5f9',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              {/* Glow blob */}
               <div style={{
-                position: 'absolute', top: '-20px', right: '-20px',
-                width: '80px', height: '80px', borderRadius: '50%',
-                background: glow, filter: 'blur(20px)',
-                pointerEvents: 'none',
+                position: 'absolute', top: '-28px', right: '-28px',
+                width: '90px', height: '90px', borderRadius: '50%',
+                background: accentBg, pointerEvents: 'none',
               }} />
 
-              {/* Icon */}
-              <div style={{
-                width: '2.75rem', height: '2.75rem', borderRadius: '0.875rem',
-                background: gradient,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: '1rem',
-                boxShadow: `0 4px 12px ${glow}`,
-              }}>
-                <Icon size={18} color="white" />
+              {/* Icon + badge row */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div style={{
+                  width: '46px', height: '46px', borderRadius: '14px',
+                  background: gradient,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: `0 6px 16px ${accentBg}`,
+                }}>
+                  <Icon size={20} color="white" strokeWidth={2} />
+                </div>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '3px',
+                  fontSize: '0.72rem', fontWeight: 700,
+                  padding: '4px 9px', borderRadius: '999px',
+                  background: up ? 'rgba(34,197,94,0.09)' : 'rgba(239,68,68,0.09)',
+                  color: up ? '#15803d' : '#b91c1c',
+                  border: `1px solid ${up ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                }}>
+                  {up
+                    ? <ArrowUpRight size={11} strokeWidth={2.5} />
+                    : <ArrowDownRight size={11} strokeWidth={2.5} />
+                  }
+                  {change}
+                </span>
               </div>
 
-              {/* Value */}
-              <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1, letterSpacing: '-0.03em' }}>
+              <p style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1, letterSpacing: '-0.04em' }}>
                 {value}
               </p>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0.35rem 0 0.75rem', fontWeight: 600 }}>
+              <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '6px 0 0', fontWeight: 500 }}>
                 {label}
               </p>
-
-              {/* Change badge */}
-              <span
-                className="inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg"
-                style={up
-                  ? { background: '#f0fdf4', color: '#16a34a' }
-                  : { background: '#fef2f2', color: '#dc2626' }
-                }
-              >
-                {up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-                {change}
-                <span style={{ fontWeight: 500, color: up ? '#86efac' : '#fca5a5' }}>{desc}</span>
-              </span>
+              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '10px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Activity size={11} style={{ color: accent }} />
+                {desc}
+              </p>
             </div>
           )
         })}
       </div>
 
-      {/* ── Bottom Grid ────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* ── Bottom Grid ──────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '16px' }}
+        className="admin-dashboard-grid">
 
-        {/* Recent Orders — 2 cols */}
-        <div
-          className="lg:col-span-2"
-          style={{
-            background: 'white',
-            borderRadius: '1.25rem',
-            border: '1px solid #f1f5f9',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            overflow: 'hidden',
-          }}
-        >
+        {/* Recent Orders */}
+        <div style={{
+          background: '#ffffff', borderRadius: '20px',
+          border: '1px solid #f1f5f9',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+          overflow: 'hidden',
+        }}>
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #f8fafc' }}>
-            <div className="flex items-center gap-2.5">
-              <div style={{ width: 32, height: 32, borderRadius: '0.625rem', background: 'rgba(233,30,140,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BarChart3 size={15} color="#e91e8c" />
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '20px 24px', borderBottom: '1px solid #f8fafc',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '10px',
+                background: 'rgba(233,30,140,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <BarChart3 size={16} color="#e91e8c" />
               </div>
               <div>
-                <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Recent Orders</p>
-                <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Last 5 transactions</p>
+                <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Recent Orders</p>
+                <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Last 5 transactions</p>
               </div>
             </div>
             <Link
               href="/admin/orders"
-              className="inline-flex items-center gap-1 text-xs font-bold transition-opacity hover:opacity-70 px-3 py-1.5 rounded-lg"
-              style={{ color: '#e91e8c', background: 'rgba(233,30,140,0.06)' }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                fontSize: '0.78rem', fontWeight: 700, color: '#e91e8c',
+                textDecoration: 'none',
+                background: 'rgba(233,30,140,0.07)',
+                border: '1px solid rgba(233,30,140,0.15)',
+                padding: '6px 12px', borderRadius: '8px',
+              }}
             >
-              View all <ChevronRight size={12} />
+              View all <ChevronRight size={12} strokeWidth={2.5} />
             </Link>
           </div>
 
           {/* Table header */}
-          <div
-            className="grid px-6 py-3"
-            style={{
-              gridTemplateColumns: '1fr 130px 110px 90px',
-              fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8',
-              textTransform: 'uppercase', letterSpacing: '0.07em',
-              background: '#f8fafc', borderBottom: '1px solid #f1f5f9',
-            }}
-          >
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 140px 120px 100px',
+            padding: '10px 24px',
+            fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+            background: '#fafbfc', borderBottom: '1px solid #f1f5f9',
+          }}>
             <span>Order</span>
             <span>Customer</span>
             <span>Status</span>
@@ -241,86 +285,89 @@ export default async function AdminDashboard() {
 
           {/* Rows */}
           {stats?.recentOrders && stats.recentOrders.length > 0 ? (
-            stats.recentOrders.map((order) => {
+            stats.recentOrders.map((order, i) => {
               const cfg = STATUS_CONFIG[order.status as StatusKey] ?? STATUS_CONFIG.processing
               return (
-                <div
-                  key={order._id}
-                  className="grid px-6 py-4 hover:bg-slate-50 transition-colors"
-                  style={{ gridTemplateColumns: '1fr 130px 110px 90px', borderBottom: '1px solid #f8fafc' }}
-                >
-                  <div className="flex items-center gap-3">
+                <div key={order._id} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 140px 120px 100px',
+                  padding: '14px 24px',
+                  borderBottom: i < stats.recentOrders.length - 1 ? '1px solid #f8fafc' : 'none',
+                  alignItems: 'center',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
-                      width: '2.25rem', height: '2.25rem', borderRadius: '0.625rem',
-                      background: 'linear-gradient(135deg, rgba(233,30,140,0.08), rgba(244,63,94,0.04))',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                      background: 'linear-gradient(135deg, rgba(233,30,140,0.07), rgba(244,63,94,0.04))',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <ShoppingBag size={12} color="#e91e8c" />
+                      <ShoppingBag size={13} color="#e91e8c" />
                     </div>
                     <div>
-                      <p style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                      <p style={{ fontSize: '0.84rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>
                         #{order.orderNumber}
                       </p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Clock size={9} color="#cbd5e1" />
-                        <p style={{ fontSize: '0.68rem', color: '#94a3b8', margin: 0 }}>
-                          {new Date(order.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                        </p>
-                      </div>
+                      <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Clock size={9} />
+                        {new Date(order.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    <p style={{ fontSize: '0.8rem', color: '#475569', margin: 0, fontWeight: 500 }}>
-                      {order.shipping?.fullName ?? 'Customer'}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <span
-                      className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg capitalize"
-                      style={{ background: cfg.bg, color: cfg.text }}
-                    >
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
-                      {cfg.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-end">
-                    <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                      ৳{order.total.toLocaleString('en-BD')}
-                    </p>
-                  </div>
+
+                  <p style={{ fontSize: '0.82rem', color: '#475569', margin: 0, fontWeight: 500 }}>
+                    {order.shipping?.fullName ?? 'Customer'}
+                  </p>
+
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    fontSize: '0.75rem', fontWeight: 700,
+                    padding: '5px 10px', borderRadius: '8px',
+                    background: cfg.bg, color: cfg.text,
+                    border: `1px solid ${cfg.border}`,
+                    width: 'fit-content',
+                  }}>
+                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
+                    {cfg.label}
+                  </span>
+
+                  <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0, textAlign: 'right' }}>
+                    ৳{order.total.toLocaleString('en-BD')}
+                  </p>
                 </div>
               )
             })
           ) : (
-            <div className="flex flex-col items-center justify-center py-14 text-center">
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', textAlign: 'center' }}>
               <div style={{
-                width: '3.5rem', height: '3.5rem', borderRadius: '1rem',
+                width: '56px', height: '56px', borderRadius: '16px',
                 background: 'linear-gradient(135deg, rgba(233,30,140,0.06), rgba(244,63,94,0.03))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.875rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px',
               }}>
-                <ShoppingBag size={20} color="#cbd5e1" />
+                <ShoppingBag size={22} color="#cbd5e1" />
               </div>
-              <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#64748b', margin: 0 }}>No orders yet</p>
-              <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+              <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', margin: 0 }}>No orders yet</p>
+              <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0' }}>
                 Orders will appear here once customers start buying
               </p>
             </div>
           )}
         </div>
 
-        {/* Right Column */}
-        <div className="flex flex-col gap-4">
+        {/* Right column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          {/* Orders by Status */}
+          {/* By Status */}
           <div style={{
-            background: 'white', borderRadius: '1.25rem',
-            border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden',
+            background: '#ffffff', borderRadius: '20px',
+            border: '1px solid #f1f5f9',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            overflow: 'hidden',
           }}>
-            <div className="px-5 py-4" style={{ borderBottom: '1px solid #f8fafc' }}>
-              <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>By Status</p>
-              <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '2px 0 0' }}>Order breakdown</p>
+            <div style={{ padding: '20px 20px 14px', borderBottom: '1px solid #f8fafc' }}>
+              <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Order Status</p>
+              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '3px 0 0' }}>Breakdown by status</p>
             </div>
-            <div className="px-5 py-4 space-y-3.5">
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {stats?.ordersByStatus && stats.ordersByStatus.length > 0 ? (
                 stats.ordersByStatus.map((s) => {
                   const cfg = STATUS_CONFIG[s._id as StatusKey] ?? STATUS_CONFIG.processing
@@ -328,65 +375,51 @@ export default async function AdminDashboard() {
                   const pct = total > 0 ? Math.round((s.count / total) * 100) : 0
                   return (
                     <div key={s._id}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold capitalize"
-                          style={{ color: cfg.text }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot }} />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: cfg.text }}>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: cfg.dot }} />
                           {cfg.label}
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{pct}%</span>
-                          <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1e293b' }}>{s.count}</span>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e293b' }}>{s.count}</span>
                         </div>
                       </div>
-                      <div style={{ height: '5px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%', background: cfg.dot, borderRadius: '99px',
-                          width: `${pct}%`, transition: 'width 0.8s ease',
-                        }} />
+                      <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', background: cfg.dot, borderRadius: '999px', width: `${pct}%` }} />
                       </div>
                     </div>
                   )
                 })
               ) : (
-                <p style={{ fontSize: '0.85rem', color: '#94a3b8', textAlign: 'center', padding: '1rem 0' }}>
+                <p style={{ fontSize: '0.85rem', color: '#94a3b8', textAlign: 'center', padding: '12px 0', margin: 0 }}>
                   No data yet
                 </p>
               )}
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions — client component for hover */}
           <div style={{
-            background: 'white', borderRadius: '1.25rem',
-            border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden',
+            background: '#ffffff', borderRadius: '20px',
+            border: '1px solid #f1f5f9',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+            overflow: 'hidden',
           }}>
-            <div className="px-5 py-4" style={{ borderBottom: '1px solid #f8fafc' }}>
-              <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Quick Actions</p>
+            <div style={{ padding: '20px 20px 12px', borderBottom: '1px solid #f8fafc' }}>
+              <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Quick Actions</p>
             </div>
-            <div className="p-3 space-y-0.5">
-              {[
-                { label: '➕ Add New Product',   href: '/admin/products'  },
-                { label: '📦 Manage Orders',      href: '/admin/orders'    },
-                { label: '👥 View Customers',     href: '/admin/customers' },
-                { label: '⚡ Flash Sale Setup',   href: '/admin/flash-sale'},
-                { label: '⚙️ Store Settings',     href: '/admin/settings'  },
-              ].map(({ label, href }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all hover:bg-slate-50 group"
-                  style={{ color: '#475569' }}
-                >
-                  {label}
-                  <ChevronRight size={13} className="text-slate-300 group-hover:text-pink-400 transition-colors" />
-                </Link>
-              ))}
-            </div>
+            <QuickActions />
           </div>
 
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .admin-dashboard-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   )
 }
