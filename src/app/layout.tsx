@@ -2,9 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
-import Navbar from '@/components/layout/Navbar'
-import CartDrawer from '@/components/cart/CartDrawer'
-import Footer from '@/components/layout/Footer'
+import ClientLayout from '@/components/layout/ClientLayout'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -49,12 +47,13 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <SessionProvider>
           <Suspense fallback={null}>
-            <Navbar />
-            <CartDrawer />
+            {/*
+              ClientLayout checks the pathname:
+              - /admin/* → renders children only (no Navbar/Footer/CartDrawer)
+              - everything else → wraps with Navbar + CartDrawer + navbar-spacer + Footer
+            */}
+            <ClientLayout>{children}</ClientLayout>
           </Suspense>
-          <div className="navbar-spacer" />
-          {children}
-          <Footer />
         </SessionProvider>
         <Toaster
           position="top-center"

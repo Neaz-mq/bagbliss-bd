@@ -9291,73 +9291,7 @@ p {
 
 
 /* ============================================
-   ADMIN PANEL OVERRIDES
-   Paste at the very bottom of globals.css
-   ============================================ */
-
-.admin-panel {
-  font-family: var(--font-body);
-  background: #f8fafc;
-}
-
-/* Reset ALL heading fonts inside admin */
-.admin-panel h1,
-.admin-panel h2,
-.admin-panel h3,
-.admin-panel h4,
-.admin-panel h5,
-.admin-panel h6 {
-  font-family: var(--font-body) !important;
-  font-size: revert !important;
-  line-height: revert !important;
-  color: revert !important;
-  letter-spacing: normal !important;
-}
-
-/* Reset paragraph color */
-.admin-panel p {
-  color: revert !important;
-  line-height: revert !important;
-  font-family: var(--font-body) !important;
-}
-
-/* Reset anchor styles */
-.admin-panel a {
-  color: revert;
-  text-decoration: none;
-}
-
-/* Reset global card hover */
-.admin-panel .card,
-.admin-panel .card:hover {
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Reset body background bleed */
-.admin-panel {
-  color: #1e293b;
-}
-
-/* Sidebar scrollbar */
-.admin-panel aside::-webkit-scrollbar {
-  width: 3px;
-}
-.admin-panel aside::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 99px;
-}
-
-/* Smooth hover transitions on all admin interactive elements */
-.admin-panel button,
-.admin-panel a {
-  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
-}
-
-/* ============================================
-   ADMIN PANEL OVERRIDES — replace existing block
+   ADMIN PANEL — Clean overrides
    ============================================ */
 
 .admin-panel {
@@ -9366,7 +9300,6 @@ p {
   color: #1e293b !important;
 }
 
-/* Reset ALL heading fonts inside admin */
 .admin-panel h1,
 .admin-panel h2,
 .admin-panel h3,
@@ -9380,49 +9313,39 @@ p {
   letter-spacing: normal !important;
 }
 
-/* Reset paragraph styles */
 .admin-panel p {
   font-family: var(--font-body) !important;
   color: revert !important;
   line-height: revert !important;
 }
 
-/* ⚠ DO NOT reset anchor color — sidebar links need their own colors */
+.admin-panel main p { color: inherit !important; }
+.admin-panel aside p { color: inherit !important; }
 
-/* Reset global card hover — admin has its own hover styles */
 .admin-panel .card,
 .admin-panel .card:hover {
   transform: none !important;
   box-shadow: none !important;
 }
 
-/* Sidebar scrollbar */
-.admin-panel aside::-webkit-scrollbar {
-  width: 3px;
-}
+.admin-panel h1 { font-size: 1.35rem !important; }
+.admin-panel h2 { font-size: 1rem !important; }
+.admin-panel h3 { font-size: 0.875rem !important; }
+
+.admin-panel aside::-webkit-scrollbar { width: 3px; }
 .admin-panel aside::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.12);
   border-radius: 99px;
 }
- 
-/* Override global h1 clamp that makes headings huge */
-.admin-panel h1 { font-size: 1.25rem !important; }
-.admin-panel h2 { font-size: 1rem !important; }
-.admin-panel h3 { font-size: 0.9rem !important; }
 
-/* Override global p color: var(--color-text-secondary) */
-.admin-panel main p {
-  color: inherit !important;
+.admin-panel button,
+.admin-panel a {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
 }
 
-/* Sidebar specific - keep white/transparent text */
-.admin-panel aside p {
-  color: inherit !important;
-  font-family: var(--font-body) !important;
-  line-height: inherit !important;
-}
-
-/* Override global body bg bleeding into admin */
-.admin-panel > div {
-  background: transparent;
-}
+/* Table grid spacing */
+.admin-panel .space-y-6 > * + * { margin-top: 1.5rem; }
+.admin-panel .space-y-3 > * + * { margin-top: 0.75rem; }
+.admin-panel .space-y-1 > * + * { margin-top: 0.25rem; }
