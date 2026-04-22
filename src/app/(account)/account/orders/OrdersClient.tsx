@@ -88,17 +88,16 @@ export default function OrdersPage() {
 
     fetchedRef.current = true
 
-    // All setStates are inside async callbacks — never synchronous
     fetch('/api/orders')
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setOrders(data.orders)
       })
-      .catch(console.error)
+      // eslint-disable-next-line no-console
+      .catch((err) => console.error(err))
       .finally(() => setFetchState('done'))
   }, [session, status])
 
-  // Show skeleton while auth is resolving OR while fetch is in flight
   const isLoading = status === 'loading' || (!!session && fetchState !== 'done')
 
   if (isLoading) {
@@ -123,7 +122,6 @@ export default function OrdersPage() {
     )
   }
 
-  // Not signed in
   if (!session) {
     return (
       <div className="orders-empty-page">
@@ -148,7 +146,6 @@ export default function OrdersPage() {
     )
   }
 
-  // No orders
   if (orders.length === 0) {
     return (
       <div className="orders-empty-page">
@@ -170,17 +167,12 @@ export default function OrdersPage() {
 
   return (
     <div className="orders-page" style={{ paddingTop: '72px' }}>
-      {/* Breadcrumb */}
       <div className="co-breadcrumb-bar">
         <div className="container-bagbliss">
           <nav className="co-breadcrumb">
-            <Link href="/" className="co-breadcrumb-link">
-              Home
-            </Link>
+            <Link href="/" className="co-breadcrumb-link">Home</Link>
             <ChevronRight size={14} className="co-breadcrumb-sep" />
-            <Link href="/account" className="co-breadcrumb-link">
-              Account
-            </Link>
+            <Link href="/account" className="co-breadcrumb-link">Account</Link>
             <ChevronRight size={14} className="co-breadcrumb-sep" />
             <span className="co-breadcrumb-current">My Orders</span>
           </nav>
@@ -209,9 +201,7 @@ export default function OrdersPage() {
                 <div className="order-card-header">
                   <div className="order-card-meta">
                     <span className="order-id">#{order.orderNumber}</span>
-                    <span className="order-date">
-                      {formatDate(order.createdAt)}
-                    </span>
+                    <span className="order-date">{formatDate(order.createdAt)}</span>
                   </div>
                   <span
                     className="order-status-badge"
@@ -247,13 +237,10 @@ export default function OrdersPage() {
                 <div className="order-card-footer">
                   <div className="order-delivery-label">
                     <Truck size={14} />
-                    {order.delivery === 'express'
-                      ? 'Express Delivery'
-                      : 'Standard Delivery'}
+                    {order.delivery === 'express' ? 'Express Delivery' : 'Standard Delivery'}
                   </div>
                   <div className="order-total">
-                    Total{' '}
-                    <strong>৳{order.total.toLocaleString('en-BD')}</strong>
+                    Total <strong>৳{order.total.toLocaleString('en-BD')}</strong>
                   </div>
                 </div>
               </div>
