@@ -25,7 +25,6 @@ export const useWishlistStore = create<WishlistStore>()(
             set({ items: data.items })
           }
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.error('Failed to sync wishlist with DB', error)
         }
       },
