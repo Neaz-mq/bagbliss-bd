@@ -193,7 +193,8 @@ export default function CheckoutPage() {
     clearCart()
     setPlaced(true)
     toast.success(`🎉 Order placed for ${data.fullName}!`)
-  } catch (err) {
+   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error(err)
     toast.error('Failed to place order. Please try again.')
   } finally {
