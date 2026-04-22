@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, wishlist: updatedUser.wishlist })
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('Wishlist Update Error:', err)
     return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
   }
