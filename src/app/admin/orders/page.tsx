@@ -66,12 +66,6 @@ const PAYMENT_CONFIG: Record<string, { label: string; color: string; bg: string 
   cod:    { label: 'COD',    color: '#475569', bg: 'rgba(71,85,105,0.1)' },
 }
 
-const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
-  processing: 'shipped',
-  shipped:    'delivered',
-  delivered:  null,
-  cancelled:  null,
-}
 
 // ─── StatusBadge ──────────────────────────────────────────────────────────────
 
