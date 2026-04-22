@@ -1,7 +1,6 @@
-// src/app/(account)/account/orders/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import {
@@ -74,29 +73,35 @@ function formatDate(iso: string) {
   })
 }
 
+type FetchState = 'idle' | 'fetching' | 'done'
+
 export default function OrdersPage() {
   const { data: session, status } = useSession()
   const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
+  const [fetchState, setFetchState] = useState<FetchState>('idle')
+  const fetchedRef = useRef(false)
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session) {
-      setLoading(false)
-      return
-    }
+    if (!session) return
+    if (fetchedRef.current) return
 
+    fetchedRef.current = true
+
+    // All setStates are inside async callbacks — never synchronous
     fetch('/api/orders')
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setOrders(data.orders)
       })
       .catch(console.error)
-      .finally(() => setLoading(false))
+      .finally(() => setFetchState('done'))
   }, [session, status])
 
-  // Loading
-  if (status === 'loading' || loading) {
+  // Show skeleton while auth is resolving OR while fetch is in flight
+  const isLoading = status === 'loading' || (!!session && fetchState !== 'done')
+
+  if (isLoading) {
     return (
       <div className="orders-page" style={{ paddingTop: '72px' }}>
         <div className="container-bagbliss">
