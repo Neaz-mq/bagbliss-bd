@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'          // ← was '@/auth', now '@/lib/auth'
-import connectDB from '@/lib/mongodb'       // ← use your existing connectDB
+import { auth } from '@/lib/auth'         
+import connectDB from '@/lib/mongodb'       
 import Order from '@/models/Order'
 
 export async function POST(req: NextRequest) {
