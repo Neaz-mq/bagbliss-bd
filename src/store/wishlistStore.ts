@@ -3,10 +3,10 @@ import { persist } from 'zustand/middleware'
 
 interface WishlistStore {
   items: string[]
-  addItem: (productId: string) => Promise<void> // Changed to Promise
-  removeItem: (productId: string) => Promise<void> // Changed to Promise
-  toggleItem: (productId: string) => Promise<void> // Changed to Promise
-  fetchWishlist: () => Promise<void> // Added this
+  addItem: (productId: string) => Promise<void> 
+  removeItem: (productId: string) => Promise<void> 
+  toggleItem: (productId: string) => Promise<void> 
+  fetchWishlist: () => Promise<void> 
   isWishlisted: (productId: string) => boolean
   getCount: () => number
 }
