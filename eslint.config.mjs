@@ -13,13 +13,13 @@ const eslintConfig = defineConfig([
     'node_modules/**',
   ]),
   {
-    rules: {
-      '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/no-explicit-any': 'error',
-      'no-console': 'warn',
-      'prefer-const': 'error',
-    },
+  rules: {
+    '@typescript-eslint/no-unused-vars': 'error',
+    '@typescript-eslint/no-explicit-any': 'error',
+    'no-console': ['warn', { allow: ['error', 'warn'] }],  // ← change this
+    'prefer-const': 'error',
   },
+},
 ])
 
 export default eslintConfig
