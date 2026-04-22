@@ -8,7 +8,24 @@ import {
   ShoppingCart, ExternalLink,
 } from 'lucide-react'
 
-const NAV_GROUPS = [
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface NavItem {
+  href: string
+  label: string
+  icon: React.ElementType
+  exact?: boolean
+  badge?: string | null
+}
+
+interface NavGroup {
+  label: string
+  items: NavItem[]
+}
+
+// ─── Nav config ───────────────────────────────────────────────────────────────
+
+const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
     items: [
@@ -18,10 +35,10 @@ const NAV_GROUPS = [
   {
     label: 'Store',
     items: [
-      { href: '/admin/orders',     label: 'Orders',     icon: ShoppingBag, badge: null },
-      { href: '/admin/products',   label: 'Products',   icon: Package,     badge: null },
-      { href: '/admin/customers',  label: 'Customers',  icon: Users,       badge: null },
-      { href: '/admin/categories', label: 'Categories', icon: Tag,         badge: null },
+      { href: '/admin/orders',     label: 'Orders',     icon: ShoppingBag },
+      { href: '/admin/products',   label: 'Products',   icon: Package     },
+      { href: '/admin/customers',  label: 'Customers',  icon: Users       },
+      { href: '/admin/categories', label: 'Categories', icon: Tag         },
     ],
   },
   {
@@ -33,15 +50,19 @@ const NAV_GROUPS = [
   {
     label: 'System',
     items: [
-      { href: '/admin/settings', label: 'Settings', icon: Settings, badge: null },
+      { href: '/admin/settings', label: 'Settings', icon: Settings },
     ],
   },
 ]
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
   isOpen: boolean
   onClose: () => void
 }
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminSidebar({ isOpen, onClose }: Props) {
   const pathname = usePathname()
@@ -79,60 +100,40 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           flexShrink: 0,
         }}>
-          {/* Top row: icon + brand + close */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-
-            {/* App icon */}
             <div style={{
-              width: '36px',
-              height: '36px',
-              minWidth: '36px',
+              width: '36px', height: '36px', minWidth: '36px',
               borderRadius: '10px',
               background: 'linear-gradient(135deg, #e91e8c 0%, #f43f5e 100%)',
               boxShadow: '0 4px 12px rgba(233,30,140,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <ShoppingCart size={17} color="white" strokeWidth={2.2} />
             </div>
 
-            {/* Brand text — flex:1 so it takes remaining space */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.92rem',
-                margin: 0,
-                letterSpacing: '-0.01em',
-                whiteSpace: 'nowrap',
+                color: '#ffffff', fontWeight: 700, fontSize: '0.92rem',
+                margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap',
               }}>
                 BagBliss BD
               </p>
               <p style={{
-                color: 'rgba(244, 114, 182, 0.85)',
-                fontWeight: 600,
-                fontSize: '0.62rem',
-                margin: '3px 0 0',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
+                color: 'rgba(244, 114, 182, 0.85)', fontWeight: 600,
+                fontSize: '0.62rem', margin: '3px 0 0',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>
                 Admin Panel
               </p>
             </div>
 
-            {/* Close button — only on mobile, clearly visible */}
             <button
               onClick={onClose}
               className="lg:hidden"
               style={{
-                width: '32px',
-                height: '32px',
-                minWidth: '32px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                width: '32px', height: '32px', minWidth: '32px',
+                borderRadius: '8px', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
                 color: 'rgba(255,255,255,0.7)',
                 background: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -146,32 +147,26 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
 
         {/* ── Navigation ───────────────────────── */}
         <nav style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '14px 10px',
-          scrollbarWidth: 'none',
+          flex: 1, overflowY: 'auto',
+          padding: '14px 10px', scrollbarWidth: 'none',
         }}>
           {NAV_GROUPS.map((group, gi) => (
             <div
               key={group.label}
               style={{ marginBottom: gi < NAV_GROUPS.length - 1 ? '22px' : 0 }}
             >
-              {/* Section label — brighter so it's readable */}
               <p style={{
-                fontSize: '0.62rem',
-                fontWeight: 700,
-                letterSpacing: '0.09em',
-                textTransform: 'uppercase',
+                fontSize: '0.62rem', fontWeight: 700,
+                letterSpacing: '0.09em', textTransform: 'uppercase',
                 color: 'rgba(255,255,255,0.28)',
-                padding: '0 10px',
-                marginBottom: '5px',
+                padding: '0 10px', marginBottom: '5px',
               }}>
                 {group.label}
               </p>
 
-              {/* Nav items */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                {group.items.map(({ href, label, icon: Icon, exact, badge }) => {
+                {group.items.map((item) => {
+                  const { href, label, icon: Icon, exact, badge } = item
                   const active = isActive(href, exact)
                   return (
                     <Link
@@ -179,26 +174,19 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
                       href={href}
                       onClick={onClose}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '9px 10px 9px 14px',
-                        borderRadius: '8px',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '9px 10px 9px 14px', borderRadius: '8px',
                         fontSize: '0.875rem',
                         fontWeight: active ? 600 : 400,
-                        textDecoration: 'none',
-                        position: 'relative',
-                        /* Active = white text. Inactive = clearly visible, not near-invisible */
+                        textDecoration: 'none', position: 'relative',
                         color: active ? '#ffffff' : 'rgba(255,255,255,0.6)',
                         background: active ? 'rgba(233,30,140,0.15)' : 'transparent',
                         transition: 'all 0.12s ease',
                       }}
                     >
-                      {/* Active left bar */}
                       {active && (
                         <span style={{
-                          position: 'absolute',
-                          left: 0, top: '50%',
+                          position: 'absolute', left: 0, top: '50%',
                           transform: 'translateY(-50%)',
                           width: '3px', height: '18px',
                           borderRadius: '0 3px 3px 0',
@@ -209,7 +197,6 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
                       <Icon
                         size={17}
                         style={{
-                          /* Active = pink. Inactive = clearly visible */
                           color: active ? '#f472b6' : 'rgba(255,255,255,0.45)',
                           flexShrink: 0,
                         }}
@@ -217,16 +204,12 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
 
                       <span style={{ flex: 1 }}>{label}</span>
 
-                      {badge && (
+                      {badge != null && (
                         <span style={{
-                          fontSize: '0.6rem',
-                          fontWeight: 700,
-                          padding: '2px 7px',
-                          borderRadius: '5px',
+                          fontSize: '0.6rem', fontWeight: 700,
+                          padding: '2px 7px', borderRadius: '5px',
                           background: 'rgba(233,30,140,0.25)',
-                          color: '#fb7185',
-                          letterSpacing: '0.04em',
-                          flexShrink: 0,
+                          color: '#fb7185', letterSpacing: '0.04em', flexShrink: 0,
                         }}>
                           {badge}
                         </span>
@@ -239,37 +222,28 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
           ))}
         </nav>
 
-        {/* ── Footer — Store Status ─────────────── */}
+        {/* ── Footer ───────────────────────────── */}
         <div style={{
           padding: '10px 12px 14px',
           borderTop: '1px solid rgba(255,255,255,0.08)',
           flexShrink: 0,
         }}>
           <div style={{
-            borderRadius: '10px',
-            padding: '12px 14px',
+            borderRadius: '10px', padding: '12px 14px',
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.08)',
           }}>
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '7px',
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between', marginBottom: '7px',
             }}>
-              <span style={{
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                color: 'rgba(255,255,255,0.7)',
-              }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
                 Store Status
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{
-                  width: '7px', height: '7px',
-                  borderRadius: '50%',
-                  background: '#22c55e',
-                  boxShadow: '0 0 7px rgba(34,197,94,0.7)',
+                  width: '7px', height: '7px', borderRadius: '50%',
+                  background: '#22c55e', boxShadow: '0 0 7px rgba(34,197,94,0.7)',
                   display: 'inline-block',
                 }} />
                 <span style={{ fontSize: '0.72rem', color: '#4ade80', fontWeight: 600 }}>
@@ -282,11 +256,8 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
               href="/"
               target="_blank"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '0.72rem',
-                color: 'rgba(255,255,255,0.38)',
+                display: 'flex', alignItems: 'center', gap: '4px',
+                fontSize: '0.72rem', color: 'rgba(255,255,255,0.38)',
                 textDecoration: 'none',
               }}
             >
