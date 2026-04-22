@@ -3,10 +3,10 @@ import { persist } from 'zustand/middleware'
 
 interface WishlistStore {
   items: string[]
-  addItem: (productId: string) => Promise<void> 
-  removeItem: (productId: string) => Promise<void> 
-  toggleItem: (productId: string) => Promise<void> 
-  fetchWishlist: () => Promise<void> 
+  addItem: (productId: string) => Promise<void>
+  removeItem: (productId: string) => Promise<void>
+  toggleItem: (productId: string) => Promise<void>
+  fetchWishlist: () => Promise<void>
   isWishlisted: (productId: string) => boolean
   getCount: () => number
 }
@@ -25,18 +25,17 @@ export const useWishlistStore = create<WishlistStore>()(
             set({ items: data.items })
           }
         } catch (error) {
-          console.error("Failed to sync wishlist with DB", error)
+          // eslint-disable-next-line no-console
+          console.error('Failed to sync wishlist with DB', error)
         }
       },
 
       // 2. Add item to both Local State and MongoDB
       addItem: async (productId) => {
-        // Update UI immediately (Optimistic Update)
         set((state) => ({
           items: [...state.items, productId],
         }))
 
-        // Sync with Database
         await fetch('/api/wishlist', {
           method: 'POST',
           body: JSON.stringify({ productId, action: 'add' }),
@@ -45,12 +44,10 @@ export const useWishlistStore = create<WishlistStore>()(
 
       // 3. Remove item from both Local State and MongoDB
       removeItem: async (productId) => {
-        // Update UI immediately
         set((state) => ({
           items: state.items.filter((id) => id !== productId),
         }))
 
-        // Sync with Database
         await fetch('/api/wishlist', {
           method: 'POST',
           body: JSON.stringify({ productId, action: 'remove' }),
@@ -67,9 +64,7 @@ export const useWishlistStore = create<WishlistStore>()(
         }
       },
 
-      isWishlisted: (productId) => {
-        return get().items.includes(productId)
-      },
+      isWishlisted: (productId) => get().items.includes(productId),
 
       getCount: () => get().items.length,
     }),
