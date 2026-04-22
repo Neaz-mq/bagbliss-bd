@@ -100,7 +100,6 @@ export default function AccountPage() {
       .then((d) => {
         if (d.success) setOrders(d.orders)
       })
-      // eslint-disable-next-line no-console
       .catch((err) => console.error(err))
       .finally(() => setOrdersLoading(false))
   }, [session])
