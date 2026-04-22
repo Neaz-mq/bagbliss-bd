@@ -93,7 +93,6 @@ export default function OrdersPage() {
       .then((data) => {
         if (data.success) setOrders(data.orders)
       })
-      // eslint-disable-next-line no-console
       .catch((err) => console.error(err))
       .finally(() => setFetchState('done'))
   }, [session, status])
