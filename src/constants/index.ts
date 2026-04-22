@@ -1,7 +1,3 @@
-// ============================================
-// BAGBLISS BD — App Constants
-// ============================================
-
 export const APP_NAME = 'BagBliss BD'
 export const APP_URL = 'https://bagbliss.com.bd'
 export const SITE_NAME = 'BagBliss BD'
