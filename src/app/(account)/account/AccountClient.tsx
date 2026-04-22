@@ -100,7 +100,8 @@ export default function AccountPage() {
       .then((d) => {
         if (d.success) setOrders(d.orders)
       })
-      .catch(console.error)
+      // eslint-disable-next-line no-console
+      .catch((err) => console.error(err))
       .finally(() => setOrdersLoading(false))
   }, [session])
 
@@ -202,7 +203,6 @@ export default function AccountPage() {
           marginBottom: '2rem',
         }}
       >
-        {/* decorative blobs */}
         <div
           style={{
             position: 'absolute',
@@ -279,7 +279,6 @@ export default function AccountPage() {
                   {user.name?.[0]?.toUpperCase() ?? 'U'}
                 </div>
               )}
-              {/* online dot */}
               <span
                 style={{
                   position: 'absolute',
@@ -408,7 +407,7 @@ export default function AccountPage() {
       </div>
 
       <div className="container-bagbliss">
-        {/* ── Stats Row ──────────────────────────────────────────────── */}
+        {/* ── Stats Row ── */}
         <div
           style={{
             display: 'grid',
@@ -504,7 +503,7 @@ export default function AccountPage() {
           })}
         </div>
 
-        {/* ── Main Layout ─────────────────────────────────────────────── */}
+        {/* ── Main Layout ── */}
         <div
           style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}
           className="account-layout"
@@ -514,7 +513,6 @@ export default function AccountPage() {
             style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
             className="account-nav-col"
           >
-            {/* Quick Nav Card */}
             <div
               style={{
                 background: 'white',
@@ -1181,7 +1179,6 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* Responsive styles */}
       <style>{`
         @media (min-width: 768px) {
           .account-stats-grid {
