@@ -1,5 +1,8 @@
-import { auth } from '@/lib/auth'
+import NextAuth from 'next-auth'
+import { authConfig } from './src/auth.config'
 import { NextResponse } from 'next/server'
+
+const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
@@ -11,7 +14,7 @@ export default auth((req) => {
       return NextResponse.redirect(loginUrl)
     }
 
-    if (req.auth.user?.role !== 'admin') {
+    if ((req.auth.user as any)?.role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url))
     }
   }

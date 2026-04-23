@@ -6,19 +6,13 @@ import { MongoDBAdapter } from '@auth/mongodb-adapter'
 import clientPromise from '@/lib/mongoClient'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
+import { authConfig } from '@/auth.config' // ← updated path
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   adapter: MongoDBAdapter(clientPromise, {
     databaseName: 'bagbliss',
   }),
-  session: {
-    strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60,
-  },
-  pages: {
-    signIn: '/login',
-    error: '/login',
-  },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
