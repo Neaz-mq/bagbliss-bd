@@ -1,58 +1,33 @@
-import mongoose, { Document, Model, Schema } from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 
-export interface IProductDocument extends Document {
-  name: string
-  slug: string
-  description: string
-  price: number
-  comparePrice?: number
-  images: string[]
-  category: string
-  tags: string[]
-  stock: number
-  sku?: string
-  isActive: boolean
-  isFeatured: boolean
-  flashSale?: {
-    isActive: boolean
-    discountPercent: number
-    endsAt: Date
-  }
-  createdAt: Date
-  updatedAt: Date
-}
+const ColorSchema = new Schema(
+  { name: String, hex: String, stock: { type: Number, default: 0 } },
+  { _id: false }
+)
 
-const ProductSchema = new Schema<IProductDocument>(
+const ProductSchema = new Schema(
   {
-    name:         { type: String, required: true, trim: true },
-    slug:         { type: String, required: true, unique: true, lowercase: true, trim: true },
-    description:  { type: String, required: true },
-    price:        { type: Number, required: true, min: 0 },
-    comparePrice: { type: Number },
-    images:       [{ type: String }],
-    category:     { type: String, required: true, trim: true },
-    tags:         [{ type: String, trim: true }],
-    stock:        { type: Number, required: true, default: 0, min: 0 },
-    sku:          { type: String, trim: true, sparse: true },
-    isActive:     { type: Boolean, default: true },
-    isFeatured:   { type: Boolean, default: false },
-    flashSale: {
-      isActive:        { type: Boolean, default: false },
-      discountPercent: { type: Number, min: 0, max: 100 },
-      endsAt:          { type: Date },
-    },
+    name:             { type: String, required: true, trim: true },
+    slug:             { type: String, required: true, unique: true, lowercase: true },
+    description:      { type: String, default: '' },
+    shortDescription: { type: String, default: '' },
+    price:            { type: Number, required: true, min: 0 },
+    originalPrice:    { type: Number, default: 0 },
+    category:         { type: String, required: true },
+    images:           [{ type: String }],
+    colors:           [ColorSchema],
+    totalStock:       { type: Number, default: 0 },
+    isActive:         { type: Boolean, default: true },
+    isFeatured:       { type: Boolean, default: false },
+    isFlashSale:      { type: Boolean, default: false },
+    flashSalePrice:   { type: Number, default: 0 },
+    rating:           { type: Number, default: 0 },
+    reviewCount:      { type: Number, default: 0 },
+    soldCount:        { type: Number, default: 0 },
+    tags:             [{ type: String }],
   },
   { timestamps: true }
 )
 
-ProductSchema.index({ name: 'text', description: 'text' })
-ProductSchema.index({ slug: 1 })
-ProductSchema.index({ category: 1 })
-ProductSchema.index({ isActive: 1 })
-ProductSchema.index({ createdAt: -1 })
-
-const Product: Model<IProductDocument> =
-  mongoose.models.Product ||
-  mongoose.model<IProductDocument>('Product', ProductSchema)
-
-export default Product
+export default mongoose.models.Product ||
+  mongoose.model('Product', ProductSchema)
