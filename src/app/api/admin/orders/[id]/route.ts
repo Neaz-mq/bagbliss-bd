@@ -6,8 +6,10 @@ import Order from '@/models/Order'
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   const session = await auth()
   if (!session || session.user?.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -24,7 +26,7 @@ export async function PATCH(
   }
 
   const order = await Order.findByIdAndUpdate(
-    params.id,
+    id,
     { status },
     { new: true }
   ).lean()
@@ -38,8 +40,10 @@ export async function PATCH(
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   const session = await auth()
   if (!session || session.user?.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -47,7 +51,7 @@ export async function GET(
 
   await connectDB()
 
-  const order = await Order.findById(params.id).lean()
+  const order = await Order.findById(id).lean()
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
