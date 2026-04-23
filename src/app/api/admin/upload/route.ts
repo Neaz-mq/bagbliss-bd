@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const file = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
 
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME  // ✅ fixed
   const apiKey    = process.env.CLOUDINARY_API_KEY
   const apiSecret = process.env.CLOUDINARY_API_SECRET
 
