@@ -1,72 +1,56 @@
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 
-export interface IOrder extends Document {
-  userId?: string
-  guestEmail?: string
-  orderNumber: string
-  items: {
-    productId: string
-    name: string
-    price: number
-    quantity: number
-    color: string
-    image?: string
-  }[]
-  shipping: {
-    fullName: string
-    phone: string
-    email?: string
-    division: string
-    district: string
-    thana: string
-    address: string
-    postalCode?: string
+const OrderItemSchema = new Schema({
+  productId: { type: String, required: true },
+  name:      { type: String, required: true },
+  price:     { type: Number, required: true },
+  quantity:  { type: Number, required: true, min: 1 },
+  color:     { type: String, default: '' },
+  image:     { type: String, default: '' },
+}, { _id: false })
+
+const ShippingSchema = new Schema({
+  fullName:   { type: String, required: true },
+  phone:      { type: String, required: true },
+  email:      { type: String, default: '' },
+  division:   { type: String, required: true },
+  district:   { type: String, required: true },
+  thana:      { type: String, default: '' },
+  address:    { type: String, required: true },
+  postalCode: { type: String, default: '' },
+}, { _id: false })
+
+const OrderSchema = new Schema({
+  orderNumber:   { type: String, required: true, unique: true },
+  userId:        { type: String, default: null },
+  guestEmail:    { type: String, default: null },
+  items:         [OrderItemSchema],
+  shipping:      { type: ShippingSchema, required: true },
+  delivery:      { type: String, default: 'standard' },
+  deliveryFee:   { type: Number, default: 60 },
+  payment:       { type: String, enum: ['bkash', 'nagad', 'cod', 'sslcommerz', 'card'], default: 'cod' },
+  subtotal:      { type: Number, required: true },
+  discount:      { type: Number, default: 0 },
+  total:         { type: Number, required: true },
+  status:        { type: String, enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'], default: 'pending' },
+  paymentStatus: { type: String, enum: ['unpaid', 'paid', 'failed', 'cancelled', 'refunded'], default: 'unpaid' },
+  orderNote:     { type: String, default: '' },
+  // SSLCommerz fields
+  tranId:        { type: String, default: null },   // our transaction ID
+  sslTranId:     { type: String, default: null },   // SSLCommerz's transaction ID
+  valId:         { type: String, default: null },   // validation ID after payment
+  cardType:      { type: String, default: null },
+  bankTranId:    { type: String, default: null },
+  currency:      { type: String, default: 'BDT' },
+}, { timestamps: true })
+
+// Auto-generate orderNumber
+OrderSchema.pre('save', async function (next) {
+  if (!this.orderNumber) {
+    const count = await mongoose.model('Order').countDocuments()
+    this.orderNumber = `BB${String(count + 1).padStart(6, '0')}`
   }
-  delivery: string
-  deliveryFee: number
-  payment: string
-  subtotal: number
-  total: number
-  status: 'processing' | 'shipped' | 'delivered' | 'cancelled'
-  orderNote?: string
-  createdAt: Date
-}
+  next()
+})
 
-const OrderSchema = new Schema<IOrder>(
-  {
-    userId:     { type: String, index: true },
-    guestEmail: { type: String },
-    orderNumber:{ type: String, required: true, unique: true },
-    items: [
-      {
-        productId: String,
-        name:      String,
-        price:     Number,
-        quantity:  Number,
-        color:     String,
-        image:     String,
-      },
-    ],
-    shipping: {
-      fullName:   String,
-      phone:      String,
-      email:      String,
-      division:   String,
-      district:   String,
-      thana:      String,
-      address:    String,
-      postalCode: String,
-    },
-    delivery:    { type: String, default: 'standard' },
-    deliveryFee: { type: Number, default: 60 },
-    payment:     { type: String, default: 'cod' },
-    subtotal:    { type: Number, required: true },
-    total:       { type: Number, required: true },
-    status:      { type: String, default: 'processing' },
-    orderNote:   String,
-  },
-  { timestamps: true }
-)
-
-export default mongoose.models.Order ||
-  mongoose.model<IOrder>('Order', OrderSchema)
+export default mongoose.models.Order || mongoose.model('Order', OrderSchema)
