@@ -21,12 +21,12 @@ export async function GET(req: NextRequest) {
   if (featured  === 'true') q.isFeatured = true
   if (flashSale === 'true') q.isFlashSale = true
 
-  const sortMap: Record<string, Record<string, number>> = {
-    newest:     { createdAt: -1 },
-    price_asc:  { price: 1 },
-    price_desc: { price: -1 },
-    popular:    { soldCount: -1 },
-    rating:     { rating: -1 },
+  const sortMap: Record<string, [string, 1 | -1][]> = {
+    newest:     [['createdAt', -1]],
+    price_asc:  [['price', 1]],
+    price_desc: [['price', -1]],
+    popular:    [['soldCount', -1]],
+    rating:     [['rating', -1]],
   }
   const sortObj = sortMap[sort] ?? sortMap.newest
 
