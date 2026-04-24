@@ -35,22 +35,20 @@ const OrderSchema = new Schema({
   status:        { type: String, enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'], default: 'pending' },
   paymentStatus: { type: String, enum: ['unpaid', 'paid', 'failed', 'cancelled', 'refunded'], default: 'unpaid' },
   orderNote:     { type: String, default: '' },
-  // SSLCommerz fields
-  tranId:        { type: String, default: null },   // our transaction ID
-  sslTranId:     { type: String, default: null },   // SSLCommerz's transaction ID
-  valId:         { type: String, default: null },   // validation ID after payment
+  tranId:        { type: String, default: null },
+  sslTranId:     { type: String, default: null },
+  valId:         { type: String, default: null },
   cardType:      { type: String, default: null },
   bankTranId:    { type: String, default: null },
   currency:      { type: String, default: 'BDT' },
 }, { timestamps: true })
 
 // Auto-generate orderNumber
-OrderSchema.pre('save', async function (next) {
+OrderSchema.pre('save', async function () {
   if (!this.orderNumber) {
     const count = await mongoose.model('Order').countDocuments()
     this.orderNumber = `BB${String(count + 1).padStart(6, '0')}`
   }
-  next()
 })
 
 export default mongoose.models.Order || mongoose.model('Order', OrderSchema)
