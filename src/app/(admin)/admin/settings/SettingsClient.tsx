@@ -5,8 +5,8 @@ import {
   Store, Truck, Share2, Bell, CreditCard,
   Search as SearchIcon, Globe, Save, RefreshCw,
   CheckCircle, AlertTriangle, Loader2, Phone,
-  Mail, MapPin, DollarSign, Facebook, Instagram,
-  Youtube, X as TikTok, Shield, Eye, EyeOff,
+  Facebook, Instagram,
+  Youtube, X as TikTok, Shield, 
   Package,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
