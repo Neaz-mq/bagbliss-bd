@@ -6,11 +6,13 @@ import Product from '@/models/Product'
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const session = await auth()
   if (!session || session.user?.role !== 'admin')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await Promise.resolve(context.params)
 
   await connectDB()
 
@@ -25,7 +27,7 @@ export async function PATCH(
   }
 
   const product = await Product.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: update },
     { new: true }
   ).lean()
