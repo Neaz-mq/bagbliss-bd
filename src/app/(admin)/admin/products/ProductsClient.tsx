@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Plus, Search, RefreshCw, Edit2, Trash2, X, Upload,
   ChevronDown, ChevronLeft, ChevronRight, Package,
-  AlertTriangle, Loader2, Eye,
+  AlertTriangle, Loader2, 
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
