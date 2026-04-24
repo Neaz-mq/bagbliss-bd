@@ -7,13 +7,13 @@ import Order from '@/models/Order'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const session = await auth()
   if (!session || session.user?.role !== 'admin')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id } = params
+  const { id } = await Promise.resolve(context.params)
 
   await connectDB()
 
