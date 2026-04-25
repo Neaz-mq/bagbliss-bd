@@ -326,6 +326,13 @@ export default function ProductsClient() {
 
   const limit = 20
 
+  // ── NEW: Read category from URL on mount (for "View Products" links from Categories page) ──
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const cat = params.get('category')
+    if (cat) setCat(cat)
+  }, [])
+
   const fetchProducts = useCallback(async () => {
     setLoading(true)
     try {

@@ -503,45 +503,114 @@ export default function SettingsClient() {
         </Card>
       )}
 
+      
       {/* ── Notifications ──────────────────────────────────────────── */}
-      {activeTab === 'notifications' && (
-        <Card>
-          <SectionTitle icon={Bell} title="Notifications" desc="Control email and alert preferences" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <Toggle
-              label="New Order Email"
-              desc="Receive an email when a new order is placed"
-              checked={settings.notifications.newOrderEmail}
-              onChange={v => update('notifications', 'newOrderEmail', v)}
-            />
-            <Toggle
-              label="Customer Order Emails"
-              desc="Send order confirmation emails to customers"
-              checked={settings.notifications.customerEmails}
-              onChange={v => update('notifications', 'customerEmails', v)}
-            />
-            <Toggle
-              label="Low Stock Alerts"
-              desc="Get notified when product stock is running low"
-              checked={settings.notifications.lowStockAlert}
-              onChange={v => update('notifications', 'lowStockAlert', v)}
-            />
-            {settings.notifications.lowStockAlert && (
-              <div style={{ marginLeft: '0', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                <Field label="Low Stock Threshold" hint="Alert when stock falls below this number">
-                  <div style={{ maxWidth: '200px' }}>
-                    <Input
-                      type="number" value={settings.notifications.lowStockThreshold}
-                      onChange={v => update('notifications', 'lowStockThreshold', Number(v))}
-                      placeholder="5" prefix="📦"
-                    />
-                  </div>
-                </Field>
-              </div>
-            )}
-          </div>
-        </Card>
+{activeTab === 'notifications' && (
+  <Card>
+    <SectionTitle icon={Bell} title="Notifications" desc="Control email and alert preferences" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <Toggle
+        label="New Order Email"
+        desc="Receive an email when a new order is placed"
+        checked={settings.notifications.newOrderEmail}
+        onChange={v => update('notifications', 'newOrderEmail', v)}
+      />
+      <Toggle
+        label="Customer Order Emails"
+        desc="Send order confirmation emails to customers"
+        checked={settings.notifications.customerEmails}
+        onChange={v => update('notifications', 'customerEmails', v)}
+      />
+      <Toggle
+        label="Low Stock Alerts"
+        desc="Get notified when product stock is running low"
+        checked={settings.notifications.lowStockAlert}
+        onChange={v => update('notifications', 'lowStockAlert', v)}
+      />
+      {settings.notifications.lowStockAlert && (
+        <div style={{ padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+          <Field label="Low Stock Threshold" hint="Alert when stock falls below this number">
+            <div style={{ maxWidth: '200px' }}>
+              <Input
+                type="number" value={settings.notifications.lowStockThreshold}
+                onChange={v => update('notifications', 'lowStockThreshold', Number(v))}
+                placeholder="5" prefix="📦"
+              />
+            </div>
+          </Field>
+        </div>
       )}
+
+      {/* ── Test Email ─────────────────────────────────────────── */}
+      <div style={{
+        marginTop: '8px', padding: '18px 16px',
+        background: 'rgba(233,30,140,0.03)',
+        border: '1.5px solid rgba(233,30,140,0.12)',
+        borderRadius: '12px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>
+              📧 Test Email System
+            </p>
+            <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+              Sends a sample order confirmation to your admin email.<br/>
+              Use this to verify Resend is working correctly.
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              toast.loading('Sending test emails…', { id: 'test-email' })
+              try {
+                const res  = await fetch('/api/admin/test-email', { method: 'POST' })
+                const data = await res.json()
+                toast.dismiss('test-email')
+                if (res.ok) {
+                  toast.success('✅ Test email sent! Check your inbox.')
+                } else {
+                  toast.error(data.error ?? 'Failed to send test email')
+                }
+              } catch {
+                toast.dismiss('test-email')
+                toast.error('Failed to send test email')
+              }
+            }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '7px',
+              padding: '10px 20px', borderRadius: '10px', border: 'none',
+              background: 'linear-gradient(135deg, #e91e8c, #f43f5e)',
+              color: 'white', fontSize: '0.82rem', fontWeight: 700,
+              cursor: 'pointer', flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(233,30,140,0.3)',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            <Bell size={14} /> Send Test Email
+          </button>
+        </div>
+
+        {/* Email info */}
+        <div style={{
+          marginTop: '14px', padding: '10px 14px',
+          background: 'white', borderRadius: '10px',
+          border: '1px solid #f1f5f9',
+          display: 'flex', alignItems: 'center', gap: '8px',
+        }}>
+          <span style={{ fontSize: '16px' }}>📬</span>
+          <div>
+            <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', margin: '0 0 1px' }}>
+              Emails will be sent to
+            </p>
+            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#e91e8c', margin: 0, fontFamily: 'monospace' }}>
+              {process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? 'your ADMIN_EMAIL in .env.local'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Card>
+)}
 
       {/* ── SEO ────────────────────────────────────────────────────── */}
       {activeTab === 'seo' && (

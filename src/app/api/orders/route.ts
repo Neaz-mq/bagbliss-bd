@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'         
-import connectDB from '@/lib/mongodb'       
+import { auth } from '@/lib/auth'
+import connectDB from '@/lib/mongodb'
 import Order from '@/models/Order'
+import { sendOrderEmails } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   try {
     await connectDB()
     const session = await auth()
-    const body = await req.json()
+    const body    = await req.json()
 
     const orderNumber = `BB${Date.now().toString().slice(-6)}`
 
     const order = await Order.create({
-      userId:      session?.user?.id ?? null,
+      userId:      session?.user?.id   ?? null,
       guestEmail:  body.shipping?.email ?? null,
       orderNumber,
       items:       body.items,
@@ -22,11 +23,29 @@ export async function POST(req: NextRequest) {
       payment:     body.payment,
       subtotal:    body.subtotal,
       total:       body.total,
-      orderNote:   body.orderNote,
+      orderNote:   body.orderNote ?? '',
       status:      'processing',
+      paymentStatus: body.payment === 'cod' ? 'unpaid' : 'unpaid',
     })
 
+    // ── Send emails (non-blocking — never fails the order) ──────────────
+    sendOrderEmails({
+      orderNumber:   order.orderNumber,
+      customerName:  body.shipping.fullName,
+      customerEmail: body.shipping.email ?? session?.user?.email ?? '',
+      items:         body.items,
+      shipping:      body.shipping,
+      subtotal:      body.subtotal,
+      deliveryFee:   body.deliveryFee,
+      total:         body.total,
+      payment:       body.payment,
+      delivery:      body.delivery,
+      orderNote:     body.orderNote ?? '',
+      createdAt:     order.createdAt.toISOString(),
+    }).catch(err => console.error('[EMAIL] Failed to send order emails:', err))
+
     return NextResponse.json({ success: true, order }, { status: 201 })
+
   } catch (err) {
     console.error('Order creation error:', err)
     return NextResponse.json(
@@ -53,6 +72,7 @@ export async function GET() {
       .lean()
 
     return NextResponse.json({ success: true, orders })
+
   } catch (err) {
     console.error('Fetch orders error:', err)
     return NextResponse.json(
