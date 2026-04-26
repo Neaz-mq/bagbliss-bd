@@ -61,11 +61,10 @@ const STATUS_CONFIG: Record<OrderStatus, {
 }
 
 const PAYMENT_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  bkash:  { label: 'bKash',  color: '#e2136e', bg: 'rgba(226,19,110,0.1)' },
-  nagad:  { label: 'Nagad',  color: '#f6a623', bg: 'rgba(246,166,35,0.1)' },
-  cod:    { label: 'COD',    color: '#475569', bg: 'rgba(71,85,105,0.1)' },
+  bkash: { label: 'bKash', color: '#e2136e', bg: 'rgba(226,19,110,0.1)' },
+  nagad: { label: 'Nagad', color: '#f6a623', bg: 'rgba(246,166,35,0.1)' },
+  cod:   { label: 'COD',   color: '#475569', bg: 'rgba(71,85,105,0.1)'  },
 }
-
 
 // ─── StatusBadge ──────────────────────────────────────────────────────────────
 
@@ -87,15 +86,13 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 // ─── Order Detail Modal ───────────────────────────────────────────────────────
 
 function OrderModal({
-  order,
-  onClose,
-  onStatusChange,
+  order, onClose, onStatusChange,
 }: {
   order: Order
   onClose: () => void
   onStatusChange: (id: string, status: OrderStatus) => Promise<void>
 }) {
-  const [updating, setUpdating] = useState(false)
+  const [updating, setUpdating]         = useState(false)
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
 
@@ -116,8 +113,7 @@ function OrderModal({
       style={{
         position: 'fixed', inset: 0, zIndex: 100,
         background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '20px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
       }}
     >
       <div
@@ -132,8 +128,7 @@ function OrderModal({
         {/* Modal header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 24px', borderBottom: '1px solid #f1f5f9',
-          flexShrink: 0,
+          padding: '20px 24px', borderBottom: '1px solid #f1f5f9', flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
@@ -158,8 +153,9 @@ function OrderModal({
           <button
             onClick={onClose}
             style={{
-              width: '36px', height: '36px', borderRadius: '10px', border: '1.5px solid #e2e8f0',
-              background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '36px', height: '36px', borderRadius: '10px',
+              border: '1.5px solid #e2e8f0', background: '#f8fafc',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', color: '#64748b',
             }}
           >
@@ -170,7 +166,7 @@ function OrderModal({
         {/* Scrollable body */}
         <div style={{ overflowY: 'auto', flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          {/* Status + payment row */}
+          {/* Status + payment + updater */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <StatusBadge status={currentStatus} />
             <span style={{
@@ -182,7 +178,6 @@ function OrderModal({
               {payment.label}
             </span>
 
-            {/* Status updater */}
             <div style={{ marginLeft: 'auto', position: 'relative' }}>
               <button
                 onClick={() => setShowStatusMenu(v => !v)}
@@ -238,7 +233,7 @@ function OrderModal({
             </div>
           </div>
 
-          {/* Order items */}
+          {/* Items */}
           <div style={{ background: '#f8fafc', borderRadius: '14px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9' }}>
               <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -247,8 +242,7 @@ function OrderModal({
             </div>
             {order.items.map((item, i) => (
               <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '12px 16px',
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
                 borderBottom: i < order.items.length - 1 ? '1px solid #f1f5f9' : 'none',
               }}>
                 <div style={{
@@ -272,10 +266,8 @@ function OrderModal({
             ))}
           </div>
 
-          {/* 2-col: Shipping + Summary */}
+          {/* Shipping + Summary grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-
-            {/* Shipping */}
             <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '16px', border: '1px solid #f1f5f9' }}>
               <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Shipping Info
@@ -301,7 +293,6 @@ function OrderModal({
               </div>
             </div>
 
-            {/* Order summary */}
             <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '16px', border: '1px solid #f1f5f9' }}>
               <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Order Summary
@@ -310,7 +301,7 @@ function OrderModal({
                 {[
                   { label: 'Subtotal', value: `৳${order.subtotal.toLocaleString()}` },
                   { label: 'Delivery', value: `৳${order.deliveryFee.toLocaleString()}` },
-                  { label: 'Payment', value: payment.label },
+                  { label: 'Payment',  value: payment.label },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{label}</span>
@@ -349,15 +340,15 @@ function OrderModal({
 // ─── Main Orders Page ─────────────────────────────────────────────────────────
 
 export default function OrdersPage() {
-  const [orders, setOrders]         = useState<Order[]>([])
-  const [total, setTotal]           = useState(0)
-  const [page, setPage]             = useState(1)
-  const [pages, setPages]           = useState(1)
-  const [loading, setLoading]       = useState(true)
-  const [search, setSearch]         = useState('')
-  const [statusFilter, setStatus]   = useState('')
-  const [paymentFilter, setPayment] = useState('')
-  const [selectedOrder, setSelected]= useState<Order | null>(null)
+  const [orders, setOrders]          = useState<Order[]>([])
+  const [total, setTotal]            = useState(0)
+  const [page, setPage]              = useState(1)
+  const [pages, setPages]            = useState(1)
+  const [loading, setLoading]        = useState(true)
+  const [search, setSearch]          = useState('')
+  const [statusFilter, setStatus]    = useState('')
+  const [paymentFilter, setPayment]  = useState('')
+  const [selectedOrder, setSelected] = useState<Order | null>(null)
 
   const limit = 15
 
@@ -365,18 +356,14 @@ export default function OrdersPage() {
     setLoading(true)
     try {
       const params = new URLSearchParams({
-        page:   String(page),
-        limit:  String(limit),
-        search,
-        status:  statusFilter,
-        payment: paymentFilter,
-        sort:   '-createdAt',
+        page: String(page), limit: String(limit),
+        search, status: statusFilter, payment: paymentFilter, sort: '-createdAt',
       })
-      const res = await fetch(`/api/admin/orders?${params}`)
+      const res  = await fetch(`/api/admin/orders?${params}`)
       const data = await res.json()
       setOrders(data.orders ?? [])
-      setTotal(data.total  ?? 0)
-      setPages(data.pages  ?? 1)
+      setTotal(data.total   ?? 0)
+      setPages(data.pages   ?? 1)
     } catch (err) {
       console.error(err)
     } finally {
@@ -385,24 +372,18 @@ export default function OrdersPage() {
   }, [page, search, statusFilter, paymentFilter])
 
   useEffect(() => { fetchOrders() }, [fetchOrders])
-
-  // Reset to page 1 when filters change
   useEffect(() => { setPage(1) }, [search, statusFilter, paymentFilter])
 
   const handleStatusChange = async (id: string, status: OrderStatus) => {
     await fetch(`/api/admin/orders/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     })
-    // Update in list
     setOrders(prev => prev.map(o => o._id === id ? { ...o, status } : o))
-    if (selectedOrder?._id === id) {
-      setSelected(prev => prev ? { ...prev, status } : null)
-    }
+    if (selectedOrder?._id === id) setSelected(prev => prev ? { ...prev, status } : null)
   }
 
-  const STATUS_TABS: { key: string; label: string }[] = [
+  const STATUS_TABS = [
     { key: '',           label: 'All' },
     { key: 'processing', label: 'Processing' },
     { key: 'shipped',    label: 'Shipped' },
@@ -441,7 +422,7 @@ export default function OrdersPage() {
       <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', scrollbarWidth: 'none' }}>
         {STATUS_TABS.map(tab => {
           const active = statusFilter === tab.key
-          const cfg = tab.key ? STATUS_CONFIG[tab.key as OrderStatus] : null
+          const cfg    = tab.key ? STATUS_CONFIG[tab.key as OrderStatus] : null
           return (
             <button
               key={tab.key}
@@ -452,8 +433,8 @@ export default function OrdersPage() {
                 cursor: 'pointer', fontSize: '0.82rem', fontWeight: active ? 700 : 500,
                 whiteSpace: 'nowrap', flexShrink: 0,
                 background: active ? (cfg ? cfg.bg : 'rgba(15,23,42,0.06)') : 'transparent',
-                color: active ? (cfg ? cfg.text : '#0f172a') : '#64748b',
-                outline: active ? `1.5px solid ${cfg ? cfg.border : 'rgba(15,23,42,0.12)'}` : 'none',
+                color:      active ? (cfg ? cfg.text : '#0f172a') : '#64748b',
+                outline:    active ? `1.5px solid ${cfg ? cfg.border : 'rgba(15,23,42,0.12)'}` : 'none',
               }}
             >
               {cfg && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />}
@@ -465,7 +446,6 @@ export default function OrdersPage() {
 
       {/* ── Search + Payment Filter ── */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        {/* Search */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 280px',
           background: '#fff', border: '1.5px solid #e8edf5', borderRadius: '12px',
@@ -477,10 +457,7 @@ export default function OrdersPage() {
             placeholder="Search order #, customer name, phone…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{
-              flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              fontSize: '0.85rem', color: '#334155',
-            }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
           />
           {search && (
             <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}>
@@ -489,7 +466,6 @@ export default function OrdersPage() {
           )}
         </div>
 
-        {/* Payment filter */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <Filter size={14} style={{ position: 'absolute', left: '12px', color: '#94a3b8', pointerEvents: 'none' }} />
           <select
@@ -514,25 +490,17 @@ export default function OrdersPage() {
       {/* ── Table ── */}
       <div style={{
         background: '#ffffff', borderRadius: '20px',
-        border: '1px solid #f1f5f9',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-        overflow: 'hidden',
+        border: '1px solid #f1f5f9', boxShadow: '0 1px 2px rgba(0,0,0,0.04)', overflow: 'hidden',
       }}>
-        {/* Table head */}
+        {/* Head */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 160px 140px 110px 90px 56px',
-          padding: '11px 20px',
-          fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8',
+          display: 'grid', gridTemplateColumns: '1fr 160px 140px 110px 90px 56px',
+          padding: '11px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8',
           textTransform: 'uppercase', letterSpacing: '0.08em',
           background: '#fafbfc', borderBottom: '1px solid #f1f5f9',
         }}>
-          <span>Order</span>
-          <span>Customer</span>
-          <span>Status</span>
-          <span>Payment</span>
-          <span style={{ textAlign: 'right' }}>Amount</span>
-          <span />
+          <span>Order</span><span>Customer</span><span>Status</span>
+          <span>Payment</span><span style={{ textAlign: 'right' }}>Amount</span><span />
         </div>
 
         {/* Loading */}
@@ -565,22 +533,19 @@ export default function OrdersPage() {
 
         {/* Rows */}
         {!loading && orders.map((order, i) => {
-          const payment = PAYMENT_CONFIG[order.payment] ?? PAYMENT_CONFIG.cod
+          const pay = PAYMENT_CONFIG[order.payment] ?? PAYMENT_CONFIG.cod
           return (
             <div
               key={order._id}
               style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 160px 140px 110px 90px 56px',
-                padding: '14px 20px',
-                borderBottom: i < orders.length - 1 ? '1px solid #f8fafc' : 'none',
-                alignItems: 'center',
-                transition: 'background 0.1s',
+                display: 'grid', gridTemplateColumns: '1fr 160px 140px 110px 90px 56px',
+                padding: '14px 20px', borderBottom: i < orders.length - 1 ? '1px solid #f8fafc' : 'none',
+                alignItems: 'center', transition: 'background 0.1s',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = '#fafbfc')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              {/* Order # + date */}
+              {/* Order # */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: '38px', height: '38px', borderRadius: '11px', flexShrink: 0,
@@ -610,17 +575,15 @@ export default function OrdersPage() {
                 </p>
               </div>
 
-              {/* Status */}
               <StatusBadge status={order.status} />
 
               {/* Payment */}
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '5px',
                 fontSize: '0.72rem', fontWeight: 700, padding: '4px 9px',
-                borderRadius: '7px', background: payment.bg, color: payment.color,
-                width: 'fit-content',
+                borderRadius: '7px', background: pay.bg, color: pay.color, width: 'fit-content',
               }}>
-                {payment.label}
+                {pay.label}
               </span>
 
               {/* Amount */}
@@ -628,7 +591,7 @@ export default function OrdersPage() {
                 ৳{order.total.toLocaleString()}
               </p>
 
-              {/* View btn */}
+              {/* View */}
               <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <button
                   onClick={() => setSelected(order)}
@@ -636,8 +599,7 @@ export default function OrdersPage() {
                     width: '34px', height: '34px', borderRadius: '9px',
                     border: '1.5px solid #e2e8f0', background: '#f8fafc',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', color: '#64748b',
-                    transition: 'all 0.12s',
+                    cursor: 'pointer', color: '#64748b', transition: 'all 0.12s',
                   }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(233,30,140,0.07)'; e.currentTarget.style.borderColor = 'rgba(233,30,140,0.25)'; e.currentTarget.style.color = '#e91e8c' }}
                   onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' }}
@@ -664,8 +626,7 @@ export default function OrdersPage() {
                 width: '36px', height: '36px', borderRadius: '10px',
                 border: '1.5px solid #e2e8f0', background: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: page === 1 ? 'not-allowed' : 'pointer',
-                opacity: page === 1 ? 0.4 : 1, color: '#475569',
+                cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.4 : 1, color: '#475569',
               }}
             >
               <ChevronLeft size={15} />
@@ -687,8 +648,7 @@ export default function OrdersPage() {
                     border: `1.5px solid ${page === p ? 'rgba(233,30,140,0.3)' : '#e2e8f0'}`,
                     background: page === p ? 'rgba(233,30,140,0.08)' : '#fff',
                     color: page === p ? '#e91e8c' : '#475569',
-                    fontWeight: page === p ? 800 : 500,
-                    fontSize: '0.82rem', cursor: 'pointer',
+                    fontWeight: page === p ? 800 : 500, fontSize: '0.82rem', cursor: 'pointer',
                   }}
                 >
                   {p}
@@ -703,8 +663,7 @@ export default function OrdersPage() {
                 width: '36px', height: '36px', borderRadius: '10px',
                 border: '1.5px solid #e2e8f0', background: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: page === pages ? 'not-allowed' : 'pointer',
-                opacity: page === pages ? 0.4 : 1, color: '#475569',
+                cursor: page === pages ? 'not-allowed' : 'pointer', opacity: page === pages ? 0.4 : 1, color: '#475569',
               }}
             >
               <ChevronRight size={15} />
@@ -722,9 +681,7 @@ export default function OrdersPage() {
         />
       )}
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

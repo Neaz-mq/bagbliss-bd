@@ -9,27 +9,39 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   return (
     <div
-      className="admin-panel flex h-screen overflow-hidden"
-      style={{ background: '#f4f6fb' }}
+      className="admin-panel"
+      style={{
+        display: 'flex',
+        height: '100vh',
+        overflow: 'hidden',
+        background: '#f4f6fb',
+      }}
     >
+      {/* Sidebar — fixed width, never shrinks */}
       <AdminSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Right side — topbar + scrollable content */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minWidth: 0,
+        overflow: 'hidden',
+      }}>
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
 
-        {/* Scrollable content — generous padding creates gap from sidebar + breathing room */}
-        <main
-          className="flex-1 overflow-y-auto"
-          style={{
-            padding: '28px 32px',
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#e2e8f0 transparent',
-          }}
-        >
+        {/* This scrolls independently */}
+        <main style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          padding: '28px 32px 60px',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#e2e8f0 transparent',
+        }}>
           {children}
         </main>
       </div>

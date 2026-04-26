@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
-import SettingsClient from './SettingsClient'
+import OrdersPage from './OrdersClient'
 
 export default function Page() {
-  return <SettingsClient />
+  return <OrdersPage />
 }

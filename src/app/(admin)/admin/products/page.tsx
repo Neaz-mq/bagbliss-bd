@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import ProductsClient from './ProductsClient'
 
-export default function ProductsPage() {
+export default function Page() {
   return <ProductsClient />
 }

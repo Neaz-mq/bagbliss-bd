@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import FlashSaleClient from './FlashSaleClient'
 
-export default function FlashSalePage() {
+export default function Page() {
   return <FlashSaleClient />
 }
