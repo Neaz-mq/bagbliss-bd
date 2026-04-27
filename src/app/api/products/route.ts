@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import type { SortOrder } from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 import { cached, CACHE_KEYS } from '@/lib/redis'
@@ -16,12 +17,10 @@ export async function GET(req: NextRequest) {
   const featured = sp.get('featured') ?? ''
   const flashSale= sp.get('flashSale') ?? ''
 
-  // Build cache key from query params
   const cacheKey = CACHE_KEYS.shopProducts(
     `p${page}-l${limit}-s${search}-c${category}-sort${sort}-f${featured}-fs${flashSale}`
   )
 
-  // Cache for 5 min for browse, skip cache for search queries
   const ttl = search ? 0 : 300
 
   const result = await cached(
@@ -33,7 +32,7 @@ export async function GET(req: NextRequest) {
       if (featured  === 'true') q.isFeatured  = true
       if (flashSale === 'true') q.isFlashSale = true
 
-      const sortMap: Record<string, Record<string, number>> = {
+      const sortMap: Record<string, Record<string, SortOrder>> = {
         newest:     { createdAt: -1 },
         price_asc:  { price: 1 },
         price_desc: { price: -1 },
