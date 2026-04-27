@@ -1,11 +1,14 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
 import {
   Search, RefreshCw, X, ChevronLeft, ChevronRight,
   ChevronDown, Users, ShoppingBag, TrendingUp,
   Mail, Calendar, Eye, Package, Clock,
 } from 'lucide-react'
+
+
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -58,8 +61,13 @@ function Avatar({ name, image, size = 40 }: { name: string; image?: string; size
   const color    = colors[name.charCodeAt(0) % colors.length]
 
   if (image) return (
-    <img src={image} alt={name}
-      style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    <Image
+      src={image}
+      alt={name}
+      width={size}
+      height={size}
+      style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+    />
   )
   return (
     <div style={{
