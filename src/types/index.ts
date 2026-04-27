@@ -1,7 +1,3 @@
-// ============================================
-// BAGBLISS BD — TypeScript Interfaces v1.0
-// ============================================
-
 // ── User Types ──────────────────────────────
 
 export type UserRole = 'user' | 'admin'
