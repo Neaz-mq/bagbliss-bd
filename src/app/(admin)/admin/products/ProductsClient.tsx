@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Plus, Search, RefreshCw, Edit2, Trash2, X, Upload,
@@ -124,7 +125,7 @@ function ProductModal({ product, onClose, onSaved }: {
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = '' }
   }
 
-  const addUrl   = () => { const url = imgUrl.trim(); if (!url) return; set('images', [...form.images, url]); setImgUrl('') }
+  const addUrl    = () => { const url = imgUrl.trim(); if (!url) return; set('images', [...form.images, url]); setImgUrl('') }
   const removeImg = (i: number) => set('images', form.images.filter((_, idx) => idx !== i))
   const addColor  = () => set('colors', [...form.colors, { name: '', hex: '#e91e8c', stock: '0' }])
   const rmColor   = (i: number) => set('colors', form.colors.filter((_, idx) => idx !== i))
@@ -229,9 +230,25 @@ function ProductModal({ product, onClose, onSaved }: {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: '8px' }}>
                   {form.images.map((url, i) => (
                     <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: `2px solid ${i === 0 ? '#e91e8c' : '#f1f5f9'}` }}>
-                      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      {i === 0 && <span style={{ position: 'absolute', top: '4px', left: '4px', background: '#e91e8c', color: 'white', fontSize: '0.52rem', fontWeight: 800, padding: '2px 5px', borderRadius: '4px' }}>MAIN</span>}
-                      <button onClick={() => removeImg(i)} style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(15,23,42,0.75)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={10} /></button>
+                      {/* ✅ Fix 1: Image preview grid — uses fill (parent is position:relative + aspectRatio:1) */}
+                      <Image
+                        src={url}
+                        alt=""
+                        fill
+                        sizes="88px"
+                        style={{ objectFit: 'cover' }}
+                      />
+                      {i === 0 && (
+                        <span style={{ position: 'absolute', top: '4px', left: '4px', background: '#e91e8c', color: 'white', fontSize: '0.52rem', fontWeight: 800, padding: '2px 5px', borderRadius: '4px', zIndex: 1 }}>
+                          MAIN
+                        </span>
+                      )}
+                      <button
+                        onClick={() => removeImg(i)}
+                        style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(15,23,42,0.75)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
+                      >
+                        <X size={10} />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -253,7 +270,7 @@ function ProductModal({ product, onClose, onSaved }: {
               </button>
             </div>
             {form.colors.length === 0
-              ? <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>No color variants yet. Click "Add Color" to define colors with per-color stock.</p>
+              ? <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>No color variants yet. Click &quot;Add Color&quot; to define colors with per-color stock.</p>
               : <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {form.colors.map((c, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -326,7 +343,7 @@ export default function ProductsClient() {
 
   const limit = 20
 
-  // ── NEW: Read category from URL on mount (for "View Products" links from Categories page) ──
+  // ── Read category from URL on mount (for "View Products" links from Categories page) ──
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const cat = params.get('category')
@@ -490,10 +507,16 @@ export default function ProductsClient() {
               onMouseEnter={e => (e.currentTarget.style.background = '#fafbfc')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
 
-              {/* Image */}
+              {/* ✅ Fix 2: Table row thumbnail — fixed 40×40 */}
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {p.images[0]
-                  ? <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ? <Image
+                      src={p.images[0]}
+                      alt={p.name}
+                      width={40}
+                      height={40}
+                      style={{ objectFit: 'cover' }}
+                    />
                   : <Package size={15} color="#e91e8c" style={{ opacity: 0.4 }} />}
               </div>
 
