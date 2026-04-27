@@ -12,8 +12,10 @@ async function guard() {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   if (await guard())
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -21,7 +23,7 @@ export async function PATCH(
 
   const body    = await req.json()
   const product = await Product.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: body },
     { new: true }
   ).lean()
@@ -29,7 +31,6 @@ export async function PATCH(
   if (!product)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Invalidate related caches
   await invalidate(
     CACHE_KEYS.products,
     CACHE_KEYS.featuredProducts,
@@ -42,18 +43,19 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   if (await guard())
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
 
-  const product = await Product.findByIdAndDelete(params.id)
+  const product = await Product.findByIdAndDelete(id)
   if (!product)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Invalidate related caches
   await invalidate(
     CACHE_KEYS.products,
     CACHE_KEYS.featuredProducts,
@@ -66,14 +68,16 @@ export async function DELETE(
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   if (await guard())
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
 
-  const product = await Product.findById(params.id).lean()
+  const product = await Product.findById(id).lean()
   if (!product)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
