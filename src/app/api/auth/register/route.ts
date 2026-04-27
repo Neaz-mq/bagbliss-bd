@@ -1,65 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
-import { z } from 'zod'
+import { rateLimit } from '@/app/api/admin/rate-limit'
 
-const registerSchema = z.object({
-  name: z.string().min(2).max(50),
-  email: z.string().email(),
-  password: z.string().min(6),
-})
+export async function POST(req: NextRequest) {
+  // Rate limit: 5 registrations per IP per hour
+  const ip     = req.headers.get('x-forwarded-for') ?? 'anonymous'
+  const limit  = await rateLimit(`register:${ip}`, 5, 3600)
 
-export async function POST(request: NextRequest) {
+  if (!limit.success) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   try {
-    const body = await request.json()
+    await connectDB()
 
-    // Validate input
-    const validation = registerSchema.safeParse(body)
-    if (!validation.success) {
+    const { name, email, password } = await req.json()
+
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { error: validation.error.issues[0].message },
+        { error: 'All fields are required' },
         { status: 400 }
       )
     }
 
-    const { name, email, password } = validation.data
-
-    await connectDB()
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email })
-    if (existingUser) {
+    const existing = await User.findOne({ email })
+    if (existing) {
       return NextResponse.json(
         { error: 'An account with this email already exists' },
-        { status: 409 }
+        { status: 400 }
       )
     }
 
-    // Create new user
-    const user = await User.create({
-      name,
-      email,
-      password,
-      provider: 'credentials',
-      isVerified: false,
-    })
+    const user = await User.create({ name, email, password, role: 'user' })
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Account created successfully',
-        user: {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-        },
+    return NextResponse.json({
+      success: true,
+      user: {
+        id:    user._id.toString(),
+        name:  user.name,
+        email: user.email,
       },
-      { status: 201 }
-    )
- } catch (error) {
-    console.error('Register error:', error)
+    })
+  } catch (err) {
+    console.error('[REGISTER]', err)
     return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
+      { error: 'Registration failed. Please try again.' },
       { status: 500 }
     )
   }
