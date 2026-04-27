@@ -137,8 +137,8 @@ function GatewayNotice({ method }: { method: string }) {
           You will be redirected to {m.label}
         </p>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: 0 }}>
-          After payment confirmation, you'll be returned to BagBliss BD automatically.
-          Your order is created before redirect — it's safe to proceed.
+          After payment confirmation, you will be returned to BagBliss BD automatically.
+          Your order is created before redirect — it is safe to proceed.
         </p>
       </div>
     </div>
