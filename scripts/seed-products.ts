@@ -249,9 +249,9 @@ const PRODUCTS = [
     price:            1850,
     originalPrice:    2400,
     category:         'leather',
-    images: [
-      'https://images.unsplash.com/photo-1543422328-a0b9bb9b24d1?w=600&q=80',
-    ],
+   images: [
+    'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80',  // ← works
+  ],
     colors: [
       { name: 'Cognac',      hex: '#9b5523', stock: 7  },
       { name: 'Olive',       hex: '#4a5240', stock: 5  },

@@ -67,7 +67,7 @@ const UserSchema = new Schema<IUserDocument>(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true,
+      unique: true,          // ← this already creates the index automatically
       lowercase: true,
       trim: true,
       match: [
@@ -122,7 +122,7 @@ const UserSchema = new Schema<IUserDocument>(
 )
 
 // ── Indexes for fast queries ─────────────────
-UserSchema.index({ email: 1 })
+// email index is already created by unique:true above — do NOT add it again
 UserSchema.index({ role: 1 })
 UserSchema.index({ createdAt: -1 })
 

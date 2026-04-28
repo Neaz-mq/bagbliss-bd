@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   SlidersHorizontal, X, ChevronDown,
@@ -39,135 +39,155 @@ export interface FilterState {
   inStockOnly: boolean
 }
 
+interface ApiResponse {
+  products: any[]
+  total: number
+  pages: number
+  page: number
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────
 const SORT_OPTIONS = [
   { value: 'newest',     label: 'Newest First' },
-  { value: 'price-asc',  label: 'Price: Low to High' },
-  { value: 'price-desc', label: 'Price: High to Low' },
+  { value: 'price_asc',  label: 'Price: Low to High' },   // matches your API sortMap keys
+  { value: 'price_desc', label: 'Price: High to Low' },
   { value: 'popular',    label: 'Most Popular' },
   { value: 'rating',     label: 'Top Rated' },
 ]
 
 const CATEGORIES = ['All', 'Mini Crossbody', 'Chain Strap', 'Leather', 'Canvas', 'Party & Evening']
 
-const MOCK_PRODUCTS: Product[] = [
-  {
-    _id: '1', name: 'Pearl Mini Crossbody', slug: 'pearl-mini-crossbody',
-    price: 1199, originalPrice: 1599, images: [], category: 'Mini Crossbody',
-    colors: ['#f5f5f0', '#e91e8c', '#1a1a2e'], rating: 4.8, reviewCount: 128,
-    stock: 12, isFeatured: true, isOnSale: true, discountPercent: 25, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '2', name: 'Gold Chain Sling', slug: 'gold-chain-sling',
-    price: 1599, originalPrice: 1999, images: [], category: 'Chain Strap',
-    colors: ['#c9a84c', '#1a1a2e', '#e91e8c'], rating: 4.9, reviewCount: 89,
-    stock: 7, isFeatured: true, isOnSale: true, discountPercent: 20, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '3', name: 'Candy Quilted Bag', slug: 'candy-quilted-bag',
-    price: 999, images: [], category: 'Mini Crossbody',
-    colors: ['#e91e8c', '#9b59b6', '#ffffff'], rating: 4.7, reviewCount: 64,
-    stock: 20, isFeatured: true, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '4', name: 'Vintage Leather Satchel', slug: 'vintage-leather-satchel',
-    price: 2199, originalPrice: 2799, images: [], category: 'Leather',
-    colors: ['#8B4513', '#1a1a2e', '#c9a84c'], rating: 4.6, reviewCount: 42,
-    stock: 5, isFeatured: true, isOnSale: true, discountPercent: 21, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '5', name: 'Boho Canvas Tote', slug: 'boho-canvas-tote',
-    price: 799, images: [], category: 'Canvas',
-    colors: ['#d2b48c', '#228B22', '#e91e8c'], rating: 4.5, reviewCount: 33,
-    stock: 18, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '6', name: 'Party Glitter Clutch', slug: 'party-glitter-clutch',
-    price: 1299, originalPrice: 1699, images: [], category: 'Party & Evening',
-    colors: ['#c9a84c', '#e91e8c', '#9b59b6'], rating: 4.8, reviewCount: 56,
-    stock: 9, isOnSale: true, discountPercent: 24, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '7', name: 'Minimalist Crossbody', slug: 'minimalist-crossbody',
-    price: 1099, images: [], category: 'Mini Crossbody',
-    colors: ['#1a1a2e', '#f5f5f0', '#6b7280'], rating: 4.7, reviewCount: 71,
-    stock: 15, isFeatured: true, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '8', name: 'Floral Summer Bag', slug: 'floral-summer-bag',
-    price: 899, originalPrice: 1199, images: [], category: 'Canvas',
-    colors: ['#e91e8c', '#f5f5f0', '#228B22'], rating: 4.4, reviewCount: 28,
-    stock: 22, isOnSale: true, discountPercent: 25, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '9', name: 'Luxe Chain Mini', slug: 'luxe-chain-mini',
-    price: 1799, images: [], category: 'Chain Strap',
-    colors: ['#c9a84c', '#e91e8c'], rating: 4.9, reviewCount: 45,
-    stock: 6, isFeatured: true, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '10', name: 'Classic Leather Flap', slug: 'classic-leather-flap',
-    price: 2499, originalPrice: 2999, images: [], category: 'Leather',
-    colors: ['#8B4513', '#1a1a2e'], rating: 4.8, reviewCount: 38,
-    stock: 4, isOnSale: true, discountPercent: 17, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '11', name: 'Neon Evening Clutch', slug: 'neon-evening-clutch',
-    price: 999, images: [], category: 'Party & Evening',
-    colors: ['#e91e8c', '#9b59b6', '#c9a84c'], rating: 4.6, reviewCount: 19,
-    stock: 11, createdAt: new Date().toISOString(),
-  },
-  {
-    _id: '12', name: 'Woven Rattan Bag', slug: 'woven-rattan-bag',
-    price: 1399, images: [], category: 'Canvas',
-    colors: ['#d2b48c', '#8B4513'], rating: 4.5, reviewCount: 24,
-    stock: 8, createdAt: new Date().toISOString(),
-  },
-]
-
 const ITEMS_PER_PAGE = 12
+
+// ── Helper: normalize DB product → UI Product ─────────────────────────────
+function normalizeProduct(p: any): Product {
+  const normalizedCategory = (p.category || '')
+    .split('-')
+    .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+
+  const discountPercent =
+    p.discountPercent ??
+    (p.originalPrice && p.price
+      ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
+      : undefined)
+
+  return {
+    _id:            String(p._id),
+    name:           p.name,
+    slug:           p.slug,
+    price:          p.price,
+    originalPrice:  p.originalPrice,
+    images:         p.images || [],
+    category:       normalizedCategory,
+    colors:         p.colors || [],
+    rating:         p.rating,
+    reviewCount:    p.reviewCount,
+    stock:          p.totalStock ?? p.stock ?? 0,         // DB: totalStock
+    isFeatured:     p.isFeatured ?? false,
+    isOnSale:       p.isFlashSale ?? p.isOnSale ?? false, // DB: isFlashSale
+    discountPercent,
+    tags:           p.tags || [],
+    createdAt:      p.createdAt,
+  }
+}
+
+// ── Build API query string matching your route's params ───────────────────
+function buildApiUrl(
+  page: number,
+  sort: string,
+  searchQuery: string,
+  filters: FilterState,
+): string {
+  const params = new URLSearchParams()
+  params.set('page',  String(page))
+  params.set('limit', String(ITEMS_PER_PAGE))
+
+  if (sort)              params.set('sort',     sort)
+  if (searchQuery.trim()) params.set('search',  searchQuery.trim())
+
+  if (filters.categories.length === 1) {
+    // Send as kebab-case to match DB values e.g. "mini-crossbody"
+    params.set('category', filters.categories[0].toLowerCase().replace(/\s+/g, '-'))
+  }
+
+  if (filters.onSaleOnly) params.set('flashSale', 'true')
+
+  return `/api/products?${params.toString()}`
+}
 
 export default function ShopClient() {
   const router       = useRouter()
   const searchParams = useSearchParams()
 
-  // ── Pure UI state (not URL-driven) ──────────────────────────────────────
-  const [isLoading]      = useState(false)
-  const [isSidebarOpen,  setIsSidebarOpen]  = useState(false)
-  const [viewMode,       setViewMode]       = useState<'grid' | 'list'>('grid')
-  const [isSortOpen,     setIsSortOpen]     = useState(false)
-  const [currentPage,    setCurrentPage]    = useState(1)
+  // ── State ──────────────────────────────────────────────────────────────
+  const [products,      setProducts]      = useState<Product[]>([])
+  const [totalCount,    setTotalCount]    = useState(0)
+  const [totalPages,    setTotalPages]    = useState(0)
+  const [isLoading,     setIsLoading]     = useState(true)
+  const [error,         setError]         = useState<string | null>(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid')
+  const [isSortOpen,    setIsSortOpen]    = useState(false)
+  const [currentPage,   setCurrentPage]   = useState(1)
 
-  // ── Derive everything from URL (reactive to navbar links) ───────────────
-  // This is the key fix: instead of useState(searchParams.get(...))
-  // we useMemo so values update whenever searchParams changes.
-  const sort = useMemo(
-    () => searchParams.get('sort') || 'newest',
-    [searchParams]
-  )
-
-  const searchQuery = useMemo(
-    () => searchParams.get('search') || '',
-    [searchParams]
-  )
-
-  // Local search input state — keeps the input controlled while typing
+  // ── Derive from URL ────────────────────────────────────────────────────
+  const sort = useMemo(() => searchParams.get('sort') || 'newest', [searchParams])
+  const searchQuery = useMemo(() => searchParams.get('search') || '', [searchParams])
   const [localSearch, setLocalSearch] = useState(searchQuery)
 
   const filters = useMemo<FilterState>(() => {
     const category  = searchParams.get('category') || ''
     const filterVal = searchParams.get('filter')   || ''
     return {
-      categories: category ? [category.replace(/-/g, ' ')] : [],
-      priceMin:   null,
-      priceMax:   null,
-      colors:     [],
-      onSaleOnly: filterVal === 'flash-sale',
+      categories:  category ? [category.replace(/-/g, ' ')] : [],
+      priceMin:    null,
+      priceMax:    null,
+      colors:      [],
+      onSaleOnly:  filterVal === 'flash-sale',
       inStockOnly: false,
     }
   }, [searchParams])
 
-  // ── URL writer (single source of truth) ────────────────────────────────
+  // ── Fetch from API ─────────────────────────────────────────────────────
+  const abortRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    // Cancel previous in-flight request
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        const url = buildApiUrl(currentPage, sort, searchQuery, filters)
+        const res = await fetch(url, { signal: controller.signal })
+
+        if (!res.ok) throw new Error(`Server error: ${res.status}`)
+
+        const data: ApiResponse = await res.json()
+
+        setProducts(data.products.map(normalizeProduct))
+        setTotalCount(data.total)
+        setTotalPages(data.pages)
+      } catch (err: any) {
+        if (err.name === 'AbortError') return   // ignore cancelled requests
+        console.error('Fetch error:', err)
+        setError(err.message || 'Failed to load products')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProducts()
+
+    return () => controller.abort()
+  }, [currentPage, sort, searchQuery, filters])   // re-fetch whenever these change
+
+  // ── URL writer ─────────────────────────────────────────────────────────
   const pushUrl = useCallback(
     (newSort: string, newFilters: FilterState, newSearch: string) => {
       const params = new URLSearchParams()
@@ -179,80 +199,17 @@ export default function ShopClient() {
       if (newSearch.trim())       params.set('search', newSearch.trim())
       const query = params.toString()
       router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
-      setCurrentPage(1)
+      setCurrentPage(1)   // reset to page 1 on any filter/sort/search change
     },
     [router]
   )
 
-  // ── Filter & Sort ───────────────────────────────────────────────────────
-  const filteredProducts = useMemo(() => {
-    let result = [...MOCK_PRODUCTS]
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.tags?.some((t) => t.toLowerCase().includes(q))
-      )
-    }
-
-    if (filters.categories.length > 0) {
-      result = result.filter((p) =>
-        filters.categories.some((c) => c.toLowerCase() === p.category.toLowerCase())
-      )
-    }
-
-    if (filters.priceMin !== null) result = result.filter((p) => p.price >= filters.priceMin!)
-    if (filters.priceMax !== null) result = result.filter((p) => p.price <= filters.priceMax!)
-
-    if (filters.colors.length > 0) {
-      result = result.filter((p) => p.colors?.some((c) => filters.colors.includes(c)))
-    }
-
-    if (filters.onSaleOnly)  result = result.filter((p) => p.isOnSale)
-    if (filters.inStockOnly) result = result.filter((p) => p.stock > 0)
-
-    switch (sort) {
-      case 'price-asc':  result.sort((a, b) => a.price - b.price); break
-      case 'price-desc': result.sort((a, b) => b.price - a.price); break
-      case 'rating':     result.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break
-      case 'popular':    result.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)); break
-      default:
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    }
-
-    return result
-  }, [searchQuery, filters, sort])
-
-  const totalPages        = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  )
-
   // ── Handlers ───────────────────────────────────────────────────────────
-  const handleFilterChange = (newFilters: FilterState) => {
-    pushUrl(sort, newFilters, searchQuery)
-  }
-
-  const handleSortChange = (newSort: string) => {
-    setIsSortOpen(false)
-    pushUrl(newSort, filters, searchQuery)
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    pushUrl(sort, filters, localSearch)
-  }
-
-  const handleSearchClear = () => {
-    setLocalSearch('')
-    pushUrl(sort, filters, '')
-  }
-
-  const clearAllFilters = () => {
+  const handleFilterChange = (newFilters: FilterState) => pushUrl(sort, newFilters, searchQuery)
+  const handleSortChange   = (newSort: string) => { setIsSortOpen(false); pushUrl(newSort, filters, searchQuery) }
+  const handleSearch       = (e: React.FormEvent) => { e.preventDefault(); pushUrl(sort, filters, localSearch) }
+  const handleSearchClear  = () => { setLocalSearch(''); pushUrl(sort, filters, '') }
+  const clearAllFilters    = () => {
     setLocalSearch('')
     router.replace('/shop', { scroll: false })
     setCurrentPage(1)
@@ -271,7 +228,8 @@ export default function ShopClient() {
 
   return (
     <div className="shop-page mobile-nav-spacing">
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
+
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
       <div className="shop-hero">
         <div className="container-bagbliss">
           <div className="shop-hero-content">
@@ -283,7 +241,9 @@ export default function ShopClient() {
               Find Your Perfect <span className="text-gradient">Bag</span>
             </h1>
             <p className="shop-hero-subtitle">
-              {filteredProducts.length} styles available · Fast delivery across Bangladesh
+              {isLoading
+                ? 'Loading products...'
+                : `${totalCount} styles available · Fast delivery across Bangladesh`}
             </p>
           </div>
 
@@ -306,7 +266,7 @@ export default function ShopClient() {
         </div>
       </div>
 
-      {/* ── Category Pills ──────────────────────────────────────────────── */}
+      {/* ── Category Pills ────────────────────────────────────────────── */}
       <div className="shop-category-bar">
         <div className="container-bagbliss">
           <div className="shop-category-pills">
@@ -338,7 +298,8 @@ export default function ShopClient() {
       </div>
 
       <div className="container-bagbliss">
-        {/* ── Toolbar ─────────────────────────────────────────────────── */}
+
+        {/* ── Toolbar ───────────────────────────────────────────────── */}
         <div className="shop-toolbar">
           <div className="shop-toolbar-left">
             <button onClick={() => setIsSidebarOpen(true)} className="shop-filter-toggle">
@@ -358,7 +319,9 @@ export default function ShopClient() {
               )}
             </button>
             <p className="shop-results-count">
-              <strong>{filteredProducts.length}</strong> products found
+              {isLoading
+                ? <span>Loading...</span>
+                : <><strong>{totalCount}</strong> products found</>}
             </p>
           </div>
 
@@ -408,7 +371,7 @@ export default function ShopClient() {
           </div>
         </div>
 
-        {/* ── Active Filters ──────────────────────────────────────────── */}
+        {/* ── Active Filters ────────────────────────────────────────── */}
         {hasActiveFilters && (
           <ShopActiveFilters
             filters={filters}
@@ -427,37 +390,55 @@ export default function ShopClient() {
           />
         )}
 
-        {/* ── Layout ──────────────────────────────────────────────────── */}
+        {/* ── Layout ────────────────────────────────────────────────── */}
         <div className="shop-layout">
           <aside className="shop-sidebar">
             <ShopFilters
               filters={filters}
               onChange={handleFilterChange}
-              totalCount={filteredProducts.length}
+              totalCount={totalCount}
             />
           </aside>
 
           <main className="shop-main">
-            {isLoading ? (
+
+            {/* Error */}
+            {error && !isLoading && (
+              <div className="shop-empty">
+                <div className="shop-empty-icon"><ShoppingBag size={40} strokeWidth={1.5} /></div>
+                <h3 className="shop-empty-title">Failed to load products</h3>
+                <p className="shop-empty-subtitle">{error}</p>
+                <button onClick={() => window.location.reload()} className="btn-primary">
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {/* Skeletons */}
+            {isLoading && (
               <div className={viewMode === 'grid' ? 'products-grid' : 'shop-list'}>
-                {[...Array(8)].map((_, i) => (
+                {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
                   <div key={i} className="skeleton product-skeleton-card"
                     style={{ height: '360px', borderRadius: '1.25rem' }} />
                 ))}
               </div>
-            ) : paginatedProducts.length === 0 ? (
+            )}
+
+            {/* Empty */}
+            {!isLoading && !error && products.length === 0 && (
               <div className="shop-empty">
-                <div className="shop-empty-icon">
-                  <ShoppingBag size={40} strokeWidth={1.5} />
-                </div>
+                <div className="shop-empty-icon"><ShoppingBag size={40} strokeWidth={1.5} /></div>
                 <h3 className="shop-empty-title">No bags found</h3>
                 <p className="shop-empty-subtitle">Try adjusting your filters or search query.</p>
                 <button onClick={clearAllFilters} className="btn-primary">Clear All Filters</button>
               </div>
-            ) : (
+            )}
+
+            {/* Products grid */}
+            {!isLoading && !error && products.length > 0 && (
               <>
                 <div className={viewMode === 'grid' ? 'products-grid' : 'shop-list'}>
-                  {paginatedProducts.map((product, idx) => (
+                  {products.map((product, idx) => (
                     <ShopProductCard
                       key={product._id}
                       product={product}
@@ -467,6 +448,7 @@ export default function ShopClient() {
                   ))}
                 </div>
 
+                {/* Pagination — driven by server totalPages */}
                 {totalPages > 1 && (
                   <div className="shop-pagination">
                     <button
@@ -510,7 +492,7 @@ export default function ShopClient() {
         </div>
       </div>
 
-      {/* ── Mobile Filter Drawer ────────────────────────────────────────── */}
+      {/* ── Mobile Filter Drawer ──────────────────────────────────────── */}
       {isSidebarOpen && (
         <>
           <div className="shop-drawer-backdrop" onClick={() => setIsSidebarOpen(false)} />
@@ -527,7 +509,7 @@ export default function ShopClient() {
               <ShopFilters
                 filters={filters}
                 onChange={(f) => { handleFilterChange(f); setIsSidebarOpen(false) }}
-                totalCount={filteredProducts.length}
+                totalCount={totalCount}
               />
             </div>
             <div className="shop-drawer-footer">
@@ -535,7 +517,7 @@ export default function ShopClient() {
                 Clear All
               </button>
               <button onClick={() => setIsSidebarOpen(false)} className="btn-primary" style={{ flex: 1 }}>
-                Show {filteredProducts.length} Results
+                Show {totalCount} Results
               </button>
             </div>
           </div>

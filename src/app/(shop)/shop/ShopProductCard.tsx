@@ -61,7 +61,6 @@ function toIProduct(p: Product): IProduct {
     slug:             p.slug,
     description:      p.name,
     shortDescription: p.name,
-    // If there's an originalPrice the displayed price is the sale price
     price:            p.originalPrice ?? p.price,
     discountPrice:    p.originalPrice ? p.price : undefined,
     category:         p.category,
@@ -91,9 +90,42 @@ function toIProduct(p: Product): IProduct {
   }
 }
 
+// ── Product Image with fallback ───────────────
+function ProductImage({
+  src,
+  alt,
+  sizes,
+  className,
+  style,
+  seed,
+}: {
+  src: string
+  alt: string
+  sizes: string
+  className: string
+  style?: React.CSSProperties
+  seed: string
+}) {
+  const [imgError, setImgError] = useState(false)
+
+  if (!src || imgError) return <BagPlaceholder seed={seed} />
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      sizes={sizes}
+      className={className}
+      style={style}
+      onError={() => setImgError(true)}
+    />
+  )
+}
+
 export default function ShopProductCard({ product, viewMode, index }: Props) {
   const [isHovered, setIsHovered] = useState(false)
-  const [isAdding, setIsAdding]   = useState(false)
+  const [isAdding,  setIsAdding]  = useState(false)
 
   const addItem    = useCartStore((s) => s.addItem)
   const openCart   = useCartStore((s) => s.openCart)
@@ -128,7 +160,7 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
     ? `৳${product.originalPrice.toLocaleString('en-BD')}`
     : null
 
-  // ── LIST VIEW ──────────────────────────────────────────────────────────
+  // ── LIST VIEW ─────────────────────────────────────────────────────────
   if (viewMode === 'list') {
     return (
       <div
@@ -139,21 +171,17 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
       >
         {/* Image */}
         <Link href={`/product/${product.slug}`} className="shop-list-img-wrap">
-          {product.images?.[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 100px, 130px"
-              className="shop-list-img"
-              style={{
-                transform: isHovered ? 'scale(1.06)' : 'scale(1)',
-                transition: 'transform 0.4s ease',
-              }}
-            />
-          ) : (
-            <BagPlaceholder seed={product._id} />
-          )}
+          <ProductImage
+            src={product.images?.[0] ?? ''}
+            alt={product.name}
+            sizes="(max-width: 640px) 100px, 130px"
+            className="shop-list-img"
+            seed={product._id}
+            style={{
+              transform:  isHovered ? 'scale(1.06)' : 'scale(1)',
+              transition: 'transform 0.4s ease',
+            }}
+          />
           {product.isOnSale && product.discountPercent && (
             <span className="shop-card-badge-sale">-{product.discountPercent}%</span>
           )}
@@ -208,7 +236,7 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
     )
   }
 
- // ── GRID VIEW ──────────────────────────────────────────────────────────
+  // ── GRID VIEW ─────────────────────────────────────────────────────────
   return (
     <div
       className="shop-grid-card"
@@ -216,24 +244,20 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Image block container */}
+      {/* Image block */}
       <div className="shop-grid-img-container" style={{ position: 'relative', overflow: 'hidden' }}>
         <Link href={`/product/${product.slug}`} className="shop-grid-img-wrap">
-          {product.images?.[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="shop-grid-img"
-              style={{
-                transform: isHovered ? 'scale(1.07)' : 'scale(1)',
-                transition: 'transform 0.5s ease',
-              }}
-            />
-          ) : (
-            <BagPlaceholder seed={product._id} />
-          )}
+          <ProductImage
+            src={product.images?.[0] ?? ''}
+            alt={product.name}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="shop-grid-img"
+            seed={product._id}
+            style={{
+              transform:  isHovered ? 'scale(1.07)' : 'scale(1)',
+              transition: 'transform 0.5s ease',
+            }}
+          />
         </Link>
 
         {/* Badges */}
@@ -253,7 +277,7 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
           </div>
         )}
 
-        {/* Hover actions - MOVED OUTSIDE THE IMAGE LINK */}
+        {/* Hover actions */}
         <div className={`shop-grid-actions ${isHovered ? 'shop-grid-actions-visible' : ''}`}>
           <button
             onClick={handleWishlist}
