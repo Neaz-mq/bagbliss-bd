@@ -32,7 +32,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession() // ← also grab status
   const cartCount = useCartStore((s) => s.getItemCount())
   const wishlistCount = useWishlistStore((s) => s.getCount())
   const openCart = useCartStore((s) => s.openCart)
@@ -59,7 +59,6 @@ export default function Navbar() {
         )
       )
     }
-    // For plain paths (e.g. "/" or "/shop"), only active if no query params
     return pathname === href && searchParams.toString() === ''
   }
 
@@ -119,6 +118,102 @@ export default function Navbar() {
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/' })
+  }
+
+  // ── Determines what to render for the auth section ──
+  // Both server and client render the placeholder until isMounted + status resolved,
+  // which eliminates the SSR/CSR mismatch.
+  const renderAuthSection = () => {
+    if (!isMounted || status === 'loading') {
+      // Invisible placeholder — same layout footprint as "Sign In" link
+      return (
+        <div
+          className="navbar-login-btn opacity-0 pointer-events-none select-none"
+          aria-hidden="true"
+        >
+          Sign In
+        </div>
+      )
+    }
+
+    if (session) {
+      return (
+        <div className="navbar-user-menu" ref={userMenuRef}>
+          <button
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="navbar-user-btn"
+          >
+            {session.user?.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={session.user.image}
+                alt={session.user.name ?? ''}
+                className="navbar-avatar"
+              />
+            ) : (
+              <div className="navbar-avatar-placeholder">
+                {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
+              </div>
+            )}
+            <ChevronDown
+              size={14}
+              className={`navbar-chevron ${isUserMenuOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {/* Dropdown */}
+          {isUserMenuOpen && (
+            <div className="navbar-dropdown">
+              <div className="navbar-dropdown-header">
+                <p className="navbar-dropdown-name">{session.user?.name}</p>
+                <p className="navbar-dropdown-email">{session.user?.email}</p>
+              </div>
+              <div className="navbar-dropdown-divider" />
+              <Link
+                href="/account"
+                className="navbar-dropdown-item"
+                onClick={() => setIsUserMenuOpen(false)}
+              >
+                <User size={16} />
+                My Account
+              </Link>
+              <Link
+                href="/account/orders"
+                className="navbar-dropdown-item"
+                onClick={() => setIsUserMenuOpen(false)}
+              >
+                <Package size={16} />
+                My Orders
+              </Link>
+              {session.user?.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="navbar-dropdown-item"
+                  onClick={() => setIsUserMenuOpen(false)}
+                >
+                  <Settings size={16} />
+                  Admin Panel
+                </Link>
+              )}
+              <div className="navbar-dropdown-divider" />
+              <button
+                onClick={handleSignOut}
+                className="navbar-dropdown-item navbar-dropdown-signout"
+              >
+                <LogOut size={16} />
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <Link href="/login" className="navbar-login-btn">
+        Sign In
+      </Link>
+    )
   }
 
   return (
@@ -186,85 +281,8 @@ export default function Navbar() {
               )}
             </button>
 
-            {/* User Menu */}
-            {session ? (
-              <div className="navbar-user-menu" ref={userMenuRef}>
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="navbar-user-btn"
-                >
-                  {session.user?.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={session.user.image}
-                      alt={session.user.name ?? ''}
-                      className="navbar-avatar"
-                    />
-                  ) : (
-                    <div className="navbar-avatar-placeholder">
-                      {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
-                    </div>
-                  )}
-                  <ChevronDown
-                    size={14}
-                    className={`navbar-chevron ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
-
-                {/* Dropdown */}
-                {isUserMenuOpen && (
-                  <div className="navbar-dropdown">
-                    <div className="navbar-dropdown-header">
-                      <p className="navbar-dropdown-name">
-                        {session.user?.name}
-                      </p>
-                      <p className="navbar-dropdown-email">
-                        {session.user?.email}
-                      </p>
-                    </div>
-                    <div className="navbar-dropdown-divider" />
-                    <Link
-                      href="/account"
-                      className="navbar-dropdown-item"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <User size={16} />
-                      My Account
-                    </Link>
-                    <Link
-                      href="/account/orders"
-                      className="navbar-dropdown-item"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <Package size={16} />
-                      My Orders
-                    </Link>
-                    {session.user?.role === 'admin' && (
-                      <Link
-                        href="/admin"
-                        className="navbar-dropdown-item"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <Settings size={16} />
-                        Admin Panel
-                      </Link>
-                    )}
-                    <div className="navbar-dropdown-divider" />
-                    <button
-                      onClick={handleSignOut}
-                      className="navbar-dropdown-item navbar-dropdown-signout"
-                    >
-                      <LogOut size={16} />
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link href="/login" className="navbar-login-btn">
-                Sign In
-              </Link>
-            )}
+            {/* Auth — guarded to prevent SSR/CSR mismatch */}
+            {renderAuthSection()}
 
             {/* Mobile Menu Toggle */}
             <button
@@ -320,7 +338,8 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {!session && (
+            {/* Guard mobile auth buttons the same way */}
+            {isMounted && !session && (
               <div className="navbar-mobile-auth">
                 <Link href="/login" className="btn-primary">
                   Sign In
@@ -338,14 +357,22 @@ export default function Navbar() {
       <nav className="mobile-bottom-nav">
         <Link
           href="/"
-          className={`mobile-nav-item ${pathname === '/' && searchParams.toString() === '' ? 'mobile-nav-item-active' : ''}`}
+          className={`mobile-nav-item ${
+            pathname === '/' && searchParams.toString() === ''
+              ? 'mobile-nav-item-active'
+              : ''
+          }`}
         >
           <Home size={22} />
           <span>Home</span>
         </Link>
         <Link
           href="/shop"
-          className={`mobile-nav-item ${pathname === '/shop' && searchParams.toString() === '' ? 'mobile-nav-item-active' : ''}`}
+          className={`mobile-nav-item ${
+            pathname === '/shop' && searchParams.toString() === ''
+              ? 'mobile-nav-item-active'
+              : ''
+          }`}
         >
           <Grid3X3 size={22} />
           <span>Shop</span>
@@ -360,13 +387,16 @@ export default function Navbar() {
         </button>
         <Link
           href="/wishlist"
-          className={`mobile-nav-item ${pathname === '/wishlist' ? 'mobile-nav-item-active' : ''}`}
+          className={`mobile-nav-item ${
+            pathname === '/wishlist' ? 'mobile-nav-item-active' : ''
+          }`}
         >
           <Heart size={22} />
           <span>Wishlist</span>
         </Link>
+        {/* Guard href and label — server always sees /login, client resolves after mount */}
         <Link
-          href={session ? '/account' : '/login'}
+          href={isMounted && session ? '/account' : '/login'}
           className={`mobile-nav-item ${
             pathname === '/account' || pathname === '/login'
               ? 'mobile-nav-item-active'
@@ -374,7 +404,7 @@ export default function Navbar() {
           }`}
         >
           <User size={22} />
-          <span>{session ? 'Account' : 'Sign In'}</span>
+          <span>{isMounted && session ? 'Account' : 'Sign In'}</span>
         </Link>
       </nav>
     </>

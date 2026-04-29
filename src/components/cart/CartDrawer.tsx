@@ -18,6 +18,29 @@ import {
   FREE_SHIPPING_THRESHOLD,
 } from '@/constants'
 
+// ── Helper: selectedColor may be stored as a string OR a color object ──
+// This handles both cases safely so React never tries to render an object.
+type ColorObject = { name: string; hex: string; stock?: number; _id?: string }
+type SelectedColor = string | ColorObject
+
+function resolveColor(
+  selectedColor: SelectedColor,
+  colors: ColorObject[]
+): { colorName: string; colorHex: string } {
+  if (typeof selectedColor === 'string') {
+    const match = colors.find((c) => c.name === selectedColor)
+    return {
+      colorName: selectedColor,
+      colorHex: match?.hex ?? '#E91E8C',
+    }
+  }
+  // selectedColor is already the full color object
+  return {
+    colorName: selectedColor?.name ?? '',
+    colorHex: selectedColor?.hex ?? '#E91E8C',
+  }
+}
+
 // ── Cart Item Row ─────────────────────────────
 function CartItem({
   item,
@@ -25,6 +48,12 @@ function CartItem({
   item: ReturnType<typeof useCartStore.getState>['items'][0]
 }) {
   const { updateQuantity, removeItem } = useCartStore()
+
+  // Safely resolve color regardless of how it was stored
+  const { colorName, colorHex } = resolveColor(
+    item.selectedColor as SelectedColor,
+    item.product.colors as ColorObject[]
+  )
 
   const handleRemove = () => {
     removeItem(item.product._id, item.selectedColor)
@@ -74,14 +103,10 @@ function CartItem({
             <p className="cart-item-color">
               <span
                 className="cart-item-color-dot"
-                style={{
-                  background:
-                    item.product.colors.find(
-                      (c) => c.name === item.selectedColor
-                    )?.hex || '#E91E8C',
-                }}
+                style={{ background: colorHex }}
               />
-              {item.selectedColor}
+              {/* colorName is always a string — safe to render */}
+              {colorName}
             </p>
           </div>
           <button
@@ -127,7 +152,7 @@ export default function CartDrawer() {
   const drawerRef = useRef<HTMLDivElement>(null)
   const [isMounted, setIsMounted] = useState(false)
 
-  // ── Mount check — fixes hydration mismatch ──
+  // Mount check — fixes hydration mismatch
   useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 0)
     return () => clearTimeout(timer)
@@ -262,7 +287,11 @@ export default function CartDrawer() {
             <div className="cart-items-list">
               {items.map((item) => (
                 <CartItem
-                  key={`${item.product._id}-${item.selectedColor}`}
+                  key={`${item.product._id}-${
+                    typeof item.selectedColor === 'string'
+                      ? item.selectedColor
+                      : (item.selectedColor as ColorObject)?.name ?? ''
+                  }`}
                   item={item}
                 />
               ))}
