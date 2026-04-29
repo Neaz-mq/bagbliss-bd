@@ -1,17 +1,17 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useSocket }                         from './useSocket'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useSocket }                                  from './useSocket'
 
 export interface OrderNotification {
-  id:          string
-  orderNumber: string
+  id:           string
+  orderNumber:  string
   customerName: string
-  total:       number
-  payment:     string
-  items:       number
-  createdAt:   string
-  read:        boolean
+  total:        number
+  payment:      string
+  items:        number
+  createdAt:    string
+  read:         boolean
 }
 
 export interface VisitorData {
@@ -20,38 +20,33 @@ export interface VisitorData {
 }
 
 export function useAdminSocket() {
-  const { socket, connected }               = useSocket()
-  const [notifications, setNotifications]   = useState<OrderNotification[]>([])
-  const [visitors,      setVisitors]        = useState<VisitorData>({ count: 0, visitors: [] })
-  const [isAdminJoined, setIsAdminJoined]   = useState(false)
-  const [lastActivity,  setLastActivity]    = useState<string | null>(null)
+  const { socket, connected }             = useSocket()
+  const [notifications, setNotifications] = useState<OrderNotification[]>([])
+  const [visitors,      setVisitors]      = useState<VisitorData>({ count: 0, visitors: [] })
+  const [lastActivity,  setLastActivity]  = useState<string | null>(null)
+  const isAdminJoinedRef                  = useRef(false)
 
   // Join admin room
   useEffect(() => {
-    if (!connected || isAdminJoined) return
-
-    const secret = process.env.NEXT_PUBLIC_SOCKET_URL
-      ? 'bagbliss-socket-secret-2026'
-      : 'bagbliss-socket-secret-2026'
-
+    if (!connected || isAdminJoinedRef.current) return
+    isAdminJoinedRef.current = true
     socket.emit('join:admin', { secret: 'bagbliss-socket-secret-2026' })
-    setIsAdminJoined(true)
-  }, [connected, socket, isAdminJoined])
+  }, [connected, socket])
 
-  // Reset joined state on disconnect
+  // Reset joined ref on disconnect
   useEffect(() => {
-    if (!connected) setIsAdminJoined(false)
+    if (!connected) {
+      isAdminJoinedRef.current = false
+    }
   }, [connected])
 
   // Listen to events
   useEffect(() => {
-    // ── New order ──────────────────────────────────────────────────
     const onNewOrder = (data: Omit<OrderNotification, 'read'>) => {
       const notification: OrderNotification = { ...data, read: false }
       setNotifications(prev => [notification, ...prev].slice(0, 50))
       setLastActivity(`New order #${data.orderNumber} — ৳${data.total.toLocaleString()}`)
 
-      // Browser notification
       if (typeof window !== 'undefined' && 'Notification' in window) {
         if (Notification.permission === 'granted') {
           new Notification('🛍️ New BagBliss Order!', {
@@ -62,12 +57,10 @@ export function useAdminSocket() {
       }
     }
 
-    // ── Visitor update ─────────────────────────────────────────────
     const onVisitorUpdate = (data: VisitorData) => {
       setVisitors(data)
     }
 
-    // ── Stock alert ────────────────────────────────────────────────
     const onLowStock = (data: { productName: string; stock: number }) => {
       setLastActivity(`⚠️ Low stock: ${data.productName} (${data.stock} left)`)
       const lowStockNotif: OrderNotification = {
@@ -83,15 +76,14 @@ export function useAdminSocket() {
       setNotifications(prev => [lowStockNotif, ...prev].slice(0, 50))
     }
 
-    // ── Payment confirmed ──────────────────────────────────────────
     const onPaymentConfirmed = (data: { orderNumber: string; total: number; payment: string }) => {
       setLastActivity(`💳 Payment confirmed: #${data.orderNumber}`)
     }
 
-    socket.on('order:new',           onNewOrder)
-    socket.on('visitors:update',     onVisitorUpdate)
-    socket.on('stock:low',           onLowStock)
-    socket.on('payment:confirmed',   onPaymentConfirmed)
+    socket.on('order:new',          onNewOrder)
+    socket.on('visitors:update',    onVisitorUpdate)
+    socket.on('stock:low',          onLowStock)
+    socket.on('payment:confirmed',  onPaymentConfirmed)
 
     return () => {
       socket.off('order:new',         onNewOrder)
@@ -115,7 +107,6 @@ export function useAdminSocket() {
 
   const unreadCount = notifications.filter(n => !n.read).length
 
-  // Request browser notification permission
   const requestNotificationPermission = useCallback(async () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       await Notification.requestPermission()

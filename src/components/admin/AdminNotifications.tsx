@@ -38,12 +38,11 @@ function NotificationIcon({ type }: { type: string }) {
 }
 
 function NotifItem({ notif, onRead }: { notif: OrderNotification; onRead: () => void }) {
-  const isAlert   = notif.payment === 'alert'
-  
-  const title     = isAlert
+  const isAlert  = notif.payment === 'alert'
+  const title    = isAlert
     ? `⚠️ Low Stock: ${notif.customerName}`
     : `New Order #${notif.orderNumber}`
-  const subtitle  = isAlert
+  const subtitle = isAlert
     ? `Only ${notif.total} items remaining`
     : `৳${notif.total.toLocaleString()} · ${notif.customerName} · ${notif.items} item${notif.items !== 1 ? 's' : ''}`
 
@@ -91,7 +90,6 @@ export default function AdminNotifications() {
     requestNotificationPermission,
   } = useAdminSocket()
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -102,7 +100,6 @@ export default function AdminNotifications() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Request permission on mount
   useEffect(() => {
     requestNotificationPermission()
   }, [requestNotificationPermission])
@@ -110,7 +107,6 @@ export default function AdminNotifications() {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
 
-      {/* ── Bell Button ─────────────────────────────────────────── */}
       <button
         onClick={() => { setOpen(v => !v); if (!open && unreadCount > 0) markAllRead() }}
         style={{
@@ -124,7 +120,6 @@ export default function AdminNotifications() {
       >
         <Bell size={17} strokeWidth={2} />
 
-        {/* Unread badge */}
         {unreadCount > 0 && (
           <span style={{
             position: 'absolute', top: '6px', right: '6px',
@@ -139,7 +134,6 @@ export default function AdminNotifications() {
           </span>
         )}
 
-        {/* Connection indicator */}
         <span style={{
           position: 'absolute', bottom: '6px', right: '6px',
           width: '6px', height: '6px', borderRadius: '50%',
@@ -148,7 +142,6 @@ export default function AdminNotifications() {
         }} />
       </button>
 
-      {/* ── Dropdown Panel ──────────────────────────────────────── */}
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 10px)', right: 0,
@@ -159,7 +152,6 @@ export default function AdminNotifications() {
           animation: 'dropIn 0.15s ease',
         }}>
 
-          {/* Header */}
           <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Bell size={15} color="#e91e8c" />
@@ -190,30 +182,12 @@ export default function AdminNotifications() {
             </div>
           </div>
 
-          {/* Live stats bar */}
-          <div style={{
-            display: 'flex', gap: '0', borderBottom: '1px solid #f1f5f9',
-            background: '#fafbfc',
-          }}>
+          <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #f1f5f9', background: '#fafbfc' }}>
             {[
-              {
-                icon: connected ? Wifi : WifiOff,
-                label: connected ? 'Connected' : 'Offline',
-                color: connected ? '#22c55e' : '#ef4444',
-                value: null,
-              },
-              {
-                icon: Users,
-                label: 'Online',
-                color: '#6366f1',
-                value: visitors.count,
-              },
+              { icon: connected ? Wifi : WifiOff, label: connected ? 'Connected' : 'Offline', color: connected ? '#22c55e' : '#ef4444', value: null },
+              { icon: Users, label: 'Online', color: '#6366f1', value: visitors.count },
             ].map(({ icon: Icon, label, color, value }) => (
-              <div key={label} style={{
-                flex: 1, padding: '8px 12px',
-                display: 'flex', alignItems: 'center', gap: '6px',
-                borderRight: '1px solid #f1f5f9',
-              }}>
+              <div key={label} style={{ flex: 1, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', borderRight: '1px solid #f1f5f9' }}>
                 <Icon size={12} style={{ color, flexShrink: 0 }} />
                 <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{label}</span>
                 {value !== null && (
@@ -223,7 +197,6 @@ export default function AdminNotifications() {
             ))}
           </div>
 
-          {/* Last activity */}
           {lastActivity && (
             <div style={{ padding: '8px 16px', background: 'rgba(233,30,140,0.03)', borderBottom: '1px solid #f1f5f9' }}>
               <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -233,7 +206,6 @@ export default function AdminNotifications() {
             </div>
           )}
 
-          {/* Notifications list */}
           <div style={{ maxHeight: '340px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
             {notifications.length === 0 ? (
               <div style={{ padding: '40px 20px', textAlign: 'center' }}>
@@ -250,15 +222,11 @@ export default function AdminNotifications() {
             )}
           </div>
 
-          {/* Footer */}
           <div style={{ padding: '10px 16px', borderTop: '1px solid #f1f5f9', background: '#fafbfc' }}>
             <Link
               href="/admin/orders"
               onClick={() => setOpen(false)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                fontSize: '0.8rem', fontWeight: 700, color: '#e91e8c', textDecoration: 'none',
-              }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '0.8rem', fontWeight: 700, color: '#e91e8c', textDecoration: 'none' }}
             >
               View all orders →
             </Link>
