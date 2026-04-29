@@ -39,7 +39,7 @@ function NotificationIcon({ type }: { type: string }) {
 
 function NotifItem({ notif, onRead }: { notif: OrderNotification; onRead: () => void }) {
   const isAlert   = notif.payment === 'alert'
-  const isOrder   = !isAlert
+  
   const title     = isAlert
     ? `⚠️ Low Stock: ${notif.customerName}`
     : `New Order #${notif.orderNumber}`
