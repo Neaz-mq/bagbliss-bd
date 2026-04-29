@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
@@ -28,11 +28,12 @@ const NAV_LINKS = [
   { label: 'Flash Sale', href: '/shop?filter=flash-sale' },
 ]
 
-export default function Navbar() {
+// ── Inner component — uses useSearchParams (must be inside <Suspense>) ──
+function NavbarInner() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { data: session, status } = useSession() // ← also grab status
+  const { data: session, status } = useSession()
   const cartCount = useCartStore((s) => s.getItemCount())
   const wishlistCount = useWishlistStore((s) => s.getCount())
   const openCart = useCartStore((s) => s.openCart)
@@ -47,7 +48,6 @@ export default function Navbar() {
   const userMenuRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  // ── Active link check (supports query params) ──
   const isLinkActive = (href: string) => {
     const [hrefPath, hrefQuery] = href.split('?')
     if (hrefQuery) {
@@ -62,22 +62,17 @@ export default function Navbar() {
     return pathname === href && searchParams.toString() === ''
   }
 
-  // Mount check — fixes hydration error with persisted Zustand store
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsMounted(true)
-    }, 0)
+    const timer = setTimeout(() => setIsMounted(true), 0)
     return () => clearTimeout(timer)
   }, [])
 
-  // Scroll effect
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Close user menu on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -91,14 +86,12 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Focus search input when opened
   useEffect(() => {
     if (isSearchOpen && searchRef.current) {
       searchRef.current.focus()
     }
   }, [isSearchOpen])
 
-  // Close mobile menu on route change
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsMobileMenuOpen(false)
@@ -120,12 +113,8 @@ export default function Navbar() {
     await signOut({ callbackUrl: '/' })
   }
 
-  // ── Determines what to render for the auth section ──
-  // Both server and client render the placeholder until isMounted + status resolved,
-  // which eliminates the SSR/CSR mismatch.
   const renderAuthSection = () => {
     if (!isMounted || status === 'loading') {
-      // Invisible placeholder — same layout footprint as "Sign In" link
       return (
         <div
           className="navbar-login-btn opacity-0 pointer-events-none select-none"
@@ -161,7 +150,6 @@ export default function Navbar() {
             />
           </button>
 
-          {/* Dropdown */}
           {isUserMenuOpen && (
             <div className="navbar-dropdown">
               <div className="navbar-dropdown-header">
@@ -218,7 +206,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ── Main Navbar ─────────────────────── */}
       <header
         className={`navbar ${isScrolled ? 'navbar-scrolled' : 'navbar-top'}`}
       >
@@ -246,7 +233,6 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="navbar-actions">
-            {/* Search */}
             <button
               onClick={() => setIsSearchOpen(!isSearchOpen)}
               className="navbar-icon-btn"
@@ -255,7 +241,6 @@ export default function Navbar() {
               <Search size={20} />
             </button>
 
-            {/* Wishlist */}
             <Link
               href="/wishlist"
               className="navbar-icon-btn navbar-icon-relative"
@@ -267,7 +252,6 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Cart */}
             <button
               onClick={openCart}
               className="navbar-icon-btn navbar-icon-relative"
@@ -281,10 +265,8 @@ export default function Navbar() {
               )}
             </button>
 
-            {/* Auth — guarded to prevent SSR/CSR mismatch */}
             {renderAuthSection()}
 
-            {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="navbar-icon-btn navbar-mobile-toggle"
@@ -338,7 +320,6 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {/* Guard mobile auth buttons the same way */}
             {isMounted && !session && (
               <div className="navbar-mobile-auth">
                 <Link href="/login" className="btn-primary">
@@ -353,7 +334,7 @@ export default function Navbar() {
         )}
       </header>
 
-      {/* ── Mobile Bottom Navigation ─────────── */}
+      {/* Mobile Bottom Navigation */}
       <nav className="mobile-bottom-nav">
         <Link
           href="/"
@@ -394,7 +375,6 @@ export default function Navbar() {
           <Heart size={22} />
           <span>Wishlist</span>
         </Link>
-        {/* Guard href and label — server always sees /login, client resolves after mount */}
         <Link
           href={isMounted && session ? '/account' : '/login'}
           className={`mobile-nav-item ${
@@ -408,5 +388,15 @@ export default function Navbar() {
         </Link>
       </nav>
     </>
+  )
+}
+
+// ── Outer export — wraps NavbarInner in Suspense ──
+// This is REQUIRED because NavbarInner uses useSearchParams()
+export default function Navbar() {
+  return (
+    <Suspense fallback={<div className="navbar navbar-top" />}>
+      <NavbarInner />
+    </Suspense>
   )
 }

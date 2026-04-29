@@ -10,7 +10,6 @@ import {
   PartyPopper,
 } from 'lucide-react'
 
-// ── Category Data ─────────────────────────────
 const CATEGORIES = [
   {
     label: 'All Bags',
@@ -62,7 +61,6 @@ const CATEGORIES = [
   },
 ]
 
-// ── Category Card ─────────────────────────────
 function CategoryCard({
   category,
   index,
@@ -85,19 +83,13 @@ function CategoryCard({
     <button
       onClick={handleClick}
       className="category-card"
-      style={{
-        animationDelay: `${index * 0.08}s`,
-      }}
+      style={{ animationDelay: `${index * 0.08}s` }}
+      suppressHydrationWarning  // ← fixes browser extension attribute injection
     >
-      {/* Icon Circle */}
       <div className="category-icon-circle" style={{ background: category.bg }}>
         <Icon size={28} color={category.color} strokeWidth={1.5} />
       </div>
-
-      {/* Label */}
       <span className="category-label">{category.label}</span>
-
-      {/* Count Badge */}
       <span className="category-count" style={{ color: category.color }}>
         {category.count}
       </span>
@@ -105,12 +97,12 @@ function CategoryCard({
   )
 }
 
-// ── Category Strip ────────────────────────────
 export default function CategoryStrip() {
+  const router = useRouter()  // ← moved here for the CTA button
+
   return (
     <section className="section category-section">
       <div className="container-bagbliss">
-        {/* Header */}
         <div className="section-header">
           <div className="section-badge">
             <span>Shop by Style</span>
@@ -125,7 +117,6 @@ export default function CategoryStrip() {
           </p>
         </div>
 
-        {/* Categories Grid */}
         <div className="category-grid">
           {CATEGORIES.map((cat, i) => (
             <CategoryCard key={cat.value} category={cat} index={i} />
@@ -136,7 +127,11 @@ export default function CategoryStrip() {
         <div className="category-cta">
           <p>
             Can&apos;t find what you&apos;re looking for?{' '}
-            <button onClick={() => {}} className="category-cta-link">
+            <button
+              onClick={() => router.push('/shop')}  // ← fixed: was empty
+              className="category-cta-link"
+              suppressHydrationWarning  // ← fixes browser extension injection
+            >
               Browse all 500+ bags →
             </button>
           </p>

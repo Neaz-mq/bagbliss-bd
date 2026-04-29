@@ -44,48 +44,24 @@ const DELIVERY_OPTIONS = [
 
 const PAYMENT_METHODS = [
   {
-    id:    'cod',
-    label: 'Cash on Delivery',
-    icon:  Banknote,
-    desc:  'Pay when you receive',
-    color: '#1a1a2e',
-    badge: 'Safe',
-    badgeBg: 'rgba(26,26,46,0.08)',
-    badgeColor: '#1a1a2e',
-    gateway: false,
+    id: 'cod', label: 'Cash on Delivery', icon: Banknote,
+    desc: 'Pay when you receive', color: '#1a1a2e',
+    badge: 'Safe', badgeBg: 'rgba(26,26,46,0.08)', badgeColor: '#1a1a2e', gateway: false,
   },
   {
-    id:    'bkash',
-    label: 'bKash',
-    icon:  Smartphone,
-    desc:  'Pay via bKash gateway',
-    color: '#e2136e',
-    badge: 'Instant',
-    badgeBg: 'rgba(226,19,110,0.08)',
-    badgeColor: '#e2136e',
-    gateway: true,
+    id: 'bkash', label: 'bKash', icon: Smartphone,
+    desc: 'Pay via bKash gateway', color: '#e2136e',
+    badge: 'Instant', badgeBg: 'rgba(226,19,110,0.08)', badgeColor: '#e2136e', gateway: true,
   },
   {
-    id:    'nagad',
-    label: 'Nagad',
-    icon:  Smartphone,
-    desc:  'Pay via Nagad gateway',
-    color: '#f6a623',
-    badge: 'Instant',
-    badgeBg: 'rgba(246,166,35,0.08)',
-    badgeColor: '#b45309',
-    gateway: true,
+    id: 'nagad', label: 'Nagad', icon: Smartphone,
+    desc: 'Pay via Nagad gateway', color: '#f6a623',
+    badge: 'Instant', badgeBg: 'rgba(246,166,35,0.08)', badgeColor: '#b45309', gateway: true,
   },
   {
-    id:    'card',
-    label: 'Card Payment',
-    icon:  CreditCard,
-    desc:  'Visa / Mastercard / Amex',
-    color: '#1a1f71',
-    badge: 'Secure',
-    badgeBg: 'rgba(26,31,113,0.08)',
-    badgeColor: '#1a1f71',
-    gateway: true,
+    id: 'card', label: 'Card Payment', icon: CreditCard,
+    desc: 'Visa / Mastercard / Amex', color: '#1a1f71',
+    badge: 'Secure', badgeBg: 'rgba(26,31,113,0.08)', badgeColor: '#1a1f71', gateway: true,
   },
 ]
 
@@ -117,7 +93,6 @@ function StepBadge({ step, label, active, done }: { step: number; label: string;
   )
 }
 
-// ── Gateway Redirect Notice ────────────────────────────────────────────────
 function GatewayNotice({ method }: { method: string }) {
   if (method === 'cod') return null
   const m = PAYMENT_METHODS.find(p => p.id === method)
@@ -152,14 +127,14 @@ export default function CheckoutPage() {
   const items     = useCartStore(s => s.items)
   const clearCart = useCartStore(s => s.clearCart)
 
-  const [delivery,   setDelivery]   = useState('standard')
-  const [payment,    setPayment]    = useState('cod')
-  const [isPlacing,  setIsPlacing]  = useState(false)
-  const [placed,     setPlaced]     = useState(false)
-  const [step,       setStep]       = useState<1 | 2>(1)
-  const [orderTotal, setOrderTotal] = useState(0)
-  const [orderId,    setOrderId]    = useState('')
-  const [redirecting,setRedirecting]= useState(false)
+  const [delivery,    setDelivery]    = useState('standard')
+  const [payment,     setPayment]     = useState('cod')
+  const [isPlacing,   setIsPlacing]   = useState(false)
+  const [placed,      setPlaced]      = useState(false)
+  const [step,        setStep]        = useState<1 | 2>(1)
+  const [orderTotal,  setOrderTotal]  = useState(0)
+  const [orderId,     setOrderId]     = useState('')
+  const [redirecting, setRedirecting] = useState(false)
 
   const deliveryFee  = DELIVERY_OPTIONS.find(d => d.id === delivery)?.fee ?? 60
   const subtotal     = items.reduce((acc, item) => acc + item.price * item.quantity, 0)
@@ -188,7 +163,6 @@ export default function CheckoutPage() {
     if (items.length === 0 && !placed && !redirecting) router.replace('/shop')
   }, [items, placed, redirecting, router])
 
-  // ── Build order payload ─────────────────────────────────────────────────
   const buildOrderPayload = (data: CheckoutForm) => ({
     items: items.map(item => ({
       productId: item.product._id,
@@ -208,28 +182,25 @@ export default function CheckoutPage() {
       address:    data.address,
       postalCode: data.postalCode ?? '',
     },
-    delivery:    delivery,
+    delivery,
     deliveryFee: freeShipping ? 0 : deliveryFee,
     subtotal,
     total,
-    orderNote:   data.orderNote ?? '',
+    orderNote: data.orderNote ?? '',
   })
 
-  // ── Submit handler ──────────────────────────────────────────────────────
   const onSubmit = async (data: CheckoutForm) => {
-    // Step 1 → go to review
     if (step === 1) { setStep(2); return }
 
     setIsPlacing(true)
     try {
       const payload = buildOrderPayload(data)
 
-      // ── COD: direct order ──────────────────────────────────────────────
       if (payment === 'cod') {
         const res  = await fetch('/api/orders', {
-          method:  'POST',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ ...payload, payment: 'cod' }),
+          body: JSON.stringify({ ...payload, payment: 'cod' }),
         })
         const json = await res.json()
         if (!json.success) throw new Error(json.error ?? 'Order failed')
@@ -242,14 +213,13 @@ export default function CheckoutPage() {
         return
       }
 
-      // ── Gateway payments: bKash / Nagad / Card via SSLCommerz ─────────
       setRedirecting(true)
       toast.loading('Redirecting to payment gateway…', { id: 'ssl-redirect' })
 
       const res  = await fetch('/api/payment/initiate', {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ ...payload, payment }),
+        body: JSON.stringify({ ...payload, payment }),
       })
       const json = await res.json()
 
@@ -257,15 +227,10 @@ export default function CheckoutPage() {
         throw new Error(json.error ?? 'Payment gateway error. Please try again.')
       }
 
-      // Clear cart before redirect (order is already created in DB)
       clearCart()
       toast.dismiss('ssl-redirect')
       toast.success('Redirecting to secure payment…')
-
-      // Small delay so toast is visible
       await new Promise(r => setTimeout(r, 800))
-
-      // Redirect to SSLCommerz gateway
       window.location.href = json.gatewayUrl
 
     } catch (err: unknown) {
@@ -276,7 +241,7 @@ export default function CheckoutPage() {
     }
   }
 
-  // ── Order Placed (COD success screen) ──────────────────────────────────
+  // ── Order Placed Screen ────────────────────────────────────────────────
   if (placed) {
     return (
       <div className="co-success-page">
@@ -290,26 +255,13 @@ export default function CheckoutPage() {
             Expected delivery in {delivery === 'express' ? '1–2' : '3–5'} business days.
           </p>
           <div className="co-success-meta">
-            <div className="co-success-meta-item">
-              <span>Order ID</span>
-              <strong>#{orderId}</strong>
-            </div>
-            <div className="co-success-meta-item">
-              <span>Payment</span>
-              <strong>Cash on Delivery</strong>
-            </div>
-            <div className="co-success-meta-item">
-              <span>Total</span>
-              <strong>৳{orderTotal.toLocaleString('en-BD')}</strong>
-            </div>
+            <div className="co-success-meta-item"><span>Order ID</span><strong>#{orderId}</strong></div>
+            <div className="co-success-meta-item"><span>Payment</span><strong>Cash on Delivery</strong></div>
+            <div className="co-success-meta-item"><span>Total</span><strong>৳{orderTotal.toLocaleString('en-BD')}</strong></div>
           </div>
           <div className="co-success-actions">
-            <Link href="/shop" className="btn-primary">
-              <ShoppingBag size={18} /> Continue Shopping
-            </Link>
-            <Link href="/account/orders" className="btn-secondary">
-              Track Order
-            </Link>
+            <Link href="/shop" className="btn-primary"><ShoppingBag size={18} /> Continue Shopping</Link>
+            <Link href="/account/orders" className="btn-secondary">Track Order</Link>
           </div>
         </div>
       </div>
@@ -320,30 +272,16 @@ export default function CheckoutPage() {
   if (redirecting) {
     const pm = PAYMENT_METHODS.find(p => p.id === payment)
     return (
-      <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', background: '#fdfaf7', padding: '2rem',
-      }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fdfaf7', padding: '2rem' }}>
         <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-          <div style={{
-            width: '80px', height: '80px', borderRadius: '50%',
-            background: `${pm?.color}14`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 1.5rem',
-          }}>
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '50%',
-              border: `4px solid ${pm?.color}33`,
-              borderTopColor: pm?.color,
-              animation: 'spin 0.8s linear infinite',
-            }} />
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: `${pm?.color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: `4px solid ${pm?.color}33`, borderTopColor: pm?.color, animation: 'spin 0.8s linear infinite' }} />
           </div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', color: '#1a1a2e', margin: '0 0 0.75rem' }}>
             Redirecting to {pm?.label}
           </h2>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: '#6b7280', lineHeight: 1.7 }}>
-            Please wait while we redirect you to the secure payment gateway.
-            Do not close this window.
+            Please wait while we redirect you to the secure payment gateway. Do not close this window.
           </p>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
@@ -367,7 +305,6 @@ export default function CheckoutPage() {
       </div>
 
       <div className="container-bagbliss">
-        {/* Header */}
         <div className="co-header">
           <div>
             <h1 className="co-title">Checkout</h1>
@@ -395,27 +332,49 @@ export default function CheckoutPage() {
                       <h2 className="co-card-title">Shipping Information</h2>
                     </div>
                     <div className="co-form-grid">
+
                       <div className="co-field co-field-half">
                         <label className="co-label"><User size={14} /> Full Name *</label>
-                        <input {...register('fullName')} className={`co-input ${errors.fullName ? 'co-input-error' : ''}`} placeholder="Fatima Rahman" />
+                        <input
+                          {...register('fullName')}
+                          className={`co-input ${errors.fullName ? 'co-input-error' : ''}`}
+                          placeholder="Fatima Rahman"
+                          suppressHydrationWarning  // ← fix
+                        />
                         {errors.fullName && <span className="co-field-error"><AlertCircle size={12} /> {errors.fullName.message}</span>}
                       </div>
 
                       <div className="co-field co-field-half">
                         <label className="co-label"><Phone size={14} /> Phone Number *</label>
-                        <input {...register('phone')} className={`co-input ${errors.phone ? 'co-input-error' : ''}`} placeholder="01XXXXXXXXX" type="tel" />
+                        <input
+                          {...register('phone')}
+                          className={`co-input ${errors.phone ? 'co-input-error' : ''}`}
+                          placeholder="01XXXXXXXXX"
+                          type="tel"
+                          suppressHydrationWarning  // ← fix
+                        />
                         {errors.phone && <span className="co-field-error"><AlertCircle size={12} /> {errors.phone.message}</span>}
                       </div>
 
                       <div className="co-field co-field-full">
                         <label className="co-label"><Mail size={14} /> Email Address (optional)</label>
-                        <input {...register('email')} className={`co-input ${errors.email ? 'co-input-error' : ''}`} placeholder="your@email.com" type="email" />
+                        <input
+                          {...register('email')}
+                          className={`co-input ${errors.email ? 'co-input-error' : ''}`}
+                          placeholder="your@email.com"
+                          type="email"
+                          suppressHydrationWarning  // ← fix
+                        />
                         {errors.email && <span className="co-field-error"><AlertCircle size={12} /> {errors.email.message}</span>}
                       </div>
 
                       <div className="co-field co-field-third">
                         <label className="co-label">Division *</label>
-                        <select {...register('division')} className={`co-input co-select ${errors.division ? 'co-input-error' : ''}`}>
+                        <select
+                          {...register('division')}
+                          className={`co-input co-select ${errors.division ? 'co-input-error' : ''}`}
+                          suppressHydrationWarning  // ← fix
+                        >
                           <option value="">Select Division</option>
                           {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
@@ -424,31 +383,59 @@ export default function CheckoutPage() {
 
                       <div className="co-field co-field-third">
                         <label className="co-label">District *</label>
-                        <input {...register('district')} className={`co-input ${errors.district ? 'co-input-error' : ''}`} placeholder="e.g. Dhaka" />
+                        <input
+                          {...register('district')}
+                          className={`co-input ${errors.district ? 'co-input-error' : ''}`}
+                          placeholder="e.g. Dhaka"
+                          suppressHydrationWarning  // ← fix
+                        />
                         {errors.district && <span className="co-field-error"><AlertCircle size={12} /> {errors.district.message}</span>}
                       </div>
 
                       <div className="co-field co-field-third">
                         <label className="co-label">Thana / Upazila *</label>
-                        <input {...register('thana')} className={`co-input ${errors.thana ? 'co-input-error' : ''}`} placeholder="e.g. Gulshan" />
+                        <input
+                          {...register('thana')}
+                          className={`co-input ${errors.thana ? 'co-input-error' : ''}`}
+                          placeholder="e.g. Gulshan"
+                          suppressHydrationWarning  // ← fix
+                        />
                         {errors.thana && <span className="co-field-error"><AlertCircle size={12} /> {errors.thana.message}</span>}
                       </div>
 
                       <div className="co-field co-field-full">
                         <label className="co-label"><Home size={14} /> Full Address *</label>
-                        <textarea {...register('address')} className={`co-input co-textarea ${errors.address ? 'co-input-error' : ''}`} placeholder="House no, Road no, Area, Landmark…" rows={3} />
+                        <textarea
+                          {...register('address')}
+                          className={`co-input co-textarea ${errors.address ? 'co-input-error' : ''}`}
+                          placeholder="House no, Road no, Area, Landmark…"
+                          rows={3}
+                          suppressHydrationWarning  // ← fix
+                        />
                         {errors.address && <span className="co-field-error"><AlertCircle size={12} /> {errors.address.message}</span>}
                       </div>
 
                       <div className="co-field co-field-half">
                         <label className="co-label">Postal Code</label>
-                        <input {...register('postalCode')} className={`co-input ${errors.postalCode ? 'co-input-error' : ''}`} placeholder="1212" maxLength={4} />
+                        <input
+                          {...register('postalCode')}
+                          className={`co-input ${errors.postalCode ? 'co-input-error' : ''}`}
+                          placeholder="1212"
+                          maxLength={4}
+                          suppressHydrationWarning  // ← fix
+                        />
                         {errors.postalCode && <span className="co-field-error"><AlertCircle size={12} /> {errors.postalCode.message}</span>}
                       </div>
 
                       <div className="co-field co-field-full">
                         <label className="co-label"><Tag size={14} /> Order Note (optional)</label>
-                        <textarea {...register('orderNote')} className="co-input co-textarea" placeholder="Special instructions, color preferences…" rows={2} />
+                        <textarea
+                          {...register('orderNote')}
+                          className="co-input co-textarea"
+                          placeholder="Special instructions, color preferences…"
+                          rows={2}
+                          suppressHydrationWarning  // ← fix
+                        />
                       </div>
                     </div>
                   </div>
@@ -468,6 +455,7 @@ export default function CheckoutPage() {
                             key={opt.id} type="button"
                             onClick={() => setDelivery(opt.id)}
                             className={`co-delivery-opt ${active ? 'co-delivery-opt-active' : ''}`}
+                            suppressHydrationWarning  // ← fix
                           >
                             <div className={`co-delivery-radio ${active ? 'co-delivery-radio-active' : ''}`}>
                               {active && <div className="co-delivery-radio-dot" />}
@@ -508,6 +496,7 @@ export default function CheckoutPage() {
                             key={pm.id} type="button"
                             onClick={() => setPayment(pm.id)}
                             className={`co-payment-opt ${active ? 'co-payment-opt-active' : ''}`}
+                            suppressHydrationWarning  // ← fix
                           >
                             <div className="co-payment-icon" style={{ background: pm.color }}>
                               <Icon size={18} color="white" />
@@ -521,8 +510,6 @@ export default function CheckoutPage() {
                         )
                       })}
                     </div>
-
-                    {/* Gateway redirect notice */}
                     <div style={{ padding: '0 1.25rem 1.25rem' }}>
                       <GatewayNotice method={payment} />
                     </div>
@@ -532,12 +519,11 @@ export default function CheckoutPage() {
 
               {step === 2 && (
                 <>
-                  {/* Review: address */}
                   <div className="co-card">
                     <div className="co-card-header">
                       <MapPin size={20} className="co-card-icon" />
                       <h2 className="co-card-title">Shipping Address</h2>
-                      <button type="button" onClick={() => setStep(1)} className="co-edit-btn">Edit</button>
+                      <button type="button" onClick={() => setStep(1)} className="co-edit-btn" suppressHydrationWarning>Edit</button>
                     </div>
                     <div className="co-review-address">
                       <p><strong>{watch('fullName')}</strong></p>
@@ -550,7 +536,6 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Review: items */}
                   <div className="co-card">
                     <div className="co-card-header">
                       <ShoppingBag size={20} className="co-card-icon" />
@@ -577,12 +562,11 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Review: payment & delivery */}
                   <div className="co-card">
                     <div className="co-card-header">
                       <CreditCard size={20} className="co-card-icon" />
                       <h2 className="co-card-title">Payment & Delivery</h2>
-                      <button type="button" onClick={() => setStep(1)} className="co-edit-btn">Edit</button>
+                      <button type="button" onClick={() => setStep(1)} className="co-edit-btn" suppressHydrationWarning>Edit</button>
                     </div>
                     <div className="co-review-pd">
                       <div className="co-review-pd-item">
@@ -598,17 +582,9 @@ export default function CheckoutPage() {
                         <strong>{DELIVERY_OPTIONS.find(d => d.id === delivery)?.time}</strong>
                       </div>
                     </div>
-
-                    {/* Final gateway notice on review step */}
                     {isGatewayPayment && (
                       <div style={{ padding: '0 1.25rem 1.25rem' }}>
-                        <div style={{
-                          display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
-                          padding: '1rem 1.25rem',
-                          background: 'rgba(233,30,140,0.04)',
-                          border: '1px solid rgba(233,30,140,0.15)',
-                          borderRadius: '0.875rem',
-                        }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem 1.25rem', background: 'rgba(233,30,140,0.04)', border: '1px solid rgba(233,30,140,0.15)', borderRadius: '0.875rem' }}>
                           <Lock size={15} style={{ color: '#e91e8c', flexShrink: 0, marginTop: '2px' }} />
                           <div>
                             <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 700, color: '#e91e8c', margin: '0 0 3px' }}>
@@ -633,12 +609,12 @@ export default function CheckoutPage() {
                     <ChevronLeft size={16} /> Back to Cart
                   </Link>
                 ) : (
-                  <button type="button" onClick={() => setStep(1)} className="co-back-link">
+                  <button type="button" onClick={() => setStep(1)} className="co-back-link" suppressHydrationWarning>
                     <ChevronLeft size={16} /> Back to Details
                   </button>
                 )}
 
-                <button type="submit" disabled={isPlacing} className="co-next-btn">
+                <button type="submit" disabled={isPlacing} className="co-next-btn" suppressHydrationWarning>
                   {isPlacing ? (
                     <><span className="co-btn-spinner" /> {isGatewayPayment ? 'Connecting…' : 'Processing…'}</>
                   ) : step === 1 ? (
@@ -656,7 +632,6 @@ export default function CheckoutPage() {
             <aside className="co-summary-col">
               <div className="co-summary-card">
                 <h3 className="co-summary-title">Order Summary</h3>
-
                 <div className="co-summary-items">
                   {items.map(item => (
                     <div key={item.product._id + item.selectedColor} className="co-summary-item">
@@ -701,20 +676,11 @@ export default function CheckoutPage() {
 
                 <div className="co-summary-total-row">
                   <span>Total</span>
-                  <span className="co-summary-total-price">
-                    ৳{total.toLocaleString('en-BD')}
-                  </span>
+                  <span className="co-summary-total-price">৳{total.toLocaleString('en-BD')}</span>
                 </div>
 
-                {/* Payment method preview */}
                 {payment !== 'cod' && (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.75rem', borderRadius: '0.75rem',
-                    background: 'rgba(233,30,140,0.04)',
-                    border: '1px solid rgba(233,30,140,0.12)',
-                    marginTop: '0.25rem',
-                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', borderRadius: '0.75rem', background: 'rgba(233,30,140,0.04)', border: '1px solid rgba(233,30,140,0.12)', marginTop: '0.25rem' }}>
                     <Lock size={13} style={{ color: '#e91e8c', flexShrink: 0 }} />
                     <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 600, color: '#e91e8c' }}>
                       Secured by SSLCommerz
