@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import {
-  Bell, ShoppingBag, X, Check,
+  Bell, ShoppingBag, X,
   CheckCheck, Trash2, Wifi, WifiOff,
   Users, AlertTriangle, CreditCard,
 } from 'lucide-react'
