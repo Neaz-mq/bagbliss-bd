@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import Order from '@/models/Order'
 import { sendOrderEmails } from '@/lib/email'
+import { serverEmit } from '@/lib/socket'
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +28,17 @@ export async function POST(req: NextRequest) {
       status:      'processing',
       paymentStatus: body.payment === 'cod' ? 'unpaid' : 'unpaid',
     })
+
+    // ── Emit to Socket Server ──────────────────────────────────────────
+    serverEmit('order:new', {
+      id:           order._id.toString(),
+      orderNumber:  order.orderNumber,
+      customerName: body.shipping.fullName,
+      total:        body.total,
+      payment:      body.payment,
+      items:        body.items.reduce((a: number, i: { quantity: number }) => a + i.quantity, 0),
+      createdAt:    order.createdAt.toISOString(),
+    }, 'admin').catch(err => console.error('[SOCKET]', err))
 
     // ── Send emails (non-blocking — never fails the order) ──────────────
     sendOrderEmails({

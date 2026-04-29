@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import ClientLayout from '@/components/layout/ClientLayout'
+import VisitorTracker from '@/components/VisitorTracker'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <SessionProvider>
+          <VisitorTracker />
           <Suspense fallback={null}>
             {/*
               ClientLayout checks the pathname:

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/cart/CartDrawer'
+import VisitorTracker from '@/components/VisitorTracker'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -23,6 +24,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {children}
       <Footer />
       <CartDrawer />
+      <VisitorTracker /> {/* ← Add this */}
     </>
   )
 }
