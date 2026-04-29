@@ -36,6 +36,27 @@ const VALID_COUPONS: Record<
   NEWGIRL20: { type: 'percent', value: 20 },
 }
 
+// ── Helper: safely resolve selectedColor to a plain string ────────────
+// selectedColor may arrive as a string OR as a color object {name, hex, stock, _id}
+function resolveColorName(color: unknown): string {
+  if (typeof color === 'string') return color
+  if (color && typeof color === 'object') {
+    const c = color as Record<string, unknown>
+    if (typeof c.name === 'string') return c.name
+    if (typeof c.hex === 'string') return c.hex
+  }
+  return 'Default'
+}
+
+function resolveColorHex(color: unknown, fallbackHex = '#E91E8C'): string {
+  if (typeof color === 'string') return fallbackHex // it's a name, not a hex
+  if (color && typeof color === 'object') {
+    const c = color as Record<string, unknown>
+    if (typeof c.hex === 'string') return c.hex
+  }
+  return fallbackHex
+}
+
 // ── Cart Item Row ─────────────────────────────
 function CartPageItem({
   item,
@@ -45,23 +66,27 @@ function CartPageItem({
   const { updateQuantity, removeItem } = useCartStore()
   const { toggleItem, isWishlisted } = useWishlistStore()
 
+  // Safely extract color name & hex regardless of whether selectedColor is
+  // a plain string or a color object {name, hex, stock, _id}
+  const colorName = resolveColorName(item.selectedColor)
+  const colorHex =
+    resolveColorHex(item.selectedColor) ||
+    item.product.colors.find((c) => c.name === colorName)?.hex ||
+    '#E91E8C'
+
   const currentPrice = item.price
   const totalPrice = currentPrice * item.quantity
 
   const handleRemove = () => {
-    removeItem(item.product._id, item.selectedColor)
+    removeItem(item.product._id, colorName)
     toast.success('Item removed from cart')
   }
 
   const handleMoveToWishlist = () => {
     toggleItem(item.product._id)
-    removeItem(item.product._id, item.selectedColor)
+    removeItem(item.product._id, colorName)
     toast.success('❤️ Moved to wishlist!')
   }
-
-  const colorHex =
-    item.product.colors.find((c) => c.name === item.selectedColor)?.hex ||
-    '#E91E8C'
 
   return (
     <div className="cart-page-item">
@@ -125,7 +150,8 @@ function CartPageItem({
                 className="cart-page-color-dot"
                 style={{ background: colorHex }}
               />
-              <span>{item.selectedColor}</span>
+              {/* ✅ Always renders a plain string, never an object */}
+              <span>{colorName}</span>
             </div>
           </div>
           <button
@@ -145,7 +171,7 @@ function CartPageItem({
               onClick={() =>
                 updateQuantity(
                   item.product._id,
-                  item.selectedColor,
+                  colorName,
                   item.quantity - 1
                 )
               }
@@ -160,7 +186,7 @@ function CartPageItem({
               onClick={() =>
                 updateQuantity(
                   item.product._id,
-                  item.selectedColor,
+                  colorName,
                   item.quantity + 1
                 )
               }
@@ -215,7 +241,6 @@ export default function CartPage() {
     'inside'
   )
 
-  // Mount check
   useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 0)
     return () => clearTimeout(timer)
@@ -247,10 +272,7 @@ export default function CartPage() {
 
     const coupon = VALID_COUPONS[couponCode.toUpperCase()]
     if (coupon) {
-      setAppliedCoupon({
-        code: couponCode.toUpperCase(),
-        ...coupon,
-      })
+      setAppliedCoupon({ code: couponCode.toUpperCase(), ...coupon })
       toast.success(
         `🎉 Coupon applied! ${coupon.type === 'percent' ? coupon.value + '% off' : CURRENCY_SYMBOL + coupon.value + ' off'}`
       )
@@ -349,7 +371,6 @@ export default function CartPage() {
         <div className="cart-page-layout">
           {/* ── Left: Items ──────────────────── */}
           <div className="cart-page-items-col">
-            {/* Items list */}
             <div className="cart-page-items-card">
               <div className="cart-page-items-header">
                 <h2 className="cart-page-items-title">
@@ -370,12 +391,16 @@ export default function CartPage() {
               </div>
 
               <div className="cart-page-items-list">
-                {items.map((item) => (
-                  <CartPageItem
-                    key={`${item.product._id}-${item.selectedColor}`}
-                    item={item}
-                  />
-                ))}
+                {items.map((item, i) => {
+                  // ✅ Key uses resolved string, never [object Object]
+                  const colorKey = resolveColorName(item.selectedColor)
+                  return (
+                    <CartPageItem
+                      key={`${item.product._id}-${colorKey}-${i}`}
+                      item={item}
+                    />
+                  )
+                })}
               </div>
             </div>
 
@@ -470,9 +495,7 @@ export default function CartPage() {
                   </div>
                   <div className="cart-delivery-info">
                     <span className="cart-delivery-label">Inside Dhaka</span>
-                    <span className="cart-delivery-time">
-                      1–2 business days
-                    </span>
+                    <span className="cart-delivery-time">1–2 business days</span>
                   </div>
                   <span className="cart-delivery-fee">
                     {subtotal >= FREE_SHIPPING_THRESHOLD
@@ -494,9 +517,7 @@ export default function CartPage() {
                   </div>
                   <div className="cart-delivery-info">
                     <span className="cart-delivery-label">Outside Dhaka</span>
-                    <span className="cart-delivery-time">
-                      3–5 business days
-                    </span>
+                    <span className="cart-delivery-time">3–5 business days</span>
                   </div>
                   <span className="cart-delivery-fee">
                     {subtotal >= FREE_SHIPPING_THRESHOLD
@@ -513,7 +534,6 @@ export default function CartPage() {
             <div className="cart-page-summary-card">
               <h2 className="cart-page-summary-title">Order Summary</h2>
 
-              {/* Price breakdown */}
               <div className="cart-page-summary-rows">
                 <div className="cart-page-summary-row">
                   <span>
@@ -528,15 +548,11 @@ export default function CartPage() {
                 <div className="cart-page-summary-row">
                   <span>
                     Delivery (
-                    {deliveryType === 'inside'
-                      ? 'Inside Dhaka'
-                      : 'Outside Dhaka'}
+                    {deliveryType === 'inside' ? 'Inside Dhaka' : 'Outside Dhaka'}
                     )
                   </span>
                   <span
-                    className={
-                      shippingFee === 0 ? 'cart-summary-free-text' : ''
-                    }
+                    className={shippingFee === 0 ? 'cart-summary-free-text' : ''}
                   >
                     {shippingFee === 0
                       ? 'FREE'
@@ -576,7 +592,6 @@ export default function CartPage() {
                 )}
               </div>
 
-              {/* Checkout Button */}
               <button
                 onClick={() => router.push('/checkout')}
                 className="cart-page-checkout-btn"
@@ -585,12 +600,10 @@ export default function CartPage() {
                 <ArrowRight size={20} />
               </button>
 
-              {/* COD Note */}
               <p className="cart-page-cod-note">
                 💵 Cash on Delivery also available at checkout
               </p>
 
-              {/* Trust Badges */}
               <div className="cart-page-trust">
                 <div className="cart-page-trust-item">
                   <Shield size={16} />
@@ -606,7 +619,6 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* Payment Methods */}
               <div className="cart-page-payment-methods">
                 <p className="cart-page-payment-label">We accept:</p>
                 <div className="cart-page-payment-badges">
@@ -619,7 +631,6 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* Need help? */}
             <div className="cart-page-help-card">
               <p className="cart-page-help-text">Need help with your order?</p>
               <Link href="/contact" className="cart-page-help-link">

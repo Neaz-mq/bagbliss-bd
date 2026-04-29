@@ -123,6 +123,17 @@ function ProductImage({
   )
 }
 
+// ── Helper: safely extract hex string from string | object ────────────
+function resolveHex(color: unknown): string {
+  if (typeof color === 'string') return color
+  if (color && typeof color === 'object') {
+    const c = color as Record<string, unknown>
+    if (typeof c.hex === 'string') return c.hex
+    if (typeof c.value === 'string') return c.value
+  }
+  return '#cccccc'
+}
+
 export default function ShopProductCard({ product, viewMode, index }: Props) {
   const [isHovered, setIsHovered] = useState(false)
   const [isAdding,  setIsAdding]  = useState(false)
@@ -318,22 +329,27 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
           <span className="shop-card-price">{price}</span>
           {original && <span className="shop-card-original">{original}</span>}
         </div>
+
+        {/* ✅ FIXED: color dots — safely resolve hex from string | object, use index in key */}
         {(product.colors?.length ?? 0) > 0 && (
           <div className="shop-card-colors">
-            {product.colors!.slice(0, 5).map((hex) => (
-              <span
-                key={hex}
-                className="shop-card-color-dot"
-                style={{
-                  background: hex,
-                  border:
-                    hex === '#f5f5f0' || hex === '#ffffff'
-                      ? '1.5px solid #e5e7eb'
-                      : '1.5px solid transparent',
-                }}
-                title={hex}
-              />
-            ))}
+            {product.colors!.slice(0, 5).map((color, i) => {
+              const hex = resolveHex(color)
+              return (
+                <span
+                  key={`${hex}-${i}`}
+                  className="shop-card-color-dot"
+                  style={{
+                    background: hex,
+                    border:
+                      hex === '#f5f5f0' || hex === '#ffffff'
+                        ? '1.5px solid #e5e7eb'
+                        : '1.5px solid transparent',
+                  }}
+                  title={hex}
+                />
+              )
+            })}
             {(product.colors?.length ?? 0) > 5 && (
               <span className="shop-card-colors-more">
                 +{product.colors!.length - 5}
