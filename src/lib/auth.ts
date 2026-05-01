@@ -6,7 +6,24 @@ import { MongoDBAdapter } from '@auth/mongodb-adapter'
 import clientPromise from '@/lib/mongoClient'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
-import { authConfig } from '@/auth.config' // ← updated path
+import { authConfig } from '@/auth.config'
+
+// ── helper: verify Google ID token with Google's public endpoint ──────────
+async function verifyGoogleToken(idToken: string) {
+  const res = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`
+  )
+  if (!res.ok) return null
+  const payload = await res.json()
+  // Make sure this token was issued for YOUR app
+  if (payload.aud !== process.env.AUTH_GOOGLE_ID) return null
+  return {
+    id: payload.sub,
+    name: payload.name,
+    email: payload.email,
+    image: payload.picture,
+  }
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -76,6 +93,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           image: user.avatar,
           role: user.role,
         }
+      },
+    }),
+    // ── Google One Tap ────────────────────────────────────────────────────
+    Credentials({
+      id: 'google-one-tap',
+      name: 'Google One Tap',
+      credentials: { credential: { type: 'text' } },
+      async authorize(creds) {
+        if (!creds?.credential) return null
+
+        const user = await verifyGoogleToken(creds.credential as string)
+        if (!user) return null
+
+        // Upsert the user in MongoDB
+        const db = await clientPromise
+        const users = db.db('bagbliss').collection('users')
+
+        await users.updateOne(
+          { email: user.email },
+          {
+            $setOnInsert: { createdAt: new Date(), role: 'user' },
+            $set: {
+              name: user.name,
+              image: user.image,
+              provider: 'google',
+            },
+          },
+          { upsert: true }
+        )
+
+        const dbUser = await users.findOne({ email: user.email })
+
+        return { ...user, role: dbUser?.role ?? 'user' }
       },
     }),
   ],
