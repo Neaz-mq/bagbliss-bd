@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useSession, signIn } from 'next-auth/react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 declare global {
   interface Window {
@@ -19,11 +19,11 @@ declare global {
 }
 
 export default function GoogleOneTap() {
-  const { status } = useSession()
+  const { status, update } = useSession()
   const pathname = usePathname()
+  const router = useRouter()
 
-  // Skip on admin / auth pages
-  const isAdmin   = pathname.startsWith('/admin')
+  const isAdmin    = pathname.startsWith('/admin')
   const isAuthPage = pathname.startsWith('/login') ||
                      pathname.startsWith('/register') ||
                      pathname.startsWith('/forgot-password')
@@ -42,46 +42,46 @@ export default function GoogleOneTap() {
 
       window.google.accounts.id.initialize({
         client_id: clientId,
-        // When user picks their account, sign in via our NextAuth credentials provider
         callback: async ({ credential }: { credential: string }) => {
-          await signIn('google-one-tap', {
+          const result = await signIn('google-one-tap', {
             credential,
             redirect: false,
           })
-          // Hard-refresh so session state propagates everywhere
-          window.location.reload()
+
+          if (result?.ok) {
+            await update()    // ← refreshes useSession() in Navbar instantly
+            router.refresh()  // ← re-renders server components with new session
+          }
         },
-        use_fedcm_for_prompt: true,   // required for Chrome 115+
+        // ✅ Fixed: was true which causes FedCM NetworkError on localhost
+        use_fedcm_for_prompt: false,
         cancel_on_tap_outside: false,
       })
 
       window.google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // Browser suppressed the prompt (user previously dismissed it, etc.)
           console.log('[GoogleOneTap] prompt suppressed by browser')
         }
       })
     }
 
-    // Inject GSI script once
     const SCRIPT_ID = 'google-gsi'
     if (!document.getElementById(SCRIPT_ID)) {
       const script = document.createElement('script')
-      script.id   = SCRIPT_ID
-      script.src  = 'https://accounts.google.com/gsi/client'
+      script.id    = SCRIPT_ID
+      script.src   = 'https://accounts.google.com/gsi/client'
       script.async = true
       script.defer = true
       script.onload = init
       document.head.appendChild(script)
     } else {
-      // Script already present (e.g. hot-reload)
       init()
     }
 
     return () => {
       window.google?.accounts.id.cancel()
     }
-  }, [status, isAdmin, isAuthPage])
+  }, [status, isAdmin, isAuthPage, update, router])
 
-  return null  // no visible markup — Google renders its own browser UI
+  return null
 }

@@ -15,8 +15,8 @@ async function verifyGoogleToken(idToken: string) {
   )
   if (!res.ok) return null
   const payload = await res.json()
-  // Make sure this token was issued for YOUR app
-  if (payload.aud !== process.env.AUTH_GOOGLE_ID) return null
+  // ✅ Fixed: was AUTH_GOOGLE_ID which doesn't exist in .env.local
+  if (payload.aud !== process.env.GOOGLE_CLIENT_ID) return null
   return {
     id: payload.sub,
     name: payload.name,
