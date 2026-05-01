@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSession, signIn } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -10,8 +10,14 @@ declare global {
       accounts: {
         id: {
           initialize: (config: object) => void
-          prompt: (callback?: (n: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void
+          prompt: (callback?: (n: {
+            isNotDisplayed: () => boolean
+            isSkippedMoment: () => boolean
+            isDismissedMoment: () => boolean
+            getMomentType: () => string
+          }) => void) => void
           cancel: () => void
+          renderButton: (parent: HTMLElement, options: object) => void
         }
       }
     }
@@ -22,14 +28,18 @@ export default function GoogleOneTap() {
   const { status, update } = useSession()
   const pathname = usePathname()
   const router = useRouter()
+  const initialized = useRef(false)
 
   const isAdmin    = pathname.startsWith('/admin')
   const isAuthPage = pathname.startsWith('/login') ||
                      pathname.startsWith('/register') ||
                      pathname.startsWith('/forgot-password')
 
+  const shouldShow = status === 'unauthenticated' && !isAdmin && !isAuthPage
+
   useEffect(() => {
-    if (status !== 'unauthenticated' || isAdmin || isAuthPage) return
+    if (!shouldShow) return
+    if (initialized.current) return
 
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
     if (!clientId) {
@@ -37,30 +47,58 @@ export default function GoogleOneTap() {
       return
     }
 
+    const handleCredentialResponse = async ({ credential }: { credential: string }) => {
+      try {
+        const result = await signIn('google-one-tap', {
+          credential,
+          redirect: false,
+        })
+        if (result?.ok) {
+          await update()
+          router.refresh()
+        } else {
+          console.error('[GoogleOneTap] signIn failed:', result?.error)
+        }
+      } catch (err) {
+        console.error('[GoogleOneTap] error:', err)
+      }
+    }
+
     const init = () => {
-      if (!window.google) return
+      if (!window.google?.accounts?.id) return
+      initialized.current = true
 
       window.google.accounts.id.initialize({
         client_id: clientId,
-        callback: async ({ credential }: { credential: string }) => {
-          const result = await signIn('google-one-tap', {
-            credential,
-            redirect: false,
-          })
-
-          if (result?.ok) {
-            await update()    // ← refreshes useSession() in Navbar instantly
-            router.refresh()  // ← re-renders server components with new session
-          }
-        },
-        // ✅ Fixed: was true which causes FedCM NetworkError on localhost
-        use_fedcm_for_prompt: false,
+        callback: handleCredentialResponse,
+        use_fedcm_for_prompt: true,   // ✅ FedCM enabled — shows native popup
         cancel_on_tap_outside: false,
+        auto_select: false,
+        itp_support: true,
+        context: 'signin',
       })
 
       window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          console.log('[GoogleOneTap] prompt suppressed by browser')
+        if (notification.isNotDisplayed()) {
+          console.log('[GoogleOneTap] not displayed:', notification.getMomentType())
+          // FedCM blocked or no Google account — show fallback button
+          const container = document.getElementById('google-one-tap-btn')
+          if (container && window.google?.accounts?.id) {
+            window.google.accounts.id.renderButton(container, {
+              type: 'standard',
+              shape: 'pill',
+              theme: 'outline',
+              text: 'continue_with',
+              size: 'large',
+              logo_alignment: 'left',
+              width: 240,
+            })
+            container.style.display = 'flex'
+          }
+        } else if (notification.isSkippedMoment()) {
+          console.log('[GoogleOneTap] skipped:', notification.getMomentType())
+        } else if (notification.isDismissedMoment()) {
+          console.log('[GoogleOneTap] dismissed:', notification.getMomentType())
         }
       })
     }
@@ -73,15 +111,38 @@ export default function GoogleOneTap() {
       script.async = true
       script.defer = true
       script.onload = init
+      script.onerror = () => console.error('[GoogleOneTap] failed to load GSI script')
       document.head.appendChild(script)
-    } else {
+    } else if (window.google?.accounts?.id) {
       init()
+    } else {
+      const iv = setInterval(() => {
+        if (window.google?.accounts?.id) { clearInterval(iv); init() }
+      }, 100)
+      setTimeout(() => clearInterval(iv), 5000)
     }
 
     return () => {
       window.google?.accounts.id.cancel()
     }
-  }, [status, isAdmin, isAuthPage, update, router])
+  }, [shouldShow, update, router])
 
-  return null
+  if (!shouldShow) return null
+
+  // Hidden fallback button — only shown if FedCM popup fails
+  return (
+    <div
+      suppressHydrationWarning
+      id="google-one-tap-btn"
+      style={{
+        position: 'fixed',
+        bottom: '24px',
+        right: '24px',
+        zIndex: 9999,
+        display: 'none',      // stays hidden unless prompt() fails
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    />
+  )
 }

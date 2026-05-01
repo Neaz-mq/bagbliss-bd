@@ -15,7 +15,6 @@ async function verifyGoogleToken(idToken: string) {
   )
   if (!res.ok) return null
   const payload = await res.json()
-  // ✅ Fixed: was AUTH_GOOGLE_ID which doesn't exist in .env.local
   if (payload.aud !== process.env.GOOGLE_CLIENT_ID) return null
   return {
     id: payload.sub,
@@ -95,6 +94,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       },
     }),
+
     // ── Google One Tap ────────────────────────────────────────────────────
     Credentials({
       id: 'google-one-tap',
@@ -103,51 +103,77 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(creds) {
         if (!creds?.credential) return null
 
-        const user = await verifyGoogleToken(creds.credential as string)
-        if (!user) return null
+        // Verify the Google ID token
+        const googleUser = await verifyGoogleToken(creds.credential as string)
+        if (!googleUser) {
+          console.error('[google-one-tap] Token verification failed')
+          return null
+        }
 
-        // Upsert the user in MongoDB
         const db = await clientPromise
         const users = db.db('bagbliss').collection('users')
 
+        // Upsert: create if not exists, always update name/image/provider
         await users.updateOne(
-          { email: user.email },
+          { email: googleUser.email },
           {
-            $setOnInsert: { createdAt: new Date(), role: 'user' },
+            $setOnInsert: {
+              createdAt: new Date(),
+              role: 'user',
+              emailVerified: new Date(),
+            },
             $set: {
-              name: user.name,
-              image: user.image,
+              name: googleUser.name,
+              image: googleUser.image,
               provider: 'google',
+              googleId: googleUser.id,
             },
           },
           { upsert: true }
         )
 
-        const dbUser = await users.findOne({ email: user.email })
+        const dbUser = await users.findOne({ email: googleUser.email })
+        if (!dbUser) return null
 
-        return { ...user, role: dbUser?.role ?? 'user' }
+        return {
+          id: dbUser._id.toString(),
+          name: googleUser.name,
+          email: googleUser.email,
+          image: googleUser.image,
+          role: dbUser.role ?? 'user',
+        }
       },
     }),
   ],
+
   callbacks: {
     async jwt({ token, user, account }) {
+      // On initial sign-in, attach user fields to the token
       if (user) {
-        token.id = user.id
+        token.id   = user.id
         token.role = (user as { role?: string }).role ?? 'user'
       }
-      if (account?.provider === 'google' || account?.provider === 'facebook') {
+
+      // For OAuth providers (Google / Facebook), sync role from DB
+      // (google-one-tap uses Credentials so account?.provider = 'google-one-tap')
+      if (
+        account?.provider === 'google' ||
+        account?.provider === 'facebook'
+      ) {
         await connectDB()
         const dbUser = await User.findOne({ email: token.email })
         if (dbUser) {
-          token.id = dbUser._id.toString()
+          token.id   = dbUser._id.toString()
           token.role = dbUser.role
         }
       }
+
       return token
     },
+
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string
+        session.user.id   = token.id as string
         session.user.role = token.role as string
       }
       return session
