@@ -9,7 +9,7 @@ import AdminNotifications from './AdminNotifications'
 interface Props { onMenuClick: () => void }
 
 export default function AdminTopbar({ onMenuClick }: Props) {
-  const { data: session, status } = useSession()
+  const { data: session} = useSession()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mounted, setMounted] = useState(false)           // ✅ add this
   const dropdownRef = useRef<HTMLDivElement>(null)
