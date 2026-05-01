@@ -1,59 +1,55 @@
-'use client'  
+'use client'
 
 import Link from 'next/link'
 import {
-  ShoppingBag,
-  MapPin,
-  Phone,
-  Mail,
-  Facebook,
-  Instagram,
-  Youtube,
-  ArrowRight,
-  
+  ShoppingBag, MapPin, Phone, Mail,
+  Facebook, Instagram, Youtube, ArrowRight,
 } from 'lucide-react'
 import { ROUTES } from '@/constants'
 
-// ── Footer Links Data ─────────────────────────
+/**
+ * ── Footer Links Data ─────────────────────────────────────────────────────
+ * Separating data from JSX makes the component cleaner and easier to update.
+ */
+
 const SHOP_LINKS = [
-  { label: 'All Bags', href: ROUTES.shop },
+  { label: 'All Bags',       href: ROUTES.shop },
   { label: 'Mini Crossbody', href: '/shop?category=mini-crossbody' },
-  { label: 'Chain Strap', href: '/shop?category=chain-strap' },
-  { label: 'Leather Bags', href: '/shop?category=leather' },
-  { label: 'Flash Sale ⚡', href: '/shop?filter=flash-sale' },
-  { label: 'New Arrivals', href: '/shop?sort=newest' },
+  { label: 'Chain Strap',    href: '/shop?category=chain-strap' },
+  { label: 'Leather Bags',   href: '/shop?category=leather' },
+  { label: 'Flash Sale ⚡',  href: '/shop?filter=flash-sale' },
+  { label: 'New Arrivals',   href: '/shop?sort=newest' },
 ]
 
 const ACCOUNT_LINKS = [
   { label: 'My Account', href: ROUTES.account },
-  { label: 'My Orders', href: ROUTES.orders },
-  { label: 'Track Order', href: ROUTES.trackOrder },
-  { label: 'Wishlist', href: ROUTES.wishlist },
-  { label: 'Login', href: ROUTES.login },
-  { label: 'Register', href: ROUTES.register },
+  { label: 'My Orders',  href: ROUTES.orders },
+  { label: 'Track Order',href: ROUTES.trackOrder },
+  { label: 'Wishlist',   href: ROUTES.wishlist },
+  { label: 'Login',      href: ROUTES.login },
+  { label: 'Register',   href: ROUTES.register },
 ]
 
 const HELP_LINKS = [
-  { label: 'FAQ', href: '/faq' },
-  { label: 'Shipping Policy', href: '/shipping' },
-  { label: 'Return Policy', href: '/returns' },
-  { label: 'Privacy Policy', href: '/privacy' },
-  { label: 'Terms of Service', href: '/terms' },
-  { label: 'Contact Us', href: '/contact' },
+  { label: 'FAQ',               href: '/faq' },
+  { label: 'Shipping Policy',   href: '/shipping' },
+  { label: 'Return Policy',     href: '/returns' },
+  { label: 'Privacy Policy',    href: '/privacy' },
+  { label: 'Terms of Service',  href: '/terms' },
+  { label: 'Contact Us',        href: '/contact' },
 ]
 
-// ── Social Icon ───────────────────────────────
+/**
+ * ── Sub-components ────────────────────────────────────────────────────────
+ */
+
 function SocialLink({
-  href,
-  icon: Icon,
-  label,
+  href, icon: Icon, label,
 }: {
-  href: string
-  icon: React.ElementType
-  label: string
+  href: string; icon: React.ElementType; label: string
 }) {
   return (
-    <a                          // ✅ Fix 1: was missing opening <a tag
+    <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
@@ -65,10 +61,8 @@ function SocialLink({
   )
 }
 
-// ── Footer Column ─────────────────────────────
 function FooterColumn({
-  title,
-  links,
+  title, links,
 }: {
   title: string
   links: { label: string; href: string }[]
@@ -77,8 +71,8 @@ function FooterColumn({
     <div className="footer-column">
       <h4 className="footer-column-title">{title}</h4>
       <ul className="footer-links-list">
-        {links.map((link) => (
-          <li key={link.href}>
+        {links.map((link, index) => (
+          <li key={`${link.href}-${index}`}>
             <Link href={link.href} className="footer-link">
               <ArrowRight size={12} />
               {link.label}
@@ -90,13 +84,17 @@ function FooterColumn({
   )
 }
 
-// ── Footer Component ──────────────────────────
+/**
+ * ── Main Footer ───────────────────────────────────────────────────────────
+ */
+
 export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
     <footer className="footer">
-      {/* Top Wave */}
+
+      {/* Top Decorative Wave */}
       <div className="footer-wave">
         <svg
           viewBox="0 0 1440 60"
@@ -113,9 +111,9 @@ export default function Footer() {
       <div className="footer-main">
         <div className="container-bagbliss">
           <div className="footer-grid">
-            {/* Brand Column */}
+
+            {/* Brand & Info Column */}
             <div className="footer-brand-column">
-              {/* Logo */}
               <Link href="/" className="footer-logo">
                 <ShoppingBag size={24} strokeWidth={1.5} />
                 <span>BagBliss BD</span>
@@ -123,11 +121,11 @@ export default function Footer() {
 
               <p className="footer-brand-desc">
                 Bangladesh&apos;s most trendy mini crossbody bag store.
-                Premium imported bags at prices you&apos;ll love. Fast
-                delivery across all 64 districts.
+                Premium imported bags at prices you&apos;ll love.
+                Fast delivery across all 64 districts.
               </p>
 
-              {/* Contact Info */}
+              {/* Contact Details */}
               <div className="footer-contact">
                 <div className="footer-contact-item">
                   <MapPin size={15} />
@@ -141,7 +139,7 @@ export default function Footer() {
                 </div>
                 <div className="footer-contact-item">
                   <Mail size={15} />
-                  <a                    
+                  <a
                     href="mailto:neazmorshed666@gmail.com"
                     className="footer-contact-link"
                   >
@@ -150,37 +148,25 @@ export default function Footer() {
                 </div>
               </div>
 
-              {/* Social Links */}
+              {/* Social Icons */}
               <div className="footer-social">
-                <SocialLink
-                  href="https://facebook.com"
-                  icon={Facebook}
-                  label="Facebook"
-                />
-                <SocialLink
-                  href="https://instagram.com"
-                  icon={Instagram}
-                  label="Instagram"
-                />
-                <SocialLink
-                  href="https://youtube.com"
-                  icon={Youtube}
-                  label="YouTube"
-                />
+                <SocialLink href="https://facebook.com"  icon={Facebook}  label="Facebook"  />
+                <SocialLink href="https://instagram.com" icon={Instagram} label="Instagram" />
+                <SocialLink href="https://youtube.com"   icon={Youtube}   label="YouTube"   />
               </div>
             </div>
 
-            {/* Links Columns */}
-            <FooterColumn title="Shop" links={SHOP_LINKS} />
+            {/* Navigation Columns */}
+            <FooterColumn title="Shop"       links={SHOP_LINKS}    />
             <FooterColumn title="My Account" links={ACCOUNT_LINKS} />
-            <FooterColumn title="Help & Info" links={HELP_LINKS} />
+            <FooterColumn title="Help & Info"links={HELP_LINKS}    />
           </div>
 
-          {/* Newsletter */}
+          {/* Newsletter Section */}
           <div className="footer-newsletter">
             <div className="footer-newsletter-left">
               <h3 className="footer-newsletter-title">
-                Get Exclusive Deals & New Arrivals 🎁
+                Get Exclusive Deals &amp; New Arrivals 🎁
               </h3>
               <p className="footer-newsletter-subtitle">
                 Join 5,000+ shoppers. Get 10% off your first order!
@@ -188,21 +174,26 @@ export default function Footer() {
             </div>
             <form
               className="footer-newsletter-form"
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={e => e.preventDefault()}
             >
               <input
                 type="email"
                 placeholder="Enter your email address"
                 className="footer-newsletter-input"
+                suppressHydrationWarning
               />
-              <button type="submit" className="footer-newsletter-btn">
+              <button
+                type="submit"
+                className="footer-newsletter-btn"
+                suppressHydrationWarning
+              >
                 Subscribe
                 <ArrowRight size={16} />
               </button>
             </form>
           </div>
 
-          {/* Payment Methods */}
+          {/* Payment Badges */}
           <div className="footer-payment">
             <span className="footer-payment-label">We Accept:</span>
             <div className="footer-payment-methods">
@@ -217,18 +208,21 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom Bar */}
+      {/* Copyright Bar */}
       <div className="footer-bottom">
         <div className="container-bagbliss footer-bottom-inner">
           <p className="footer-copyright">
-            © {currentYear} BagBliss BD. All rights reserved.
+            &copy; {currentYear} BagBliss BD. All rights reserved.
           </p>
-         <p className="footer-made-with">
-  Designed & Developed by{' '}
-  <span className="font-medium text-pink-500">Neaz Morshed</span>
-</p>
+          <p className="footer-made-with">
+            Designed &amp; Developed by{' '}
+            <span style={{ fontWeight: 600, color: '#e91e8c' }}>
+              Neaz Morshed
+            </span>
+          </p>
         </div>
       </div>
+
     </footer>
   )
 }

@@ -7,8 +7,7 @@ import ProductCard from '@/components/product/ProductCard'
 import ProductSkeleton from '@/components/product/ProductSkeleton'
 import { IProduct } from '@/types'
 
-
-// ── Mock products for now (will be replaced with real API) ──
+// ── Mock products ──────────────────────────────────────────────────────────
 const MOCK_PRODUCTS: IProduct[] = [
   {
     _id: '1',
@@ -22,8 +21,8 @@ const MOCK_PRODUCTS: IProduct[] = [
     tags: ['trending', 'new'],
     colors: [
       { name: 'Pearl White', hex: '#f8f4f0', images: [], stock: 15 },
-      { name: 'Blush Pink', hex: '#E91E8C', images: [], stock: 10 },
-      { name: 'Midnight', hex: '#1A1A2E', images: [], stock: 8 },
+      { name: 'Blush Pink',  hex: '#E91E8C', images: [], stock: 10 },
+      { name: 'Midnight',    hex: '#1A1A2E', images: [], stock: 8  },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Pearl Mini Crossbody' },
     status: 'active',
@@ -47,7 +46,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     tags: ['luxury', 'trending'],
     colors: [
       { name: 'Champagne', hex: '#C9A84C', images: [], stock: 12 },
-      { name: 'Black', hex: '#1A1A2E', images: [], stock: 7 },
+      { name: 'Black',     hex: '#1A1A2E', images: [], stock: 7  },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Gold Chain Sling' },
     status: 'active',
@@ -73,8 +72,8 @@ const MOCK_PRODUCTS: IProduct[] = [
     colors: [
       { name: 'Hot Pink', hex: '#E91E8C', images: [], stock: 20 },
       { name: 'Sky Blue', hex: '#3b82f6', images: [], stock: 15 },
-      { name: 'Mint', hex: '#10b981', images: [], stock: 10 },
-      { name: 'Lilac', hex: '#8b5cf6', images: [], stock: 8 },
+      { name: 'Mint',     hex: '#10b981', images: [], stock: 10 },
+      { name: 'Lilac',    hex: '#8b5cf6', images: [], stock: 8  },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Candy Quilted Bag' },
     status: 'active',
@@ -97,7 +96,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     category: 'Leather',
     tags: ['vintage', 'premium'],
     colors: [
-      { name: 'Tan Brown', hex: '#92400e', images: [], stock: 6 },
+      { name: 'Tan Brown',  hex: '#92400e', images: [], stock: 6 },
       { name: 'Dark Brown', hex: '#451a03', images: [], stock: 4 },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Vintage Leather Satchel' },
@@ -122,7 +121,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     tags: ['boho', 'casual'],
     colors: [
       { name: 'Natural', hex: '#d4b896', images: [], stock: 25 },
-      { name: 'Navy', hex: '#1e3a5f', images: [], stock: 18 },
+      { name: 'Navy',    hex: '#1e3a5f', images: [], stock: 18 },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Boho Canvas Tote' },
     status: 'active',
@@ -146,8 +145,8 @@ const MOCK_PRODUCTS: IProduct[] = [
     tags: ['party', 'glam'],
     colors: [
       { name: 'Gold Glitter', hex: '#C9A84C', images: [], stock: 12 },
-      { name: 'Silver', hex: '#9ca3af', images: [], stock: 10 },
-      { name: 'Rose Gold', hex: '#f9a8d4', images: [], stock: 8 },
+      { name: 'Silver',       hex: '#9ca3af', images: [], stock: 10 },
+      { name: 'Rose Gold',    hex: '#f9a8d4', images: [], stock: 8  },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Party Glitter Clutch' },
     status: 'active',
@@ -211,21 +210,20 @@ const MOCK_PRODUCTS: IProduct[] = [
   },
 ]
 
-// ── Tab Filter ────────────────────────────────
+// ── Tab Filter ─────────────────────────────────────────────────────────────
 const TABS = [
-  { label: 'All', value: 'all' },
-  { label: '🔥 Trending', value: 'trending' },
-  { label: '✨ New Arrivals', value: 'new' },
-  { label: '⚡ Flash Sale', value: 'sale' },
+  { label: 'All',          value: 'all'      },
+  { label: '🔥 Trending',  value: 'trending' },
+  { label: '✨ New Arrivals', value: 'new'   },
+  { label: '⚡ Flash Sale', value: 'sale'    },
 ]
 
 export default function FeaturedProducts() {
-  const [activeTab, setActiveTab] = useState('all')
-  const [isLoading, setIsLoading] = useState(true)
-  const [products, setProducts] = useState<IProduct[]>([])
+  const [activeTab,  setActiveTab]  = useState('all')
+  const [isLoading,  setIsLoading]  = useState(true)
+  const [products,   setProducts]   = useState<IProduct[]>([])
 
   useEffect(() => {
-    // Simulate API loading
     const timer = setTimeout(() => {
       setProducts(MOCK_PRODUCTS)
       setIsLoading(false)
@@ -234,16 +232,23 @@ export default function FeaturedProducts() {
   }, [])
 
   const filteredProducts = products.filter((p) => {
-    if (activeTab === 'all') return true
+    if (activeTab === 'all')      return true
     if (activeTab === 'trending') return p.soldCount > 150
-    if (activeTab === 'new') return p.tags.includes('new')
-    if (activeTab === 'sale') return p.isFlashSale
+    if (activeTab === 'new')      return p.tags.includes('new')
+    if (activeTab === 'sale')     return p.isFlashSale
     return true
   })
+
+  const handleTabClick = (value: string) => {
+    setIsLoading(true)
+    setActiveTab(value)
+    setTimeout(() => setIsLoading(false), 300)
+  }
 
   return (
     <section className="section featured-section">
       <div className="container-bagbliss">
+
         {/* Header */}
         <div className="featured-header">
           <div className="featured-header-left">
@@ -266,11 +271,8 @@ export default function FeaturedProducts() {
           {TABS.map((tab) => (
             <button
               key={tab.value}
-              onClick={() => {
-                setIsLoading(true)
-                setActiveTab(tab.value)
-                setTimeout(() => setIsLoading(false), 300)
-              }}
+              type="button"                             // ✅ explicit type prevents form submit
+              onClick={() => handleTabClick(tab.value)} // ✅ extracted handler, no inline object
               className={`featured-tab ${activeTab === tab.value ? 'featured-tab-active' : ''}`}
             >
               {tab.label}
@@ -281,9 +283,7 @@ export default function FeaturedProducts() {
         {/* Products Grid */}
         <div className="products-grid">
           {isLoading
-            ? Array.from({ length: 8 }).map((_, i) => (
-                <ProductSkeleton key={i} />
-              ))
+            ? Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)
             : filteredProducts.map((product, i) => (
                 <ProductCard
                   key={product._id}
@@ -307,4 +307,3 @@ export default function FeaturedProducts() {
     </section>
   )
 }
-

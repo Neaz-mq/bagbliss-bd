@@ -15,8 +15,12 @@ const EMIT_SECRET    = process.env.EMIT_SECRET || 'bagbliss-socket-secret-2026'
 // ── Socket.IO setup ───────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin:  [ALLOWED_ORIGIN, 'http://localhost:3000', 'https://bagbliss-bd.vercel.app'],
-    methods: ['GET', 'POST'],
+    origin: [
+      'http://localhost:3000',
+      'https://bagbliss-bd.vercel.app',
+      ALLOWED_ORIGIN,
+    ],
+    methods:     ['GET', 'POST'],
     credentials: true,
   },
   pingTimeout:  60000,
@@ -90,7 +94,7 @@ io.on('connection', (socket) => {
     onlineVisitors.set(socket.id, { page, joinedAt: new Date() })
     // Notify admins of visitor count update
     io.to('admin').emit('visitors:update', {
-      count:   onlineVisitors.size,
+      count:    onlineVisitors.size,
       visitors: [...onlineVisitors.values()],
     })
   })

@@ -68,6 +68,17 @@ const PAYMENT_METHODS = [
 const FREE_SHIPPING_THRESHOLD = 1500
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+// ✅ Fix: helper to safely get color name whether selectedColor is string or object
+function getColorName(selectedColor: unknown): string {
+  if (!selectedColor) return ''
+  if (typeof selectedColor === 'string') return selectedColor
+  if (typeof selectedColor === 'object' && selectedColor !== null && 'name' in selectedColor) {
+    return (selectedColor as { name: string }).name
+  }
+  return ''
+}
+
 function ItemPlaceholder() {
   return (
     <div className="co-item-placeholder">
@@ -169,7 +180,7 @@ export default function CheckoutPage() {
       name:      item.product.name,
       price:     item.price,
       quantity:  item.quantity,
-      color:     item.selectedColor ?? '',
+      color:     getColorName(item.selectedColor), // ✅ Fix: send string not object
       image:     item.product.mainImage?.url ?? '',
     })),
     shipping: {
@@ -339,7 +350,7 @@ export default function CheckoutPage() {
                           {...register('fullName')}
                           className={`co-input ${errors.fullName ? 'co-input-error' : ''}`}
                           placeholder="Fatima Rahman"
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         />
                         {errors.fullName && <span className="co-field-error"><AlertCircle size={12} /> {errors.fullName.message}</span>}
                       </div>
@@ -351,7 +362,7 @@ export default function CheckoutPage() {
                           className={`co-input ${errors.phone ? 'co-input-error' : ''}`}
                           placeholder="01XXXXXXXXX"
                           type="tel"
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         />
                         {errors.phone && <span className="co-field-error"><AlertCircle size={12} /> {errors.phone.message}</span>}
                       </div>
@@ -363,7 +374,7 @@ export default function CheckoutPage() {
                           className={`co-input ${errors.email ? 'co-input-error' : ''}`}
                           placeholder="your@email.com"
                           type="email"
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         />
                         {errors.email && <span className="co-field-error"><AlertCircle size={12} /> {errors.email.message}</span>}
                       </div>
@@ -373,7 +384,7 @@ export default function CheckoutPage() {
                         <select
                           {...register('division')}
                           className={`co-input co-select ${errors.division ? 'co-input-error' : ''}`}
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         >
                           <option value="">Select Division</option>
                           {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -387,7 +398,7 @@ export default function CheckoutPage() {
                           {...register('district')}
                           className={`co-input ${errors.district ? 'co-input-error' : ''}`}
                           placeholder="e.g. Dhaka"
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         />
                         {errors.district && <span className="co-field-error"><AlertCircle size={12} /> {errors.district.message}</span>}
                       </div>
@@ -398,7 +409,7 @@ export default function CheckoutPage() {
                           {...register('thana')}
                           className={`co-input ${errors.thana ? 'co-input-error' : ''}`}
                           placeholder="e.g. Gulshan"
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         />
                         {errors.thana && <span className="co-field-error"><AlertCircle size={12} /> {errors.thana.message}</span>}
                       </div>
@@ -410,7 +421,7 @@ export default function CheckoutPage() {
                           className={`co-input co-textarea ${errors.address ? 'co-input-error' : ''}`}
                           placeholder="House no, Road no, Area, Landmark…"
                           rows={3}
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         />
                         {errors.address && <span className="co-field-error"><AlertCircle size={12} /> {errors.address.message}</span>}
                       </div>
@@ -422,7 +433,7 @@ export default function CheckoutPage() {
                           className={`co-input ${errors.postalCode ? 'co-input-error' : ''}`}
                           placeholder="1212"
                           maxLength={4}
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         />
                         {errors.postalCode && <span className="co-field-error"><AlertCircle size={12} /> {errors.postalCode.message}</span>}
                       </div>
@@ -434,7 +445,7 @@ export default function CheckoutPage() {
                           className="co-input co-textarea"
                           placeholder="Special instructions, color preferences…"
                           rows={2}
-                          suppressHydrationWarning  // ← fix
+                          suppressHydrationWarning
                         />
                       </div>
                     </div>
@@ -455,7 +466,7 @@ export default function CheckoutPage() {
                             key={opt.id} type="button"
                             onClick={() => setDelivery(opt.id)}
                             className={`co-delivery-opt ${active ? 'co-delivery-opt-active' : ''}`}
-                            suppressHydrationWarning  // ← fix
+                            suppressHydrationWarning
                           >
                             <div className={`co-delivery-radio ${active ? 'co-delivery-radio-active' : ''}`}>
                               {active && <div className="co-delivery-radio-dot" />}
@@ -496,7 +507,7 @@ export default function CheckoutPage() {
                             key={pm.id} type="button"
                             onClick={() => setPayment(pm.id)}
                             className={`co-payment-opt ${active ? 'co-payment-opt-active' : ''}`}
-                            suppressHydrationWarning  // ← fix
+                            suppressHydrationWarning
                           >
                             <div className="co-payment-icon" style={{ background: pm.color }}>
                               <Icon size={18} color="white" />
@@ -543,7 +554,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="co-review-items">
                       {items.map(item => (
-                        <div key={item.product._id + item.selectedColor} className="co-review-item">
+                        <div key={item.product._id + getColorName(item.selectedColor)} className="co-review-item"> {/* ✅ Fix */}
                           <div className="co-review-item-img">
                             {item.product.mainImage?.url ? (
                               <Image src={item.product.mainImage.url} alt={item.product.name} fill sizes="72px" className="co-review-item-photo" />
@@ -551,7 +562,7 @@ export default function CheckoutPage() {
                           </div>
                           <div className="co-review-item-info">
                             <p className="co-review-item-name">{item.product.name}</p>
-                            <p className="co-review-item-color">Color: {item.selectedColor}</p>
+                            <p className="co-review-item-color">Color: {getColorName(item.selectedColor)}</p> {/* ✅ Fix */}
                             <p className="co-review-item-qty">Qty: {item.quantity}</p>
                           </div>
                           <span className="co-review-item-price">
@@ -634,7 +645,7 @@ export default function CheckoutPage() {
                 <h3 className="co-summary-title">Order Summary</h3>
                 <div className="co-summary-items">
                   {items.map(item => (
-                    <div key={item.product._id + item.selectedColor} className="co-summary-item">
+                    <div key={item.product._id + getColorName(item.selectedColor)} className="co-summary-item"> {/* ✅ Fix */}
                       <div className="co-summary-item-img">
                         {item.product.mainImage?.url ? (
                           <Image src={item.product.mainImage.url} alt={item.product.name} fill sizes="56px" className="co-summary-item-photo" />
@@ -643,7 +654,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="co-summary-item-info">
                         <p className="co-summary-item-name">{item.product.name}</p>
-                        <p className="co-summary-item-variant">{item.selectedColor}</p>
+                        <p className="co-summary-item-variant">{getColorName(item.selectedColor)}</p> {/* ✅ Fix */}
                       </div>
                       <span className="co-summary-item-price">
                         ৳{(item.price * item.quantity).toLocaleString('en-BD')}
