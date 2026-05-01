@@ -22,13 +22,12 @@ import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
 
 const NAV_LINKS = [
-  { label: 'Home',         href: '/'                    },
-  { label: 'Shop',         href: '/shop'                },
-  { label: 'New Arrivals', href: '/shop?sort=newest'    },
-  { label: 'Flash Sale',   href: '/shop?filter=flash-sale' },
+  { label: 'Home',            href: '/'                    },
+  { label: 'Shop',            href: '/shop'                },
+  { label: 'New Arrivals',    href: '/shop?sort=newest'    },
+  { label: 'Flash Sale',      href: '/shop?filter=flash-sale' },
 ]
 
-// ── Inner component — uses useSearchParams (must be inside <Suspense>) ──
 function NavbarInner() {
   const pathname     = usePathname()
   const searchParams = useSearchParams()
@@ -39,17 +38,16 @@ function NavbarInner() {
   const wishlistCount = useWishlistStore((s) => s.getCount())
   const openCart      = useCartStore((s) => s.openCart)
 
-  const [isScrolled,      setIsScrolled]      = useState(false)
-  const [isMobileMenuOpen,setIsMobileMenuOpen] = useState(false)
-  const [isSearchOpen,    setIsSearchOpen]     = useState(false)
-  const [isUserMenuOpen,  setIsUserMenuOpen]   = useState(false)
-  const [searchQuery,     setSearchQuery]      = useState('')
-  const [isMounted,       setIsMounted]        = useState(false)
+  const [isScrolled,       setIsScrolled]       = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSearchOpen,     setIsSearchOpen]     = useState(false)
+  const [isUserMenuOpen,   setIsUserMenuOpen]   = useState(false)
+  const [searchQuery,      setSearchQuery]      = useState('')
+  const [isMounted,        setIsMounted]        = useState(false)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const searchRef   = useRef<HTMLInputElement>(null)
 
-  // ✅ Safe count helpers — guard against non-number values
   const safeCartCount     = typeof cartCount     === 'number' ? cartCount     : 0
   const safeWishlistCount = typeof wishlistCount === 'number' ? wishlistCount : 0
 
@@ -117,6 +115,7 @@ function NavbarInner() {
         <div
           className="navbar-login-btn opacity-0 pointer-events-none select-none"
           aria-hidden="true"
+          suppressHydrationWarning
         >
           Sign In
         </div>
@@ -125,10 +124,12 @@ function NavbarInner() {
 
     if (session) {
       return (
-        <div className="navbar-user-menu" ref={userMenuRef}>
+        <div className="navbar-user-menu" ref={userMenuRef} suppressHydrationWarning>
           <button
+            type="button"
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
             className="navbar-user-btn"
+            suppressHydrationWarning  // ✅ stops extension attrs causing hydration mismatch
           >
             {session.user?.image ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -136,9 +137,10 @@ function NavbarInner() {
                 src={session.user.image}
                 alt={session.user.name ?? ''}
                 className="navbar-avatar"
+                suppressHydrationWarning
               />
             ) : (
-              <div className="navbar-avatar-placeholder">
+              <div className="navbar-avatar-placeholder" suppressHydrationWarning>
                 {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
               </div>
             )}
@@ -149,11 +151,10 @@ function NavbarInner() {
           </button>
 
           {isUserMenuOpen && (
-            <div className="navbar-dropdown">
+            <div className="navbar-dropdown" suppressHydrationWarning>
               <div className="navbar-dropdown-header">
-                {/* ✅ Safe string render — guard against object values */}
                 <p className="navbar-dropdown-name">
-                  {typeof session.user?.name === 'string' ? session.user.name : ''}
+                  {typeof session.user?.name  === 'string' ? session.user.name  : ''}
                 </p>
                 <p className="navbar-dropdown-email">
                   {typeof session.user?.email === 'string' ? session.user.email : ''}
@@ -173,8 +174,10 @@ function NavbarInner() {
               )}
               <div className="navbar-dropdown-divider" />
               <button
+                type="button"
                 onClick={handleSignOut}
                 className="navbar-dropdown-item navbar-dropdown-signout"
+                suppressHydrationWarning
               >
                 <LogOut size={16} /> Sign Out
               </button>
@@ -189,7 +192,7 @@ function NavbarInner() {
 
   return (
     <>
-      <header className={`navbar ${isScrolled ? 'navbar-scrolled' : 'navbar-top'}`}>
+      <header className={`navbar ${isScrolled ? 'navbar-scrolled' : 'navbar-top'}`} suppressHydrationWarning>
         <div className="navbar-inner">
 
           {/* Logo */}
@@ -213,10 +216,14 @@ function NavbarInner() {
 
           {/* Right Actions */}
           <div className="navbar-actions">
+
+            {/* ✅ suppressHydrationWarning on ALL buttons — browser extensions inject fdprocessedid */}
             <button
+              type="button"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
               className="navbar-icon-btn"
               aria-label="Search"
+              suppressHydrationWarning
             >
               <Search size={20} />
             </button>
@@ -225,21 +232,22 @@ function NavbarInner() {
               href="/wishlist"
               className="navbar-icon-btn navbar-icon-relative"
               aria-label="Wishlist"
+              suppressHydrationWarning
             >
               <Heart size={20} />
-              {/* ✅ Use safeWishlistCount */}
               {isMounted && safeWishlistCount > 0 && (
                 <span className="navbar-badge">{safeWishlistCount}</span>
               )}
             </Link>
 
             <button
+              type="button"
               onClick={openCart}
               className="navbar-icon-btn navbar-icon-relative"
               aria-label="Cart"
+              suppressHydrationWarning
             >
               <ShoppingBag size={20} />
-              {/* ✅ Use safeCartCount */}
               {isMounted && safeCartCount > 0 && (
                 <span className="navbar-badge navbar-badge-accent">{safeCartCount}</span>
               )}
@@ -248,9 +256,11 @@ function NavbarInner() {
             {renderAuthSection()}
 
             <button
+              type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="navbar-icon-btn navbar-mobile-toggle"
               aria-label="Menu"
+              suppressHydrationWarning
             >
               {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -259,7 +269,7 @@ function NavbarInner() {
 
         {/* Search Bar */}
         {isSearchOpen && (
-          <div className="navbar-search">
+          <div className="navbar-search" suppressHydrationWarning>
             <form onSubmit={handleSearch} className="navbar-search-form">
               <Search size={18} className="navbar-search-icon" />
               <input
@@ -269,20 +279,32 @@ function NavbarInner() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="navbar-search-input"
+                suppressHydrationWarning  // ✅ extensions modify input attrs
               />
               {searchQuery && (
-                <button type="button" onClick={() => setSearchQuery('')} className="navbar-search-clear">
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="navbar-search-clear"
+                  suppressHydrationWarning
+                >
                   <X size={16} />
                 </button>
               )}
-              <button type="submit" className="navbar-search-btn">Search</button>
+              <button
+                type="submit"
+                className="navbar-search-btn"
+                suppressHydrationWarning
+              >
+                Search
+              </button>
             </form>
           </div>
         )}
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="navbar-mobile-menu">
+          <div className="navbar-mobile-menu" suppressHydrationWarning>
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -303,7 +325,7 @@ function NavbarInner() {
       </header>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="mobile-bottom-nav">
+      <nav className="mobile-bottom-nav" suppressHydrationWarning>
         <Link
           href="/"
           className={`mobile-nav-item ${
@@ -324,10 +346,14 @@ function NavbarInner() {
           <span>Shop</span>
         </Link>
 
-        <button onClick={openCart} className="mobile-nav-item mobile-nav-cart">
+        <button
+          type="button"
+          onClick={openCart}
+          className="mobile-nav-item mobile-nav-cart"
+          suppressHydrationWarning
+        >
           <div className="mobile-nav-cart-btn">
             <ShoppingBag size={24} color="white" />
-            {/* ✅ Use safeCartCount */}
             {isMounted && safeCartCount > 0 && (
               <span className="mobile-nav-cart-badge">{safeCartCount}</span>
             )}
@@ -347,19 +373,21 @@ function NavbarInner() {
           className={`mobile-nav-item ${
             pathname === '/account' || pathname === '/login' ? 'mobile-nav-item-active' : ''
           }`}
+          suppressHydrationWarning
         >
           <User size={22} />
-          <span>{isMounted && session ? 'Account' : 'Sign In'}</span>
+          <span suppressHydrationWarning>
+            {isMounted && session ? 'Account' : 'Sign In'}
+          </span>
         </Link>
       </nav>
     </>
   )
 }
 
-// ── Outer export — wraps NavbarInner in Suspense ──
 export default function Navbar() {
   return (
-    <Suspense fallback={<div className="navbar navbar-top" />}>
+    <Suspense fallback={<div className="navbar navbar-top" suppressHydrationWarning />}>
       <NavbarInner />
     </Suspense>
   )

@@ -12,47 +12,47 @@ import ShopProductCard from './ShopProductCard'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 export interface Product {
-  _id: string
-  name: string
-  slug: string
-  price: number
-  originalPrice?: number
-  images: string[]
-  category: string
-  colors?: string[]
-  rating?: number
-  reviewCount?: number
-  stock: number
-  isFeatured?: boolean
-  isOnSale?: boolean
+  _id:             string
+  name:            string
+  slug:            string
+  price:           number
+  originalPrice?:  number
+  images:          string[]
+  category:        string
+  colors?:         string[]
+  rating?:         number
+  reviewCount?:    number
+  stock:           number
+  isFeatured?:     boolean
+  isOnSale?:       boolean
   discountPercent?: number
-  tags?: string[]
-  createdAt: string
+  tags?:           string[]
+  createdAt:       string
 }
 
 export interface FilterState {
-  categories: string[]
-  priceMin: number | null
-  priceMax: number | null
-  colors: string[]
-  onSaleOnly: boolean
+  categories:  string[]
+  priceMin:    number | null
+  priceMax:    number | null
+  colors:      string[]
+  onSaleOnly:  boolean
   inStockOnly: boolean
 }
 
 interface ApiResponse {
   products: any[]
-  total: number
-  pages: number
-  page: number
+  total:    number
+  pages:    number
+  page:     number
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Newest First' },
-  { value: 'price_asc',  label: 'Price: Low to High' },   // matches your API sortMap keys
-  { value: 'price_desc', label: 'Price: High to Low' },
-  { value: 'popular',    label: 'Most Popular' },
-  { value: 'rating',     label: 'Top Rated' },
+  { value: 'newest',     label: 'Newest First'        },
+  { value: 'price_asc',  label: 'Price: Low to High'  },
+  { value: 'price_desc', label: 'Price: High to Low'  },
+  { value: 'popular',    label: 'Most Popular'         },
+  { value: 'rating',     label: 'Top Rated'            },
 ]
 
 const CATEGORIES = ['All', 'Mini Crossbody', 'Chain Strap', 'Leather', 'Canvas', 'Party & Evening']
@@ -83,16 +83,16 @@ function normalizeProduct(p: any): Product {
     colors:         p.colors || [],
     rating:         p.rating,
     reviewCount:    p.reviewCount,
-    stock:          p.totalStock ?? p.stock ?? 0,         // DB: totalStock
+    stock:          p.totalStock ?? p.stock ?? 0,
     isFeatured:     p.isFeatured ?? false,
-    isOnSale:       p.isFlashSale ?? p.isOnSale ?? false, // DB: isFlashSale
+    isOnSale:       p.isFlashSale ?? p.isOnSale ?? false,
     discountPercent,
     tags:           p.tags || [],
     createdAt:      p.createdAt,
   }
 }
 
-// ── Build API query string matching your route's params ───────────────────
+// ── Build API query string ─────────────────────────────────────────────────
 function buildApiUrl(
   page: number,
   sort: string,
@@ -103,11 +103,10 @@ function buildApiUrl(
   params.set('page',  String(page))
   params.set('limit', String(ITEMS_PER_PAGE))
 
-  if (sort)              params.set('sort',     sort)
-  if (searchQuery.trim()) params.set('search',  searchQuery.trim())
+  if (sort)               params.set('sort',      sort)
+  if (searchQuery.trim()) params.set('search',    searchQuery.trim())
 
   if (filters.categories.length === 1) {
-    // Send as kebab-case to match DB values e.g. "mini-crossbody"
     params.set('category', filters.categories[0].toLowerCase().replace(/\s+/g, '-'))
   }
 
@@ -132,8 +131,8 @@ export default function ShopClient() {
   const [currentPage,   setCurrentPage]   = useState(1)
 
   // ── Derive from URL ────────────────────────────────────────────────────
-  const sort = useMemo(() => searchParams.get('sort') || 'newest', [searchParams])
-  const searchQuery = useMemo(() => searchParams.get('search') || '', [searchParams])
+  const sort        = useMemo(() => searchParams.get('sort')   || 'newest', [searchParams])
+  const searchQuery = useMemo(() => searchParams.get('search') || '',       [searchParams])
   const [localSearch, setLocalSearch] = useState(searchQuery)
 
   const filters = useMemo<FilterState>(() => {
@@ -149,14 +148,13 @@ export default function ShopClient() {
     }
   }, [searchParams])
 
-  // ── Fetch from API ─────────────────────────────────────────────────────
+  // ── Fetch ──────────────────────────────────────────────────────────────
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    // Cancel previous in-flight request
     abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
+    const controller  = new AbortController()
+    abortRef.current  = controller
 
     const fetchProducts = async () => {
       try {
@@ -169,12 +167,11 @@ export default function ShopClient() {
         if (!res.ok) throw new Error(`Server error: ${res.status}`)
 
         const data: ApiResponse = await res.json()
-
         setProducts(data.products.map(normalizeProduct))
         setTotalCount(data.total)
         setTotalPages(data.pages)
       } catch (err: any) {
-        if (err.name === 'AbortError') return   // ignore cancelled requests
+        if (err.name === 'AbortError') return
         console.error('Fetch error:', err)
         setError(err.message || 'Failed to load products')
       } finally {
@@ -183,9 +180,8 @@ export default function ShopClient() {
     }
 
     fetchProducts()
-
     return () => controller.abort()
-  }, [currentPage, sort, searchQuery, filters])   // re-fetch whenever these change
+  }, [currentPage, sort, searchQuery, filters])
 
   // ── URL writer ─────────────────────────────────────────────────────────
   const pushUrl = useCallback(
@@ -199,7 +195,7 @@ export default function ShopClient() {
       if (newSearch.trim())       params.set('search', newSearch.trim())
       const query = params.toString()
       router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
-      setCurrentPage(1)   // reset to page 1 on any filter/sort/search change
+      setCurrentPage(1)
     },
     [router]
   )
@@ -217,11 +213,11 @@ export default function ShopClient() {
 
   const hasActiveFilters =
     filters.categories.length > 0 ||
-    filters.priceMin !== null ||
-    filters.priceMax !== null ||
-    filters.colors.length > 0 ||
-    filters.onSaleOnly ||
-    filters.inStockOnly ||
+    filters.priceMin    !== null   ||
+    filters.priceMax    !== null   ||
+    filters.colors.length > 0     ||
+    filters.onSaleOnly             ||
+    filters.inStockOnly            ||
     searchQuery.trim() !== ''
 
   const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Sort'
@@ -247,7 +243,8 @@ export default function ShopClient() {
             </p>
           </div>
 
-          <form onSubmit={handleSearch} className="shop-search-form">
+          {/* ✅ suppressHydrationWarning on form, input, and all buttons */}
+          <form onSubmit={handleSearch} className="shop-search-form" suppressHydrationWarning>
             <Search size={18} className="shop-search-icon" />
             <input
               type="text"
@@ -255,13 +252,25 @@ export default function ShopClient() {
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               className="shop-search-input"
+              suppressHydrationWarning  // ✅ stops fdprocessedid mismatch
             />
             {localSearch && (
-              <button type="button" onClick={handleSearchClear} className="shop-search-clear">
+              <button
+                type="button"
+                onClick={handleSearchClear}
+                className="shop-search-clear"
+                suppressHydrationWarning
+              >
                 <X size={16} />
               </button>
             )}
-            <button type="submit" className="shop-search-btn">Search</button>
+            <button
+              type="submit"
+              className="shop-search-btn"
+              suppressHydrationWarning  // ✅ stops fdprocessedid mismatch
+            >
+              Search
+            </button>
           </form>
         </div>
       </div>
@@ -278,6 +287,7 @@ export default function ShopClient() {
               return (
                 <button
                   key={cat}
+                  type="button"
                   onClick={() => {
                     const newCats =
                       cat === 'All'
@@ -288,6 +298,7 @@ export default function ShopClient() {
                     handleFilterChange({ ...filters, categories: newCats })
                   }}
                   className={`shop-category-pill ${isActive ? 'shop-category-pill-active' : ''}`}
+                  suppressHydrationWarning  // ✅
                 >
                   {cat}
                 </button>
@@ -302,7 +313,12 @@ export default function ShopClient() {
         {/* ── Toolbar ───────────────────────────────────────────────── */}
         <div className="shop-toolbar">
           <div className="shop-toolbar-left">
-            <button onClick={() => setIsSidebarOpen(true)} className="shop-filter-toggle">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="shop-filter-toggle"
+              suppressHydrationWarning  // ✅
+            >
               <SlidersHorizontal size={16} />
               Filters
               {hasActiveFilters && (
@@ -310,8 +326,8 @@ export default function ShopClient() {
                   {[
                     filters.categories.length,
                     filters.colors.length,
-                    filters.priceMin  !== null ? 1 : 0,
-                    filters.priceMax  !== null ? 1 : 0,
+                    filters.priceMin    !== null ? 1 : 0,
+                    filters.priceMax    !== null ? 1 : 0,
                     filters.onSaleOnly  ? 1 : 0,
                     filters.inStockOnly ? 1 : 0,
                   ].reduce((a, b) => a + b, 0)}
@@ -328,7 +344,12 @@ export default function ShopClient() {
           <div className="shop-toolbar-right">
             {/* Sort */}
             <div className="shop-sort-wrapper">
-              <button onClick={() => setIsSortOpen(!isSortOpen)} className="shop-sort-btn">
+              <button
+                type="button"
+                onClick={() => setIsSortOpen(!isSortOpen)}
+                className="shop-sort-btn"
+                suppressHydrationWarning  // ✅
+              >
                 <ArrowUpDown size={15} />
                 {currentSortLabel}
                 <ChevronDown size={14} className={isSortOpen ? 'rotate-180' : ''} />
@@ -340,8 +361,10 @@ export default function ShopClient() {
                     {SORT_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
+                        type="button"
                         onClick={() => handleSortChange(opt.value)}
                         className={`shop-sort-option ${sort === opt.value ? 'shop-sort-option-active' : ''}`}
+                        suppressHydrationWarning  // ✅
                       >
                         {opt.label}
                       </button>
@@ -354,16 +377,20 @@ export default function ShopClient() {
             {/* View mode */}
             <div className="shop-view-toggle">
               <button
+                type="button"
                 onClick={() => setViewMode('grid')}
                 className={`shop-view-btn ${viewMode === 'grid' ? 'shop-view-btn-active' : ''}`}
                 aria-label="Grid view"
+                suppressHydrationWarning  // ✅
               >
                 <Grid2X2 size={17} />
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode('list')}
                 className={`shop-view-btn ${viewMode === 'list' ? 'shop-view-btn-active' : ''}`}
                 aria-label="List view"
+                suppressHydrationWarning  // ✅
               >
                 <LayoutList size={17} />
               </button>
@@ -382,10 +409,10 @@ export default function ShopClient() {
             onRemoveColor={(color) =>
               handleFilterChange({ ...filters, colors: filters.colors.filter((c) => c !== color) })
             }
-            onRemovePrice={() => handleFilterChange({ ...filters, priceMin: null, priceMax: null })}
-            onRemoveSale={() => handleFilterChange({ ...filters, onSaleOnly: false })}
-            onRemoveStock={() => handleFilterChange({ ...filters, inStockOnly: false })}
-            onRemoveSearch={() => { setLocalSearch(''); pushUrl(sort, filters, '') }}
+            onRemovePrice={()  => handleFilterChange({ ...filters, priceMin: null, priceMax: null })}
+            onRemoveSale={()   => handleFilterChange({ ...filters, onSaleOnly: false })}
+            onRemoveStock={()  => handleFilterChange({ ...filters, inStockOnly: false })}
+            onRemoveSearch={()  => { setLocalSearch(''); pushUrl(sort, filters, '') }}
             onClearAll={clearAllFilters}
           />
         )}
@@ -408,7 +435,12 @@ export default function ShopClient() {
                 <div className="shop-empty-icon"><ShoppingBag size={40} strokeWidth={1.5} /></div>
                 <h3 className="shop-empty-title">Failed to load products</h3>
                 <p className="shop-empty-subtitle">{error}</p>
-                <button onClick={() => window.location.reload()} className="btn-primary">
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="btn-primary"
+                  suppressHydrationWarning
+                >
                   Try Again
                 </button>
               </div>
@@ -418,8 +450,11 @@ export default function ShopClient() {
             {isLoading && (
               <div className={viewMode === 'grid' ? 'products-grid' : 'shop-list'}>
                 {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
-                  <div key={i} className="skeleton product-skeleton-card"
-                    style={{ height: '360px', borderRadius: '1.25rem' }} />
+                  <div
+                    key={i}
+                    className="skeleton product-skeleton-card"
+                    style={{ height: '360px', borderRadius: '1.25rem' }}
+                  />
                 ))}
               </div>
             )}
@@ -430,11 +465,18 @@ export default function ShopClient() {
                 <div className="shop-empty-icon"><ShoppingBag size={40} strokeWidth={1.5} /></div>
                 <h3 className="shop-empty-title">No bags found</h3>
                 <p className="shop-empty-subtitle">Try adjusting your filters or search query.</p>
-                <button onClick={clearAllFilters} className="btn-primary">Clear All Filters</button>
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="btn-primary"
+                  suppressHydrationWarning
+                >
+                  Clear All Filters
+                </button>
               </div>
             )}
 
-            {/* Products grid */}
+            {/* Products */}
             {!isLoading && !error && products.length > 0 && (
               <>
                 <div className={viewMode === 'grid' ? 'products-grid' : 'shop-list'}>
@@ -448,13 +490,15 @@ export default function ShopClient() {
                   ))}
                 </div>
 
-                {/* Pagination — driven by server totalPages */}
+                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="shop-pagination">
                     <button
+                      type="button"
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
                       className="shop-page-btn"
+                      suppressHydrationWarning
                     >
                       Previous
                     </button>
@@ -465,8 +509,10 @@ export default function ShopClient() {
                           return (
                             <button
                               key={page}
+                              type="button"
                               onClick={() => setCurrentPage(page)}
                               className={`shop-page-number ${currentPage === page ? 'shop-page-number-active' : ''}`}
+                              suppressHydrationWarning
                             >
                               {page}
                             </button>
@@ -478,9 +524,11 @@ export default function ShopClient() {
                       })}
                     </div>
                     <button
+                      type="button"
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
                       className="shop-page-btn"
+                      suppressHydrationWarning
                     >
                       Next
                     </button>
@@ -501,7 +549,12 @@ export default function ShopClient() {
               <h3 className="shop-drawer-title">
                 <SlidersHorizontal size={18} /> Filters
               </h3>
-              <button onClick={() => setIsSidebarOpen(false)} className="shop-drawer-close">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                className="shop-drawer-close"
+                suppressHydrationWarning
+              >
                 <X size={20} />
               </button>
             </div>
@@ -513,10 +566,22 @@ export default function ShopClient() {
               />
             </div>
             <div className="shop-drawer-footer">
-              <button onClick={clearAllFilters} className="btn-secondary" style={{ flex: 1 }}>
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="btn-secondary"
+                style={{ flex: 1 }}
+                suppressHydrationWarning
+              >
                 Clear All
               </button>
-              <button onClick={() => setIsSidebarOpen(false)} className="btn-primary" style={{ flex: 1 }}>
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                className="btn-primary"
+                style={{ flex: 1 }}
+                suppressHydrationWarning
+              >
                 Show {totalCount} Results
               </button>
             </div>

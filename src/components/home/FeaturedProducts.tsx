@@ -7,7 +7,6 @@ import ProductCard from '@/components/product/ProductCard'
 import ProductSkeleton from '@/components/product/ProductSkeleton'
 import { IProduct } from '@/types'
 
-// ── Mock products ──────────────────────────────────────────────────────────
 const MOCK_PRODUCTS: IProduct[] = [
   {
     _id: '1',
@@ -25,14 +24,10 @@ const MOCK_PRODUCTS: IProduct[] = [
       { name: 'Midnight',    hex: '#1A1A2E', images: [], stock: 8  },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Pearl Mini Crossbody' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: false,
-    soldCount: 234,
-    stock: 33,
+    status: 'active', isFeatured: true, isFlashSale: false,
+    soldCount: 234, stock: 33,
     ratings: { average: 4.8, count: 127 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
   {
     _id: '2',
@@ -40,8 +35,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     slug: 'gold-chain-sling',
     description: 'Luxury gold chain strap crossbody',
     shortDescription: 'Statement piece for any outfit',
-    price: 1800,
-    discountPrice: undefined,
+    price: 1800, discountPrice: undefined,
     category: 'Chain Strap',
     tags: ['luxury', 'trending'],
     colors: [
@@ -49,15 +43,10 @@ const MOCK_PRODUCTS: IProduct[] = [
       { name: 'Black',     hex: '#1A1A2E', images: [], stock: 7  },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Gold Chain Sling' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: true,
-    flashSalePrice: 1400,
-    soldCount: 189,
-    stock: 19,
+    status: 'active', isFeatured: true, isFlashSale: true, flashSalePrice: 1400,
+    soldCount: 189, stock: 19,
     ratings: { average: 4.9, count: 89 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
   {
     _id: '3',
@@ -65,8 +54,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     slug: 'candy-quilted-bag',
     description: 'Cute quilted pattern mini bag',
     shortDescription: 'Sweet and stylish',
-    price: 950,
-    discountPrice: 750,
+    price: 950, discountPrice: 750,
     category: 'Mini Crossbody',
     tags: ['cute', 'new'],
     colors: [
@@ -76,14 +64,10 @@ const MOCK_PRODUCTS: IProduct[] = [
       { name: 'Lilac',    hex: '#8b5cf6', images: [], stock: 8  },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Candy Quilted Bag' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: false,
-    soldCount: 312,
-    stock: 53,
+    status: 'active', isFeatured: true, isFlashSale: false,
+    soldCount: 312, stock: 53,
     ratings: { average: 4.7, count: 203 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
   {
     _id: '4',
@@ -91,8 +75,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     slug: 'vintage-leather-satchel',
     description: 'Classic vintage-inspired leather bag',
     shortDescription: 'Timeless elegance',
-    price: 2200,
-    discountPrice: 1800,
+    price: 2200, discountPrice: 1800,
     category: 'Leather',
     tags: ['vintage', 'premium'],
     colors: [
@@ -100,14 +83,10 @@ const MOCK_PRODUCTS: IProduct[] = [
       { name: 'Dark Brown', hex: '#451a03', images: [], stock: 4 },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Vintage Leather Satchel' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: false,
-    soldCount: 98,
-    stock: 10,
+    status: 'active', isFeatured: true, isFlashSale: false,
+    soldCount: 98, stock: 10,
     ratings: { average: 5.0, count: 45 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
   {
     _id: '5',
@@ -115,8 +94,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     slug: 'boho-canvas-tote',
     description: 'Bohemian canvas crossbody bag',
     shortDescription: 'Free-spirited style',
-    price: 850,
-    discountPrice: undefined,
+    price: 850, discountPrice: undefined,
     category: 'Canvas',
     tags: ['boho', 'casual'],
     colors: [
@@ -124,14 +102,10 @@ const MOCK_PRODUCTS: IProduct[] = [
       { name: 'Navy',    hex: '#1e3a5f', images: [], stock: 18 },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Boho Canvas Tote' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: false,
-    soldCount: 156,
-    stock: 43,
+    status: 'active', isFeatured: true, isFlashSale: false,
+    soldCount: 156, stock: 43,
     ratings: { average: 4.6, count: 78 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
   {
     _id: '6',
@@ -139,8 +113,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     slug: 'party-glitter-clutch',
     description: 'Glamorous glitter evening bag',
     shortDescription: 'Shine at every party',
-    price: 1500,
-    discountPrice: 1200,
+    price: 1500, discountPrice: 1200,
     category: 'Party & Evening',
     tags: ['party', 'glam'],
     colors: [
@@ -149,15 +122,10 @@ const MOCK_PRODUCTS: IProduct[] = [
       { name: 'Rose Gold',    hex: '#f9a8d4', images: [], stock: 8  },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Party Glitter Clutch' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: true,
-    flashSalePrice: 999,
-    soldCount: 267,
-    stock: 30,
+    status: 'active', isFeatured: true, isFlashSale: true, flashSalePrice: 999,
+    soldCount: 267, stock: 30,
     ratings: { average: 4.8, count: 156 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
   {
     _id: '7',
@@ -165,8 +133,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     slug: 'minimalist-crossbody',
     description: 'Clean lines, pure style',
     shortDescription: 'Less is more',
-    price: 1100,
-    discountPrice: undefined,
+    price: 1100, discountPrice: undefined,
     category: 'Mini Crossbody',
     tags: ['minimal', 'clean'],
     colors: [
@@ -175,14 +142,10 @@ const MOCK_PRODUCTS: IProduct[] = [
       { name: 'Beige', hex: '#f5f0eb', images: [], stock: 15 },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Minimalist Crossbody' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: false,
-    soldCount: 445,
-    stock: 55,
+    status: 'active', isFeatured: true, isFlashSale: false,
+    soldCount: 445, stock: 55,
     ratings: { average: 4.9, count: 312 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
   {
     _id: '8',
@@ -190,8 +153,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     slug: 'floral-summer-bag',
     description: 'Vibrant floral print crossbody',
     shortDescription: 'Summer vibes only',
-    price: 780,
-    discountPrice: 650,
+    price: 780, discountPrice: 650,
     category: 'Canvas',
     tags: ['floral', 'summer'],
     colors: [
@@ -199,29 +161,24 @@ const MOCK_PRODUCTS: IProduct[] = [
       { name: 'Blue Floral', hex: '#3b82f6', images: [], stock: 14 },
     ],
     mainImage: { url: '', cloudinaryId: '', alt: 'Floral Summer Bag' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: false,
-    soldCount: 178,
-    stock: 32,
+    status: 'active', isFeatured: true, isFlashSale: false,
+    soldCount: 178, stock: 32,
     ratings: { average: 4.7, count: 94 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
 ]
 
-// ── Tab Filter ─────────────────────────────────────────────────────────────
 const TABS = [
-  { label: 'All',          value: 'all'      },
-  { label: '🔥 Trending',  value: 'trending' },
-  { label: '✨ New Arrivals', value: 'new'   },
-  { label: '⚡ Flash Sale', value: 'sale'    },
+  { label: 'All',             value: 'all'      },
+  { label: '🔥 Trending',     value: 'trending' },
+  { label: '✨ New Arrivals', value: 'new'      },
+  { label: '⚡ Flash Sale',   value: 'sale'     },
 ]
 
 export default function FeaturedProducts() {
-  const [activeTab,  setActiveTab]  = useState('all')
-  const [isLoading,  setIsLoading]  = useState(true)
-  const [products,   setProducts]   = useState<IProduct[]>([])
+  const [activeTab, setActiveTab] = useState('all')
+  const [isLoading, setIsLoading] = useState(true)
+  const [products,  setProducts]  = useState<IProduct[]>([])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -271,9 +228,10 @@ export default function FeaturedProducts() {
           {TABS.map((tab) => (
             <button
               key={tab.value}
-              type="button"                             // ✅ explicit type prevents form submit
-              onClick={() => handleTabClick(tab.value)} // ✅ extracted handler, no inline object
+              type="button"
+              onClick={() => handleTabClick(tab.value)}
               className={`featured-tab ${activeTab === tab.value ? 'featured-tab-active' : ''}`}
+              suppressHydrationWarning  // ✅ fixes fdprocessedid from browser extensions
             >
               {tab.label}
             </button>
