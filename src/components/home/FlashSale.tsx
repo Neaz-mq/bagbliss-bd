@@ -9,7 +9,7 @@ import { IProduct } from '@/types'
 import toast from 'react-hot-toast'
 
 // ── Countdown Timer Hook ──────────────────────
-function useCountdown(targetDate: Date) {
+function useCountdown(targetDate: Date | null) {
   const [timeLeft, setTimeLeft] = useState({
     hours: 0,
     minutes: 0,
@@ -17,6 +17,8 @@ function useCountdown(targetDate: Date) {
   })
 
   useEffect(() => {
+    if (!targetDate) return
+
     const calculate = () => {
       const now = new Date().getTime()
       const target = targetDate.getTime()
@@ -46,7 +48,7 @@ function useCountdown(targetDate: Date) {
 function TimerBlock({ value, label }: { value: number; label: string }) {
   return (
     <div className="flash-timer-block">
-      <div className="flash-timer-value">
+      <div className="flash-timer-value" suppressHydrationWarning>
         {String(value).padStart(2, '0')}
       </div>
       <div className="flash-timer-label">{label}</div>
@@ -74,16 +76,22 @@ function FlashProductCard({
   )
 
   const handleAddToCart = async () => {
-    setIsAdding(true)
-    addItem({
-      product,
-      quantity: 1,
-      selectedColor: product.colors[0]?.name || 'Default',
-      price: salePrice,
-    })
-    toast.success('⚡ Added to cart!')
-    openCart()
-    setTimeout(() => setIsAdding(false), 600)
+    try {
+      setIsAdding(true)
+      addItem({
+        product,
+        quantity: 1,
+        selectedColor: product.colors[0]?.name || 'Default',
+        price: salePrice,
+      })
+      toast.success('⚡ Added to cart!')
+      openCart()
+    } catch (err) {
+      console.error('Failed to add item to cart:', err)
+      toast.error('Could not add to cart. Please try again.')
+    } finally {
+      setTimeout(() => setIsAdding(false), 600)
+    }
   }
 
   return (
@@ -161,15 +169,26 @@ function FlashProductCard({
           </div>
         </div>
 
-        {/* Add to Cart */}
+        {/*
+          ✅ FIX: suppressHydrationWarning on the button
+          Browser extensions (LastPass, Dashlane, etc.) inject fdprocessedid
+          attributes into buttons/inputs on Chrome & Firefox but NOT Edge.
+          This causes a hydration mismatch between SSR HTML and client DOM.
+          suppressHydrationWarning tells React to ignore such injected attrs.
+        */}
         <button
+          type="button"
           onClick={handleAddToCart}
           disabled={isAdding}
           className={`flash-add-btn ${isAdding ? 'flash-add-btn-adding' : ''}`}
+          suppressHydrationWarning
         >
           {isAdding ? (
             <>
-              <span className="spinner" style={{ borderTopColor: 'white', width: '14px', height: '14px' }} />
+              <span
+                className="spinner"
+                style={{ borderTopColor: 'white', width: '14px', height: '14px' }}
+              />
               Adding...
             </>
           ) : (
@@ -185,6 +204,8 @@ function FlashProductCard({
 }
 
 // ── Flash Sale Products ───────────────────────
+const FIXED_DATE = '2025-01-01T00:00:00.000Z'
+
 const FLASH_PRODUCTS: IProduct[] = [
   {
     _id: 'f1',
@@ -208,8 +229,8 @@ const FLASH_PRODUCTS: IProduct[] = [
     soldCount: 189,
     stock: 8,
     ratings: { average: 4.9, count: 89 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE,
+    updatedAt: FIXED_DATE,
   },
   {
     _id: 'f2',
@@ -233,8 +254,8 @@ const FLASH_PRODUCTS: IProduct[] = [
     soldCount: 267,
     stock: 6,
     ratings: { average: 4.8, count: 156 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE,
+    updatedAt: FIXED_DATE,
   },
   {
     _id: 'f3',
@@ -258,8 +279,8 @@ const FLASH_PRODUCTS: IProduct[] = [
     soldCount: 234,
     stock: 9,
     ratings: { average: 4.8, count: 127 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE,
+    updatedAt: FIXED_DATE,
   },
   {
     _id: 'f4',
@@ -283,33 +304,32 @@ const FLASH_PRODUCTS: IProduct[] = [
     soldCount: 312,
     stock: 11,
     ratings: { average: 4.7, count: 203 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE,
+    updatedAt: FIXED_DATE,
   },
 ]
 
 // ── Flash Sale Section ────────────────────────
 export default function FlashSale() {
-  // Set flash sale end time — 24 hours from now
-  const [endTime] = useState(() => {
+  const [endTime, setEndTime] = useState<Date | null>(null)
+
+  useEffect(() => {
     const end = new Date()
     end.setHours(end.getHours() + 23)
     end.setMinutes(end.getMinutes() + 45)
-    return end
-  })
+    setEndTime(end)
+  }, [])
 
   const { hours, minutes, seconds } = useCountdown(endTime)
 
   return (
     <section className="flash-section">
-      {/* Decorative top border */}
       <div className="flash-top-border" />
 
       <div className="container-bagbliss">
         {/* Header */}
         <div className="flash-header">
           <div className="flash-header-left">
-            {/* Title */}
             <div className="flash-title-row">
               <div className="flash-icon-wrap">
                 <Zap size={24} fill="white" color="white" />
@@ -320,7 +340,6 @@ export default function FlashSale() {
               </div>
             </div>
 
-            {/* Countdown */}
             <div className="flash-countdown">
               <span className="flash-ends-label">
                 <Clock size={13} />
@@ -358,14 +377,16 @@ export default function FlashSale() {
               <strong>Don&apos;t miss out!</strong>
             </span>
           </div>
-          <Link href="/shop?filter=flash-sale" className="btn-primary flash-banner-btn">
+          <Link
+            href="/shop?filter=flash-sale"
+            className="btn-primary flash-banner-btn"
+          >
             Shop All Flash Deals
             <ArrowRight size={15} />
           </Link>
         </div>
       </div>
 
-      {/* Decorative bottom border */}
       <div className="flash-top-border" />
     </section>
   )

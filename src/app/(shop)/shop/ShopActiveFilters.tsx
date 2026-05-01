@@ -43,48 +43,102 @@ export default function ShopActiveFilters({
     <div className="shop-active-filters">
       <span className="shop-active-filters-label">Active:</span>
       <div className="shop-active-filter-pills">
+
         {searchQuery.trim() && (
-          <button onClick={onRemoveSearch} className="shop-active-pill">
-          {`Search: "${searchQuery}"`}
+          <button
+            type="button"
+            onClick={onRemoveSearch}
+            className="shop-active-pill"
+            suppressHydrationWarning
+          >
+            {`Search: "${searchQuery}"`}
             <X size={13} />
           </button>
         )}
+
         {filters.categories.map((cat) => (
-          <button key={cat} onClick={() => onRemoveCategory(cat)} className="shop-active-pill">
+          <button
+            key={cat}
+            type="button"
+            onClick={() => onRemoveCategory(cat)}
+            className="shop-active-pill"
+            suppressHydrationWarning
+          >
             {cat}
             <X size={13} />
           </button>
         ))}
+
         {hasPriceFilter && (
-          <button onClick={onRemovePrice} className="shop-active-pill">
+          <button
+            type="button"
+            onClick={onRemovePrice}
+            className="shop-active-pill"
+            suppressHydrationWarning
+          >
             {filters.priceMin !== null ? `৳${filters.priceMin}` : ''}
             {filters.priceMin !== null && filters.priceMax !== null ? ' – ' : ''}
             {filters.priceMax !== null ? `৳${filters.priceMax}` : ''}
             <X size={13} />
           </button>
         )}
+
         {filters.colors.map((color) => (
-          <button key={color} onClick={() => onRemoveColor(color)} className="shop-active-pill">
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, border: '1px solid rgba(0,0,0,0.1)', display: 'inline-block' }} />
+          <button
+            key={color}
+            type="button"
+            onClick={() => onRemoveColor(color)}
+            className="shop-active-pill"
+            suppressHydrationWarning
+          >
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: color,
+                border: '1px solid rgba(0,0,0,0.1)',
+                display: 'inline-block',
+              }}
+            />
             {COLOR_NAMES[color] || color}
             <X size={13} />
           </button>
         ))}
+
         {filters.onSaleOnly && (
-          <button onClick={onRemoveSale} className="shop-active-pill shop-active-pill-sale">
+          <button
+            type="button"
+            onClick={onRemoveSale}
+            className="shop-active-pill shop-active-pill-sale"
+            suppressHydrationWarning
+          >
             On Sale
             <X size={13} />
           </button>
         )}
+
         {filters.inStockOnly && (
-          <button onClick={onRemoveStock} className="shop-active-pill">
+          <button
+            type="button"
+            onClick={onRemoveStock}
+            className="shop-active-pill"
+            suppressHydrationWarning
+          >
             In Stock
             <X size={13} />
           </button>
         )}
-        <button onClick={onClearAll} className="shop-clear-all-btn">
+
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="shop-clear-all-btn"
+          suppressHydrationWarning
+        >
           Clear All
         </button>
+
       </div>
     </div>
   )

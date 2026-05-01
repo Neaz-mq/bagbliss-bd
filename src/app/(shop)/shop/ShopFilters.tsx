@@ -48,9 +48,14 @@ function FilterSection({
   const [isOpen, setIsOpen] = useState(defaultOpen)
   return (
     <div className="shop-filter-section">
+      {/* ✅ FIX: type="button" + suppressHydrationWarning
+          Browser extensions inject fdprocessedid into buttons,
+          causing SSR/client mismatch on Chrome & Firefox */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="shop-filter-section-header"
+        suppressHydrationWarning
       >
         <span className="shop-filter-section-title">{title}</span>
         {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -60,7 +65,7 @@ function FilterSection({
   )
 }
 
-export default function ShopFilters({ filters, onChange}: Props) {
+export default function ShopFilters({ filters, onChange }: Props) {
   const toggleCategory = (cat: string) => {
     const has = filters.categories.includes(cat)
     onChange({
@@ -90,6 +95,7 @@ export default function ShopFilters({ filters, onChange}: Props) {
 
   return (
     <div className="shop-filters">
+
       {/* Category */}
       <FilterSection title="Category">
         <div className="shop-filter-list">
@@ -100,6 +106,7 @@ export default function ShopFilters({ filters, onChange}: Props) {
                 checked={filters.categories.includes(label)}
                 onChange={() => toggleCategory(label)}
                 className="shop-filter-check-input"
+                suppressHydrationWarning
               />
               <span className="shop-filter-check-label">{label}</span>
               <span className="shop-filter-count">{count}</span>
@@ -119,6 +126,7 @@ export default function ShopFilters({ filters, onChange}: Props) {
                 checked={filters.priceMin === min && filters.priceMax === max}
                 onChange={() => setPriceRange(min, max)}
                 className="shop-filter-check-input"
+                suppressHydrationWarning
               />
               <span className="shop-filter-check-label">{label}</span>
             </label>
@@ -135,6 +143,7 @@ export default function ShopFilters({ filters, onChange}: Props) {
               onChange({ ...filters, priceMin: e.target.value ? Number(e.target.value) : null })
             }
             className="shop-price-input"
+            suppressHydrationWarning
           />
           <span className="shop-price-dash">—</span>
           <input
@@ -145,6 +154,7 @@ export default function ShopFilters({ filters, onChange}: Props) {
               onChange({ ...filters, priceMax: e.target.value ? Number(e.target.value) : null })
             }
             className="shop-price-input"
+            suppressHydrationWarning
           />
         </div>
       </FilterSection>
@@ -155,17 +165,19 @@ export default function ShopFilters({ filters, onChange}: Props) {
           {COLORS.map(({ hex, name }) => (
             <button
               key={hex}
+              type="button"
               onClick={() => toggleColor(hex)}
               title={name}
               className={`shop-color-btn ${filters.colors.includes(hex) ? 'shop-color-btn-active' : ''}`}
               style={{ backgroundColor: hex }}
               aria-label={name}
+              suppressHydrationWarning
             />
           ))}
         </div>
       </FilterSection>
 
-      {/* Other Filters */}
+      {/* Availability */}
       <FilterSection title="Availability" defaultOpen={false}>
         <div className="shop-filter-list">
           <label className="shop-filter-checkbox">
@@ -174,6 +186,7 @@ export default function ShopFilters({ filters, onChange}: Props) {
               checked={filters.onSaleOnly}
               onChange={() => onChange({ ...filters, onSaleOnly: !filters.onSaleOnly })}
               className="shop-filter-check-input"
+              suppressHydrationWarning
             />
             <span className="shop-filter-check-label">On Sale Only</span>
           </label>
@@ -183,11 +196,13 @@ export default function ShopFilters({ filters, onChange}: Props) {
               checked={filters.inStockOnly}
               onChange={() => onChange({ ...filters, inStockOnly: !filters.inStockOnly })}
               className="shop-filter-check-input"
+              suppressHydrationWarning
             />
             <span className="shop-filter-check-label">In Stock Only</span>
           </label>
         </div>
       </FilterSection>
+
     </div>
   )
 }

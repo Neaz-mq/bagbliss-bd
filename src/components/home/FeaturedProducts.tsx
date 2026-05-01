@@ -7,6 +7,10 @@ import ProductCard from '@/components/product/ProductCard'
 import ProductSkeleton from '@/components/product/ProductSkeleton'
 import { IProduct } from '@/types'
 
+// ✅ FIX: Fixed ISO string instead of new Date().toISOString()
+//         new Date() differs between SSR and client → hydration mismatch
+const FIXED_DATE = '2025-01-01T00:00:00.000Z'
+
 const MOCK_PRODUCTS: IProduct[] = [
   {
     _id: '1',
@@ -27,7 +31,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     status: 'active', isFeatured: true, isFlashSale: false,
     soldCount: 234, stock: 33,
     ratings: { average: 4.8, count: 127 },
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
   },
   {
     _id: '2',
@@ -46,7 +50,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     status: 'active', isFeatured: true, isFlashSale: true, flashSalePrice: 1400,
     soldCount: 189, stock: 19,
     ratings: { average: 4.9, count: 89 },
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
   },
   {
     _id: '3',
@@ -67,7 +71,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     status: 'active', isFeatured: true, isFlashSale: false,
     soldCount: 312, stock: 53,
     ratings: { average: 4.7, count: 203 },
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
   },
   {
     _id: '4',
@@ -86,7 +90,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     status: 'active', isFeatured: true, isFlashSale: false,
     soldCount: 98, stock: 10,
     ratings: { average: 5.0, count: 45 },
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
   },
   {
     _id: '5',
@@ -105,7 +109,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     status: 'active', isFeatured: true, isFlashSale: false,
     soldCount: 156, stock: 43,
     ratings: { average: 4.6, count: 78 },
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
   },
   {
     _id: '6',
@@ -125,7 +129,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     status: 'active', isFeatured: true, isFlashSale: true, flashSalePrice: 999,
     soldCount: 267, stock: 30,
     ratings: { average: 4.8, count: 156 },
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
   },
   {
     _id: '7',
@@ -145,7 +149,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     status: 'active', isFeatured: true, isFlashSale: false,
     soldCount: 445, stock: 55,
     ratings: { average: 4.9, count: 312 },
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
   },
   {
     _id: '8',
@@ -164,7 +168,7 @@ const MOCK_PRODUCTS: IProduct[] = [
     status: 'active', isFeatured: true, isFlashSale: false,
     soldCount: 178, stock: 32,
     ratings: { average: 4.7, count: 94 },
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
   },
 ]
 
@@ -231,7 +235,7 @@ export default function FeaturedProducts() {
               type="button"
               onClick={() => handleTabClick(tab.value)}
               className={`featured-tab ${activeTab === tab.value ? 'featured-tab-active' : ''}`}
-              suppressHydrationWarning  // ✅ fixes fdprocessedid from browser extensions
+              suppressHydrationWarning
             >
               {tab.label}
             </button>

@@ -7,11 +7,6 @@ import {
 } from 'lucide-react'
 import { ROUTES } from '@/constants'
 
-/**
- * ── Footer Links Data ─────────────────────────────────────────────────────
- * Separating data from JSX makes the component cleaner and easier to update.
- */
-
 const SHOP_LINKS = [
   { label: 'All Bags',       href: ROUTES.shop },
   { label: 'Mini Crossbody', href: '/shop?category=mini-crossbody' },
@@ -31,17 +26,13 @@ const ACCOUNT_LINKS = [
 ]
 
 const HELP_LINKS = [
-  { label: 'FAQ',               href: '/faq' },
-  { label: 'Shipping Policy',   href: '/shipping' },
-  { label: 'Return Policy',     href: '/returns' },
-  { label: 'Privacy Policy',    href: '/privacy' },
-  { label: 'Terms of Service',  href: '/terms' },
-  { label: 'Contact Us',        href: '/contact' },
+  { label: 'FAQ',              href: '/faq' },
+  { label: 'Shipping Policy',  href: '/shipping' },
+  { label: 'Return Policy',    href: '/returns' },
+  { label: 'Privacy Policy',   href: '/privacy' },
+  { label: 'Terms of Service', href: '/terms' },
+  { label: 'Contact Us',       href: '/contact' },
 ]
-
-/**
- * ── Sub-components ────────────────────────────────────────────────────────
- */
 
 function SocialLink({
   href, icon: Icon, label,
@@ -84,11 +75,10 @@ function FooterColumn({
   )
 }
 
-/**
- * ── Main Footer ───────────────────────────────────────────────────────────
- */
-
 export default function Footer() {
+  // ✅ FIX: new Date().getFullYear() differs between SSR and client.
+  //         suppressHydrationWarning on the <p> tag tells React to
+  //         accept the client value without throwing a mismatch error.
   const currentYear = new Date().getFullYear()
 
   return (
@@ -157,9 +147,9 @@ export default function Footer() {
             </div>
 
             {/* Navigation Columns */}
-            <FooterColumn title="Shop"       links={SHOP_LINKS}    />
-            <FooterColumn title="My Account" links={ACCOUNT_LINKS} />
-            <FooterColumn title="Help & Info"links={HELP_LINKS}    />
+            <FooterColumn title="Shop"        links={SHOP_LINKS}    />
+            <FooterColumn title="My Account"  links={ACCOUNT_LINKS} />
+            <FooterColumn title="Help & Info" links={HELP_LINKS}    />
           </div>
 
           {/* Newsletter Section */}
@@ -211,7 +201,9 @@ export default function Footer() {
       {/* Copyright Bar */}
       <div className="footer-bottom">
         <div className="container-bagbliss footer-bottom-inner">
-          <p className="footer-copyright">
+          {/* ✅ FIX: suppressHydrationWarning silences the mismatch caused
+                      by new Date().getFullYear() differing between SSR and client */}
+          <p className="footer-copyright" suppressHydrationWarning>
             &copy; {currentYear} BagBliss BD. All rights reserved.
           </p>
           <p className="footer-made-with">
