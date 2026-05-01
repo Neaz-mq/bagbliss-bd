@@ -107,7 +107,9 @@ export default function AdminNotifications() {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
 
+      {/* ✅ suppressHydrationWarning — fixes fdprocessedid injection on line 110 */}
       <button
+        suppressHydrationWarning
         onClick={() => { setOpen(v => !v); if (!open && unreadCount > 0) markAllRead() }}
         style={{
           position: 'relative', width: '40px', height: '40px',
@@ -165,17 +167,18 @@ export default function AdminNotifications() {
             <div style={{ display: 'flex', gap: '4px' }}>
               {notifications.length > 0 && (
                 <>
-                  <button onClick={markAllRead} title="Mark all read"
+                  {/* ✅ suppressHydrationWarning on all action buttons */}
+                  <button suppressHydrationWarning onClick={markAllRead} title="Mark all read"
                     style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
                     <CheckCheck size={13} />
                   </button>
-                  <button onClick={clearAll} title="Clear all"
+                  <button suppressHydrationWarning onClick={clearAll} title="Clear all"
                     style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ef4444' }}>
                     <Trash2 size={13} />
                   </button>
                 </>
               )}
-              <button onClick={() => setOpen(false)}
+              <button suppressHydrationWarning onClick={() => setOpen(false)}
                 style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
                 <X size={13} />
               </button>

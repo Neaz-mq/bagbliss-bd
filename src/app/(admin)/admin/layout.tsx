@@ -1,8 +1,11 @@
+// src/app/(admin)/admin/layout.tsx
+import { Suspense } from 'react'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import AdminShell from '@/components/admin/AdminShell'
 
 export const metadata = { title: 'Admin — BagBliss BD' }
+export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({
   children,
@@ -14,5 +17,9 @@ export default async function AdminLayout({
     redirect('/login')
   }
 
-  return <AdminShell>{children}</AdminShell>
+  return (
+    <Suspense fallback={null}>
+      <AdminShell>{children}</AdminShell>
+    </Suspense>
+  )
 }

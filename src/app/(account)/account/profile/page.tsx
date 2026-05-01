@@ -1,5 +1,13 @@
-export const dynamic = 'force-dynamic'
+// src/app/(account)/account/profile/page.tsx
+import { Suspense } from 'react'
 import ProfileClient from './ProfileClient'
+
+export const dynamic = 'force-dynamic'
+
 export default function ProfilePage() {
-  return <ProfileClient />
+  return (
+    <Suspense fallback={null}>
+      <ProfileClient />
+    </Suspense>
+  )
 }

@@ -1,7 +1,13 @@
-export const dynamic = 'force-dynamic'
-
+// src/app/(account)/account/addresses/page.tsx
+import { Suspense } from 'react'
 import AddressesClient from './AddressesClient'
 
+export const dynamic = 'force-dynamic'
+
 export default function AddressesPage() {
-  return <AddressesClient />
+  return (
+    <Suspense fallback={null}>
+      <AddressesClient />
+    </Suspense>
+  )
 }

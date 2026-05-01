@@ -8,8 +8,6 @@ import {
   ShoppingCart, ExternalLink,
 } from 'lucide-react'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface NavItem {
   href: string
   label: string
@@ -22,8 +20,6 @@ interface NavGroup {
   label: string
   items: NavItem[]
 }
-
-// ─── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_GROUPS: NavGroup[] = [
   {
@@ -55,14 +51,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 interface Props {
   isOpen: boolean
   onClose: () => void
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminSidebar({ isOpen, onClose }: Props) {
   const pathname = usePathname()
@@ -127,7 +119,9 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
               </p>
             </div>
 
+            {/* ✅ suppressHydrationWarning added — fixes fdprocessedid injection */}
             <button
+              suppressHydrationWarning
               onClick={onClose}
               className="lg:hidden"
               style={{

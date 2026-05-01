@@ -26,8 +26,6 @@ import {
   TrendingUp,
 } from 'lucide-react'
 
-export const dynamic = 'force-dynamic'
-
 interface Order {
   _id: string
   orderNumber: string
@@ -64,11 +62,14 @@ const STATUS_CONFIG = {
   },
 } as const
 
+// ✅ FIX 1: Use fixed locale 'en-GB' with timeZone: 'UTC' so server and
+//    client always produce identical strings regardless of user's locale/TZ
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+    timeZone: 'UTC',
   })
 }
 
@@ -77,6 +78,7 @@ function formatJoinDate(iso?: string | null) {
   return new Date(iso).toLocaleDateString('en-GB', {
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC',
   })
 }
 
@@ -86,6 +88,13 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [ordersLoading, setOrdersLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
+  // ✅ FIX 2: Track mount state so date strings only render client-side,
+  //    preventing server/client mismatch on date formatting
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -190,158 +199,173 @@ export default function AccountPage() {
         background: 'var(--color-surface)',
         paddingBottom: '5rem',
       }}
+      suppressHydrationWarning
     >
-      {/* ── Hero Banner ─────────────────────────────────────────────── */}
-      <div
-        style={{
-          background:
-            'linear-gradient(135deg, var(--color-primary) 0%, #2d1b4e 60%, #1e0a2e 100%)',
-          padding: '2.5rem 0',
-          position: 'relative',
-          overflow: 'hidden',
-          marginBottom: '2rem',
-        }}
-      >
+      {/* ── Hero Banner ── */}
+      {mounted && (
         <div
           style={{
-            position: 'absolute',
-            top: '-60px',
-            right: '-60px',
-            width: '280px',
-            height: '280px',
-            borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(233,30,140,0.15) 0%, transparent 70%)',
-            pointerEvents: 'none',
+              'linear-gradient(135deg, var(--color-primary) 0%, #2d1b4e 60%, #1e0a2e 100%)',
+            padding: '2.5rem 0',
+            position: 'relative',
+            overflow: 'hidden',
+            marginBottom: '2rem',
           }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-40px',
-            left: '10%',
-            width: '200px',
-            height: '200px',
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-        />
-
-        <div className="container-bagbliss">
+        >
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1.5rem',
-              position: 'relative',
-              zIndex: 1,
-              flexWrap: 'wrap',
+              position: 'absolute',
+              top: '-60px',
+              right: '-60px',
+              width: '280px',
+              height: '280px',
+              borderRadius: '50%',
+              background:
+                'radial-gradient(circle, rgba(233,30,140,0.15) 0%, transparent 70%)',
+              pointerEvents: 'none',
             }}
-          >
-            {/* Avatar */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              {user.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.image}
-                  alt={user.name ?? ''}
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '3px solid rgba(233,30,140,0.5)',
-                    boxShadow: '0 0 0 4px rgba(233,30,140,0.15)',
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    background:
-                      'linear-gradient(135deg, var(--color-accent), #c2185b)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '2rem',
-                    fontWeight: 700,
-                    color: 'white',
-                    border: '3px solid rgba(233,30,140,0.5)',
-                    boxShadow: '0 0 0 4px rgba(233,30,140,0.15)',
-                  }}
-                >
-                  {user.name?.[0]?.toUpperCase() ?? 'U'}
-                </div>
-              )}
-              <span
-                style={{
-                  position: 'absolute',
-                  bottom: '4px',
-                  right: '4px',
-                  width: '16px',
-                  height: '16px',
-                  borderRadius: '50%',
-                  background: '#22c55e',
-                  border: '2px solid #1a1a2e',
-                }}
-              />
-            </div>
+          />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '-40px',
+              left: '10%',
+              width: '200px',
+              height: '200px',
+              borderRadius: '50%',
+              background:
+                'radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }}
+          />
 
-            {/* Name & info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  flexWrap: 'wrap',
-                  marginBottom: '0.35rem',
-                }}
-              >
-                <h1
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'clamp(1.5rem,3vw,2rem)',
-                    fontWeight: 700,
-                    color: 'white',
-                    margin: 0,
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {user.name ?? 'Welcome'}
-                </h1>
-                {(user as { role?: string }).role === 'admin' && (
-                  <span
+          <div className="container-bagbliss">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1.5rem',
+                position: 'relative',
+                zIndex: 1,
+                flexWrap: 'wrap',
+              }}
+            >
+              {/* Avatar */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                {user.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.image}
+                    alt={user.name ?? ''}
                     style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '3px solid rgba(233,30,140,0.5)',
+                      boxShadow: '0 0 0 4px rgba(233,30,140,0.15)',
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      background:
+                        'linear-gradient(135deg, var(--color-accent), #c2185b)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       fontFamily: 'var(--font-mono)',
-                      fontSize: '0.65rem',
+                      fontSize: '2rem',
                       fontWeight: 700,
-                      background: 'var(--color-gold)',
-                      color: 'var(--color-primary)',
-                      padding: '0.2rem 0.6rem',
-                      borderRadius: '9999px',
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
+                      color: 'white',
+                      border: '3px solid rgba(233,30,140,0.5)',
+                      boxShadow: '0 0 0 4px rgba(233,30,140,0.15)',
                     }}
                   >
-                    Admin
-                  </span>
+                    {user.name?.[0]?.toUpperCase() ?? 'U'}
+                  </div>
                 )}
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: '4px',
+                    right: '4px',
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    border: '2px solid #1a1a2e',
+                  }}
+                />
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1.25rem',
-                  flexWrap: 'wrap',
-                }}
-              >
-                {user.email && (
+
+              {/* Name & info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    flexWrap: 'wrap',
+                    marginBottom: '0.35rem',
+                  }}
+                >
+                  <h1
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'clamp(1.5rem,3vw,2rem)',
+                      fontWeight: 700,
+                      color: 'white',
+                      margin: 0,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {user.name ?? 'Welcome'}
+                  </h1>
+                  {(user as { role?: string }).role === 'admin' && (
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        background: 'var(--color-gold)',
+                        color: 'var(--color-primary)',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '9999px',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Admin
+                    </span>
+                  )}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.25rem',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {user.email && (
+                    <span
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '0.85rem',
+                        color: 'rgba(255,255,255,0.6)',
+                      }}
+                    >
+                      <Mail size={13} /> {user.email}
+                    </span>
+                  )}
                   <span
                     style={{
                       display: 'flex',
@@ -352,58 +376,58 @@ export default function AccountPage() {
                       color: 'rgba(255,255,255,0.6)',
                     }}
                   >
-                    <Mail size={13} /> {user.email}
+                    <Calendar size={13} />
+                    Member since{' '}
+                    {formatJoinDate((user as { createdAt?: string }).createdAt)}
                   </span>
-                )}
-                <span
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.85rem',
-                    color: 'rgba(255,255,255,0.6)',
-                  }}
-                >
-                  <Calendar size={13} /> Member since{' '}
-                  {formatJoinDate((user as { createdAt?: string }).createdAt)}
-                </span>
+                </div>
               </div>
-            </div>
 
-            {/* Edit Profile button */}
-            <Link
-              href="/account/profile"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.625rem 1.25rem',
-                border: '2px solid rgba(255,255,255,0.2)',
-                borderRadius: '9999px',
-                color: 'white',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                textDecoration: 'none',
-                transition: 'all 0.2s ease',
-                background: 'transparent',
-                flexShrink: 0,
-              }}
-              onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLAnchorElement).style.background =
-                  'rgba(255,255,255,0.1)'
-              }}
-              onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLAnchorElement).style.background =
-                  'transparent'
-              }}
-            >
-              <Edit3 size={15} /> Edit Profile
-            </Link>
+              {/* Edit Profile button */}
+              <Link
+                href="/account/profile"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 1.25rem',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  borderRadius: '9999px',
+                  color: 'white',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  background: 'transparent',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLAnchorElement).style.background =
+                    'rgba(255,255,255,0.1)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLAnchorElement).style.background =
+                    'transparent'
+                }}
+              >
+                <Edit3 size={15} /> Edit Profile
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Skeleton shown before mount so layout doesn't jump */}
+      {!mounted && (
+        <div
+          style={{
+            height: '140px',
+            marginBottom: '2rem',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #2d1b4e 60%, #1e0a2e 100%)',
+          }}
+        />
+      )}
 
       <div className="container-bagbliss">
         {/* ── Stats Row ── */}
@@ -426,6 +450,7 @@ export default function AccountPage() {
             {
               icon: TrendingUp,
               label: 'Total Spent',
+              // ✅ FIX 5: Use fixed locale for number formatting too
               value: `৳${totalSpent.toLocaleString('en-BD')}`,
               color: 'var(--color-gold)',
             },
@@ -905,7 +930,8 @@ export default function AccountPage() {
                           >
                             {order.items.length} item
                             {order.items.length !== 1 ? 's' : ''} ·{' '}
-                            {formatDate(order.createdAt)}
+                            {/* ✅ FIX 6: Guard date render behind mounted flag */}
+                            {mounted ? formatDate(order.createdAt) : '—'}
                           </p>
                         </div>
                         <span

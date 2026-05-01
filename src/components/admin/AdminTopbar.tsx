@@ -39,6 +39,7 @@ export default function AdminTopbar({ onMenuClick }: Props) {
       {/* Left */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
         <button
+          suppressHydrationWarning
           onClick={onMenuClick}
           className="lg:hidden"
           style={{ width: '38px', height: '38px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#475569', cursor: 'pointer' }}
@@ -49,8 +50,12 @@ export default function AdminTopbar({ onMenuClick }: Props) {
         <label className="hidden md:flex"
           style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8fafc', border: '1.5px solid #e8edf5', borderRadius: '12px', padding: '0 14px', height: '40px', cursor: 'text', maxWidth: '320px', width: '100%' }}>
           <Search size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
-          <input type="text" placeholder="Search orders, products, customers…"
-            style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '0.83rem', color: '#334155', width: '100%' }} />
+          <input
+            suppressHydrationWarning
+            type="text"
+            placeholder="Search orders, products, customers…"
+            style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '0.83rem', color: '#334155', width: '100%' }}
+          />
           <kbd style={{ fontSize: '11px', color: '#cbd5e1', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '2px 7px', fontFamily: 'monospace', whiteSpace: 'nowrap', flexShrink: 0 }}>⌘K</kbd>
         </label>
       </div>
@@ -68,7 +73,7 @@ export default function AdminTopbar({ onMenuClick }: Props) {
         <div className="hidden md:block"
           style={{ width: '1px', height: '28px', background: '#e8edf5', margin: '0 6px' }} />
 
-        {/* ── Real-time Notifications Bell ── */}
+        {/* Real-time Notifications Bell */}
         <AdminNotifications />
 
         <div style={{ width: '1px', height: '28px', background: '#e8edf5', margin: '0 6px' }} />
@@ -76,6 +81,7 @@ export default function AdminTopbar({ onMenuClick }: Props) {
         {/* Profile dropdown */}
         <div ref={dropdownRef} style={{ position: 'relative' }}>
           <button
+            suppressHydrationWarning
             onClick={() => setDropdownOpen(v => !v)}
             style={{
               display: 'flex', alignItems: 'center', gap: '10px',
@@ -111,6 +117,7 @@ export default function AdminTopbar({ onMenuClick }: Props) {
               </div>
               <div style={{ padding: '6px' }}>
                 <button
+                  suppressHydrationWarning
                   onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: '/login' }) }}
                   style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '9px', width: '100%', fontSize: '0.84rem', fontWeight: 500, color: '#e11d48', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#fff1f2')}

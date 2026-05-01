@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   MapPin, Plus, Edit2, Trash2, ArrowLeft,
   Home, Briefcase, Check, X,
@@ -21,7 +21,6 @@ interface Address {
   isDefault: boolean
 }
 
-// ── Fix: type the form state explicitly ──
 interface AddressForm {
   label: 'Home' | 'Work' | 'Other'
   fullName: string
@@ -33,8 +32,6 @@ interface AddressForm {
   postalCode: string
   isDefault: boolean
 }
-
-export const dynamic = 'force-dynamic'
 
 const DIVISIONS = ['Dhaka','Chittagong','Rajshahi','Khulna','Barisal','Sylhet','Rangpur','Mymensingh']
 
@@ -59,19 +56,30 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 700, color: 'var(--color-text-primary)',
 }
 
+// ✅ Define initial addresses OUTSIDE component so it's stable across renders
+const INITIAL_ADDRESSES: Address[] = [
+  {
+    id: '1', label: 'Home', fullName: 'Morshed',
+    phone: '01785286936', division: 'Dhaka', district: 'Dhaka',
+    thana: 'Gulshan', address: 'Sector 10, Road 11',
+    postalCode: '1230', isDefault: true,
+  },
+]
+
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      id: '1', label: 'Home', fullName: 'Morshed',
-      phone: '01785286936', division: 'Dhaka', district: 'Dhaka',
-      thana: 'Gulshan', address: 'Sector 10, Road 11',
-      postalCode: '1230', isDefault: true,
-    },
-  ])
+  const [mounted, setMounted] = useState(false)
+  // ✅ FIX: Start with empty array on server, populate after mount
+  const [addresses, setAddresses] = useState<Address[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<AddressForm>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    // Load addresses only on client to prevent SSR mismatch
+    setAddresses(INITIAL_ADDRESSES)
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -128,6 +136,19 @@ export default function AddressesPage() {
     setIsSaving(false); setShowForm(false); setEditingId(null)
   }
 
+  // ✅ Render stable skeleton until mounted
+  if (!mounted) {
+    return (
+      <div style={{ paddingTop: '72px', minHeight: '100vh', background: 'var(--color-surface)', paddingBottom: '5rem' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+          <div className="skeleton" style={{ height: '40px', width: '120px', borderRadius: '8px', marginBottom: '1rem' }} />
+          <div className="skeleton" style={{ height: '60px', borderRadius: '12px', marginBottom: '1.5rem' }} />
+          <div className="skeleton" style={{ height: '160px', borderRadius: '16px' }} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ paddingTop: '72px', minHeight: '100vh', background: 'var(--color-surface)', paddingBottom: '5rem' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1.5rem' }}>
@@ -151,7 +172,7 @@ export default function AddressesPage() {
               </p>
             </div>
             {!showForm && (
-              <button onClick={openAdd} style={{
+              <button type="button" onClick={openAdd} style={{
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
                 padding: '0.625rem 1.25rem', background: 'var(--color-accent)',
                 color: 'white', fontFamily: 'var(--font-body)', fontWeight: 700,
@@ -170,7 +191,6 @@ export default function AddressesPage() {
             border: '2px solid rgba(233,30,140,0.15)',
             padding: '2rem', marginBottom: '1.5rem',
           }}>
-            {/* Form Header */}
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               marginBottom: '1.5rem', paddingBottom: '1rem',
@@ -179,7 +199,7 @@ export default function AddressesPage() {
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-primary)', margin: 0 }}>
                 {editingId ? 'Edit Address' : 'Add New Address'}
               </h2>
-              <button onClick={() => setShowForm(false)} style={{
+              <button type="button" onClick={() => setShowForm(false)} style={{
                 width: '36px', height: '36px', borderRadius: '50%',
                 background: 'rgba(26,26,46,0.06)', border: 'none',
                 cursor: 'pointer', display: 'flex', alignItems: 'center',
@@ -189,8 +209,7 @@ export default function AddressesPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }} noValidate>
               {/* Address Type */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={labelStyle}>Address Type</label>
@@ -220,14 +239,14 @@ export default function AddressesPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={labelStyle}>Full Name <span style={{ color: 'var(--color-accent)' }}>*</span></label>
                   <input type="text" name="fullName" value={form.fullName} onChange={handleChange}
-                    placeholder="Recipient's name" required style={inputStyle}
+                    placeholder="Recipient's name" suppressHydrationWarning style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                     onBlur={e => e.target.style.borderColor = 'rgba(26,26,46,0.1)'} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={labelStyle}>Phone <span style={{ color: 'var(--color-accent)' }}>*</span></label>
                   <input type="tel" name="phone" value={form.phone} onChange={handleChange}
-                    placeholder="01XXX-XXXXXX" required style={inputStyle}
+                    placeholder="01XXX-XXXXXX" suppressHydrationWarning style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                     onBlur={e => e.target.style.borderColor = 'rgba(26,26,46,0.1)'} />
                 </div>
@@ -237,7 +256,8 @@ export default function AddressesPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }} className="addr-grid-3-resp">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={labelStyle}>Division <span style={{ color: 'var(--color-accent)' }}>*</span></label>
-                  <select name="division" value={form.division} onChange={handleChange} required
+                  <select name="division" value={form.division} onChange={handleChange}
+                    suppressHydrationWarning
                     style={{ ...inputStyle, cursor: 'pointer', appearance: 'none' }}
                     onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                     onBlur={e => e.target.style.borderColor = 'rgba(26,26,46,0.1)'}>
@@ -248,14 +268,14 @@ export default function AddressesPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={labelStyle}>District <span style={{ color: 'var(--color-accent)' }}>*</span></label>
                   <input type="text" name="district" value={form.district} onChange={handleChange}
-                    placeholder="e.g. Dhaka" required style={inputStyle}
+                    placeholder="e.g. Dhaka" suppressHydrationWarning style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                     onBlur={e => e.target.style.borderColor = 'rgba(26,26,46,0.1)'} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={labelStyle}>Thana / Upazila</label>
                   <input type="text" name="thana" value={form.thana} onChange={handleChange}
-                    placeholder="e.g. Gulshan" style={inputStyle}
+                    placeholder="e.g. Gulshan" suppressHydrationWarning style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                     onBlur={e => e.target.style.borderColor = 'rgba(26,26,46,0.1)'} />
                 </div>
@@ -265,7 +285,7 @@ export default function AddressesPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={labelStyle}>Full Address <span style={{ color: 'var(--color-accent)' }}>*</span></label>
                 <input type="text" name="address" value={form.address} onChange={handleChange}
-                  placeholder="House/Flat, Road, Area" required style={inputStyle}
+                  placeholder="House/Flat, Road, Area" suppressHydrationWarning style={inputStyle}
                   onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                   onBlur={e => e.target.style.borderColor = 'rgba(26,26,46,0.1)'} />
               </div>
@@ -275,7 +295,7 @@ export default function AddressesPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={labelStyle}>Postal Code</label>
                   <input type="text" name="postalCode" value={form.postalCode} onChange={handleChange}
-                    placeholder="e.g. 1212" style={inputStyle}
+                    placeholder="e.g. 1212" suppressHydrationWarning style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                     onBlur={e => e.target.style.borderColor = 'rgba(26,26,46,0.1)'} />
                 </div>
@@ -286,6 +306,7 @@ export default function AddressesPage() {
                     fontSize: '0.875rem', color: 'var(--color-text-secondary)',
                   }}>
                     <input type="checkbox" name="isDefault" checked={form.isDefault} onChange={handleChange}
+                      suppressHydrationWarning
                       style={{ width: '16px', height: '16px', accentColor: 'var(--color-accent)', cursor: 'pointer' }} />
                     Set as default address
                   </label>
@@ -300,7 +321,7 @@ export default function AddressesPage() {
                   fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.875rem',
                   color: 'var(--color-primary)', cursor: 'pointer',
                 }}>Cancel</button>
-                <button type="submit" disabled={isSaving} style={{
+                <button type="submit" disabled={isSaving} suppressHydrationWarning style={{
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
                   padding: '0.875rem 2rem', background: 'var(--color-accent)',
                   color: 'white', fontFamily: 'var(--font-body)', fontWeight: 700,
@@ -331,7 +352,7 @@ export default function AddressesPage() {
             <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 }}>
               Add a delivery address to speed up your checkout.
             </p>
-            <button onClick={openAdd} style={{
+            <button type="button" onClick={openAdd} style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
               padding: '0.875rem 2rem', background: 'var(--color-accent)',
               color: 'white', fontFamily: 'var(--font-body)', fontWeight: 700,
@@ -351,7 +372,6 @@ export default function AddressesPage() {
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(26,26,46,0.1)')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
               >
-                {/* Card Header */}
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '1rem 1.25rem', background: 'var(--color-surface)',
@@ -378,51 +398,39 @@ export default function AddressesPage() {
                       </span>
                     )}
                   </div>
-
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {!addr.isDefault && (
-                      <button onClick={() => handleSetDefault(addr.id)} style={{
+                      <button type="button" onClick={() => handleSetDefault(addr.id)} style={{
                         display: 'flex', alignItems: 'center', gap: '0.3rem',
                         padding: '0.35rem 0.75rem', background: 'white',
                         border: '1px solid rgba(26,26,46,0.1)', borderRadius: '9999px',
                         fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 600,
-                        color: 'var(--color-text-secondary)', cursor: 'pointer',
-                        transition: 'all 0.15s',
+                        color: 'var(--color-text-secondary)', cursor: 'pointer', transition: 'all 0.15s',
                       }}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.color = 'var(--color-accent)' }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(26,26,46,0.1)'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
-                      >
-                        Set Default
-                      </button>
+                      >Set Default</button>
                     )}
-                    <button onClick={() => openEdit(addr)} style={{
+                    <button type="button" onClick={() => openEdit(addr)} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: '32px', height: '32px', borderRadius: '50%',
                       background: 'white', border: '1px solid rgba(26,26,46,0.1)',
-                      cursor: 'pointer', color: 'var(--color-text-secondary)',
-                      transition: 'all 0.15s',
+                      cursor: 'pointer', color: 'var(--color-text-secondary)', transition: 'all 0.15s',
                     }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.color = 'var(--color-accent)' }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(26,26,46,0.1)'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button onClick={() => handleDelete(addr.id)} style={{
+                    ><Edit2 size={14} /></button>
+                    <button type="button" onClick={() => handleDelete(addr.id)} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: '32px', height: '32px', borderRadius: '50%',
                       background: 'white', border: '1px solid rgba(26,26,46,0.1)',
-                      cursor: 'pointer', color: 'var(--color-error)',
-                      transition: 'all 0.15s',
+                      cursor: 'pointer', color: 'var(--color-error)', transition: 'all 0.15s',
                     }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.06)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'rgba(26,26,46,0.1)' }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    ><Trash2 size={14} /></button>
                   </div>
                 </div>
-
-                {/* Card Body */}
                 <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                   <p style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-primary)', margin: 0 }}>
                     {addr.fullName}
