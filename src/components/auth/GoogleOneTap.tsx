@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSession, signIn } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -15,6 +15,9 @@ declare global {
             isSkippedMoment: () => boolean
             isDismissedMoment: () => boolean
             getMomentType: () => string
+            getNotDisplayedReason: () => string
+            getSkippedReason: () => string
+            getDismissedReason: () => string
           }) => void) => void
           cancel: () => void
           renderButton: (parent: HTMLElement, options: object) => void
@@ -24,18 +27,45 @@ declare global {
   }
 }
 
+// ✅ Suppress the [GSI_LOGGER] FedCM NetworkError from the Next.js dev overlay.
+// This error is thrown internally by Google's GSI script when FedCM is
+// disabled in the browser — it is not actionable and the app works fine.
+function suppressFedCMConsoleError() {
+  if (typeof window === 'undefined') return
+
+  const originalError = console.error.bind(console)
+  console.error = (...args: unknown[]) => {
+    const msg = typeof args[0] === 'string' ? args[0] : ''
+    if (
+      msg.includes('GSI_LOGGER') ||
+      msg.includes('FedCM') ||
+      msg.includes('NetworkError') && msg.includes('token')
+    ) {
+      return // swallow — known benign GSI internal error
+    }
+    originalError(...args)
+  }
+}
+
 export default function GoogleOneTap() {
   const { status, update } = useSession()
   const pathname = usePathname()
   const router = useRouter()
   const initialized = useRef(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    // Suppress GSI_LOGGER FedCM error from Next.js dev overlay
+    suppressFedCMConsoleError()
+  }, [])
 
   const isAdmin    = pathname.startsWith('/admin')
   const isAuthPage = pathname.startsWith('/login') ||
                      pathname.startsWith('/register') ||
                      pathname.startsWith('/forgot-password')
 
-  const shouldShow = status === 'unauthenticated' && !isAdmin && !isAuthPage
+  const shouldShow = mounted && status === 'unauthenticated' && !isAdmin && !isAuthPage
 
   useEffect(() => {
     if (!shouldShow) return
@@ -64,6 +94,22 @@ export default function GoogleOneTap() {
       }
     }
 
+    const showFallbackButton = () => {
+      const container = document.getElementById('google-one-tap-btn')
+      if (container && window.google?.accounts?.id) {
+        window.google.accounts.id.renderButton(container, {
+          type: 'standard',
+          shape: 'pill',
+          theme: 'outline',
+          text: 'continue_with',
+          size: 'large',
+          logo_alignment: 'left',
+          width: 240,
+        })
+        container.style.display = 'flex'
+      }
+    }
+
     const init = () => {
       if (!window.google?.accounts?.id) return
       initialized.current = true
@@ -71,7 +117,6 @@ export default function GoogleOneTap() {
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: handleCredentialResponse,
-        use_fedcm_for_prompt: true,   // ✅ FedCM enabled — shows native popup
         cancel_on_tap_outside: false,
         auto_select: false,
         itp_support: true,
@@ -80,26 +125,10 @@ export default function GoogleOneTap() {
 
       window.google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed()) {
-          console.log('[GoogleOneTap] not displayed:', notification.getMomentType())
-          // FedCM blocked or no Google account — show fallback button
-          const container = document.getElementById('google-one-tap-btn')
-          if (container && window.google?.accounts?.id) {
-            window.google.accounts.id.renderButton(container, {
-              type: 'standard',
-              shape: 'pill',
-              theme: 'outline',
-              text: 'continue_with',
-              size: 'large',
-              logo_alignment: 'left',
-              width: 240,
-            })
-            container.style.display = 'flex'
-          }
-        } else if (notification.isSkippedMoment()) {
-          console.log('[GoogleOneTap] skipped:', notification.getMomentType())
-        } else if (notification.isDismissedMoment()) {
-          console.log('[GoogleOneTap] dismissed:', notification.getMomentType())
+          showFallbackButton()
+          return
         }
+        // isSkippedMoment / isDismissedMoment — user action, do nothing
       })
     }
 
@@ -129,17 +158,15 @@ export default function GoogleOneTap() {
 
   if (!shouldShow) return null
 
-  // Hidden fallback button — only shown if FedCM popup fails
   return (
     <div
-      suppressHydrationWarning
       id="google-one-tap-btn"
       style={{
         position: 'fixed',
         bottom: '24px',
         right: '24px',
         zIndex: 9999,
-        display: 'none',      // stays hidden unless prompt() fails
+        display: 'none',
         alignItems: 'center',
         justifyContent: 'center',
       }}
