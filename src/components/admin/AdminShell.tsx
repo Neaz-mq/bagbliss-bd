@@ -9,6 +9,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   return (
     <div
+      suppressHydrationWarning
       className="admin-panel"
       style={{
         display: 'flex',
@@ -17,13 +18,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         background: '#f4f6fb',
       }}
     >
-      {/* Sidebar — fixed width, never shrinks */}
       <AdminSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Right side — topbar + scrollable content */}
       <div style={{
         flex: 1,
         display: 'flex',
@@ -33,7 +32,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       }}>
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
 
-        {/* This scrolls independently */}
         <main style={{
           flex: 1,
           overflowY: 'auto',

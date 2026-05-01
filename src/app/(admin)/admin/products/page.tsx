@@ -1,6 +1,13 @@
-export const dynamic = 'force-dynamic'
+// src/app/(admin)/admin/products/page.tsx
+import { Suspense } from 'react'
 import ProductsClient from './ProductsClient'
 
+export const dynamic = 'force-dynamic'
+
 export default function Page() {
-  return <ProductsClient />
+  return (
+    <Suspense fallback={null}>
+      <ProductsClient />
+    </Suspense>
+  )
 }

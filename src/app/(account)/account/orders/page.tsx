@@ -1,5 +1,13 @@
+// src/app/(admin)/admin/orders/page.tsx
+import { Suspense } from 'react'
+import OrdersPage from './OrdersClient'
+
 export const dynamic = 'force-dynamic'
-import OrdersClient from './OrdersClient'
-export default function OrdersPage() {
-  return <OrdersClient />
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <OrdersPage />
+    </Suspense>
+  )
 }

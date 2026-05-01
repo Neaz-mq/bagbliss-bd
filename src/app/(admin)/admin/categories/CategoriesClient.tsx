@@ -61,8 +61,8 @@ function StatPill({
 // ── Category Card ──────────────────────────────────────────────────────────
 
 function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
-  const g    = CAT_GRADIENTS[cat.value] ?? CAT_GRADIENTS['mini-crossbody']
-  const pct  = cat.stats.total > 0 ? Math.round((cat.stats.active / cat.stats.total) * 100) : 0
+  const g   = CAT_GRADIENTS[cat.value] ?? CAT_GRADIENTS['mini-crossbody']
+  const pct = cat.stats.total > 0 ? Math.round((cat.stats.active / cat.stats.total) * 100) : 0
   const sold = cat.stats.totalSold ?? 0
 
   return (
@@ -89,7 +89,6 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
         borderBottom: `1px solid ${g.border}`,
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-          {/* Emoji + rank */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
@@ -142,10 +141,10 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
       {/* Stats grid */}
       <div style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-          <StatPill icon={Package}   label="Total"    value={cat.stats.total}  color={g.from} />
-          <StatPill icon={Tag}       label="Active"   value={cat.stats.active} color="#10b981" />
-          <StatPill icon={Star}      label="Featured" value={cat.stats.featured} color="#f59e0b" />
-          <StatPill icon={Zap}       label="On Sale"  value={cat.stats.flashSale} color="#e91e8c" />
+          <StatPill icon={Package} label="Total"    value={cat.stats.total}      color={g.from}    />
+          <StatPill icon={Tag}     label="Active"   value={cat.stats.active}     color="#10b981"   />
+          <StatPill icon={Star}    label="Featured" value={cat.stats.featured}   color="#f59e0b"   />
+          <StatPill icon={Zap}     label="On Sale"  value={cat.stats.flashSale}  color="#e91e8c"   />
         </div>
 
         {/* Price range */}
@@ -158,15 +157,15 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
             <div>
               <p style={{ fontSize: '0.62rem', color: '#94a3b8', margin: '0 0 2px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Price Range</p>
               <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                ৳{cat.stats.minPrice.toLocaleString()}
+                ৳{cat.stats.minPrice.toLocaleString('en-US')}
                 {' '}–{' '}
-                ৳{cat.stats.maxPrice.toLocaleString()}
+                ৳{cat.stats.maxPrice.toLocaleString('en-US')}
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '0.62rem', color: '#94a3b8', margin: '0 0 2px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Avg Price</p>
               <p style={{ fontSize: '0.9rem', fontWeight: 800, color: g.from, margin: 0 }}>
-                ৳{Math.round(cat.stats.avgPrice).toLocaleString()}
+                ৳{Math.round(cat.stats.avgPrice).toLocaleString('en-US')}
               </p>
             </div>
           </div>
@@ -192,8 +191,7 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
             padding: '10px', borderRadius: '10px', textDecoration: 'none',
             fontSize: '0.82rem', fontWeight: 700,
             background: `linear-gradient(135deg, ${g.from}, ${g.to})`,
-            color: 'white',
-            boxShadow: `0 3px 10px ${g.border}`,
+            color: 'white', boxShadow: `0 3px 10px ${g.border}`,
           }}
         >
           <Package size={14} />
@@ -209,21 +207,21 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
 
 function SummaryBar({ categories }: { categories: Category[] }) {
   const totals = categories.reduce((acc, cat) => ({
-    products:   acc.products  + cat.stats.total,
-    active:     acc.active    + cat.stats.active,
-    stock:      acc.stock     + cat.stats.totalStock,
-    sold:       acc.sold      + cat.stats.totalSold,
-    featured:   acc.featured  + cat.stats.featured,
-    flashSale:  acc.flashSale + cat.stats.flashSale,
+    products:  acc.products  + cat.stats.total,
+    active:    acc.active    + cat.stats.active,
+    stock:     acc.stock     + cat.stats.totalStock,
+    sold:      acc.sold      + cat.stats.totalSold,
+    featured:  acc.featured  + cat.stats.featured,
+    flashSale: acc.flashSale + cat.stats.flashSale,
   }), { products: 0, active: 0, stock: 0, sold: 0, featured: 0, flashSale: 0 })
 
   const items = [
-    { label: 'Total Products', value: totals.products,  icon: Package,    color: '#e91e8c', gradient: 'linear-gradient(135deg, #e91e8c, #f43f5e)' },
-    { label: 'Active',         value: totals.active,    icon: Tag,        color: '#10b981', gradient: 'linear-gradient(135deg, #10b981, #059669)' },
-    { label: 'In Stock',       value: totals.stock,     icon: ShoppingBag,color: '#6366f1', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)' },
-    { label: 'Total Sold',     value: totals.sold,      icon: TrendingUp, color: '#f59e0b', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
-    { label: 'Featured',       value: totals.featured,  icon: Star,       color: '#3b82f6', gradient: 'linear-gradient(135deg, #3b82f6, #6366f1)' },
-    { label: 'Flash Sale',     value: totals.flashSale, icon: Zap,        color: '#ec4899', gradient: 'linear-gradient(135deg, #ec4899, #e91e8c)' },
+    { label: 'Total Products', value: totals.products,  icon: Package,     gradient: 'linear-gradient(135deg, #e91e8c, #f43f5e)' },
+    { label: 'Active',         value: totals.active,    icon: Tag,         gradient: 'linear-gradient(135deg, #10b981, #059669)' },
+    { label: 'In Stock',       value: totals.stock,     icon: ShoppingBag, gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)' },
+    { label: 'Total Sold',     value: totals.sold,      icon: TrendingUp,  gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
+    { label: 'Featured',       value: totals.featured,  icon: Star,        gradient: 'linear-gradient(135deg, #3b82f6, #6366f1)' },
+    { label: 'Flash Sale',     value: totals.flashSale, icon: Zap,         gradient: 'linear-gradient(135deg, #ec4899, #e91e8c)' },
   ]
 
   return (
@@ -241,8 +239,8 @@ function SummaryBar({ categories }: { categories: Category[] }) {
             <Icon size={17} color="white" strokeWidth={2} />
           </div>
           <div>
-            <p style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1 }}>{value}</p>
-            <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '4px 0 0', fontWeight: 500 }}>{label}</p>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{value}</div>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px', fontWeight: 500 }}>{label}</div>
           </div>
         </div>
       ))}
@@ -276,14 +274,13 @@ export default function CategoriesClient() {
   const sorted = [...categories]
     .filter(c => c.label.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-      if (sortBy === 'products') return b.stats.total    - a.stats.total
-      if (sortBy === 'sold')     return b.stats.totalSold - a.stats.totalSold
+      if (sortBy === 'products') return b.stats.total      - a.stats.total
+      if (sortBy === 'sold')     return b.stats.totalSold  - a.stats.totalSold
       if (sortBy === 'stock')    return b.stats.totalStock - a.stats.totalStock
       if (sortBy === 'name')     return a.label.localeCompare(b.label)
       return 0
     })
 
-  // Rank is based on original sort by products
   const rankMap = Object.fromEntries(
     [...categories]
       .sort((a, b) => b.stats.total - a.stats.total)
@@ -299,12 +296,14 @@ export default function CategoriesClient() {
           <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>
             Categories
           </h1>
-          <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: '4px 0 0' }}>
+          <p suppressHydrationWarning style={{ fontSize: '0.875rem', color: '#94a3b8', margin: '4px 0 0' }}>
             {categories.length} categories · Overview of your product catalog
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* ✅ Fix: suppressHydrationWarning on button with onClick */}
           <button
+            suppressHydrationWarning
             onClick={fetchCategories}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
           >
@@ -340,7 +339,7 @@ export default function CategoriesClient() {
                 🏆 Best Selling Category
               </p>
               <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                {top.label} — {top.stats.totalSold} units sold · ৳{Math.round(top.stats.avgPrice).toLocaleString()} avg price
+                {top.label} — {top.stats.totalSold} units sold · ৳{Math.round(top.stats.avgPrice).toLocaleString('en-US')} avg price
               </p>
             </div>
             <Link
@@ -357,8 +356,12 @@ export default function CategoriesClient() {
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 200px', background: '#fff', border: '1.5px solid #e8edf5', borderRadius: '12px', padding: '0 14px', height: '42px' }}>
           <Search size={15} style={{ color: '#94a3b8', flexShrink: 0 }} />
+          {/* ✅ Fix: suppressHydrationWarning on controlled input */}
           <input
-            type="text" placeholder="Search categories…" value={search}
+            suppressHydrationWarning
+            type="text"
+            placeholder="Search categories…"
+            value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
           />
@@ -371,7 +374,9 @@ export default function CategoriesClient() {
             { key: 'stock',    label: 'By Stock'    },
             { key: 'name',     label: 'By Name'     },
           ] as const).map(({ key, label }) => (
+            // ✅ Fix: suppressHydrationWarning on sort buttons (style depends on state)
             <button
+              suppressHydrationWarning
               key={key}
               onClick={() => setSortBy(key)}
               style={{
@@ -458,10 +463,10 @@ export default function CategoriesClient() {
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', margin: '0 0 14px' }}>Quick Actions</p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {[
-              { label: '➕ Add New Product',    href: '/admin/products',           color: '#e91e8c' },
-              { label: '⚡ Manage Flash Sale',  href: '/admin/flash-sale',         color: '#f59e0b' },
-              { label: '📊 View All Orders',    href: '/admin/orders',             color: '#6366f1' },
-              { label: '👜 Visit Shop',          href: '/shop', color: '#10b981' },
+              { label: '➕ Add New Product',   href: '/admin/products',   color: '#e91e8c' },
+              { label: '⚡ Manage Flash Sale', href: '/admin/flash-sale', color: '#f59e0b' },
+              { label: '📊 View All Orders',   href: '/admin/orders',     color: '#6366f1' },
+              { label: '👜 Visit Shop',         href: '/shop',            color: '#10b981' },
             ].map(({ label, href, color }) => (
               <Link
                 key={href} href={href}

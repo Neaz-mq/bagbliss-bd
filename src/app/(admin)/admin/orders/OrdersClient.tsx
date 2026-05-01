@@ -7,49 +7,24 @@ import {
   Phone, MapPin, CreditCard, StickyNote, ChevronDown,
 } from 'lucide-react'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled'
 type PaymentMethod = 'bkash' | 'nagad' | 'cod'
 
 interface OrderItem {
-  productId: string
-  name: string
-  price: number
-  quantity: number
-  color: string
-  image?: string
+  productId: string; name: string; price: number
+  quantity: number; color: string; image?: string
 }
-
 interface Shipping {
-  fullName: string
-  phone: string
-  email?: string
-  division: string
-  district: string
-  thana: string
-  address: string
-  postalCode?: string
+  fullName: string; phone: string; email?: string
+  division: string; district: string; thana: string
+  address: string; postalCode?: string
 }
-
 interface Order {
-  _id: string
-  orderNumber: string
-  userId?: string
-  guestEmail?: string
-  items: OrderItem[]
-  shipping: Shipping
-  delivery: string
-  deliveryFee: number
-  payment: PaymentMethod
-  subtotal: number
-  total: number
-  status: OrderStatus
-  orderNote?: string
-  createdAt: string
+  _id: string; orderNumber: string; userId?: string; guestEmail?: string
+  items: OrderItem[]; shipping: Shipping; delivery: string; deliveryFee: number
+  payment: PaymentMethod; subtotal: number; total: number; status: OrderStatus
+  orderNote?: string; createdAt: string
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<OrderStatus, {
   label: string; bg: string; text: string; dot: string; border: string; icon: React.ElementType
@@ -66,8 +41,6 @@ const PAYMENT_CONFIG: Record<string, { label: string; color: string; bg: string 
   cod:   { label: 'COD',   color: '#475569', bg: 'rgba(71,85,105,0.1)'  },
 }
 
-// ─── StatusBadge ──────────────────────────────────────────────────────────────
-
 function StatusBadge({ status }: { status: OrderStatus }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.processing
   return (
@@ -83,48 +56,36 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   )
 }
 
-// ─── Order Detail Modal ───────────────────────────────────────────────────────
-
-function OrderModal({
-  order, onClose, onStatusChange,
-}: {
+function OrderModal({ order, onClose, onStatusChange }: {
   order: Order
   onClose: () => void
   onStatusChange: (id: string, status: OrderStatus) => Promise<void>
 }) {
-  const [updating, setUpdating]         = useState(false)
+  const [updating, setUpdating]           = useState(false)
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
-    setShowStatusMenu(false)
-    setUpdating(true)
+    setShowStatusMenu(false); setUpdating(true)
     await onStatusChange(order._id, newStatus)
-    setCurrentStatus(newStatus)
-    setUpdating(false)
+    setCurrentStatus(newStatus); setUpdating(false)
   }
 
   const allStatuses: OrderStatus[] = ['processing', 'shipped', 'delivered', 'cancelled']
   const payment = PAYMENT_CONFIG[order.payment] ?? PAYMENT_CONFIG.cod
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 100,
-        background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: '#ffffff', borderRadius: '20px',
-          width: '100%', maxWidth: '680px', maxHeight: '90vh',
-          overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.2)',
-        }}
-      >
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: '#ffffff', borderRadius: '20px',
+        width: '100%', maxWidth: '680px', maxHeight: '90vh',
+        overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.2)',
+      }}>
         {/* Modal header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -150,15 +111,13 @@ function OrderModal({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              width: '36px', height: '36px', borderRadius: '10px',
-              border: '1.5px solid #e2e8f0', background: '#f8fafc',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: '#64748b',
-            }}
-          >
+          {/* ✅ suppressHydrationWarning */}
+          <button suppressHydrationWarning onClick={onClose} style={{
+            width: '36px', height: '36px', borderRadius: '10px',
+            border: '1.5px solid #e2e8f0', background: '#f8fafc',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: '#64748b',
+          }}>
             <X size={16} />
           </button>
         </div>
@@ -179,7 +138,8 @@ function OrderModal({
             </span>
 
             <div style={{ marginLeft: 'auto', position: 'relative' }}>
-              <button
+              {/* ✅ suppressHydrationWarning */}
+              <button suppressHydrationWarning
                 onClick={() => setShowStatusMenu(v => !v)}
                 disabled={updating}
                 style={{
@@ -206,7 +166,7 @@ function OrderModal({
                   {allStatuses.map(s => {
                     const cfg = STATUS_CONFIG[s]
                     return (
-                      <button
+                      <button suppressHydrationWarning
                         key={s}
                         onClick={() => handleStatusChange(s)}
                         disabled={s === currentStatus}
@@ -317,7 +277,6 @@ function OrderModal({
             </div>
           </div>
 
-          {/* Order note */}
           {order.orderNote && (
             <div style={{
               background: 'rgba(245,158,11,0.06)', borderRadius: '12px',
@@ -336,8 +295,6 @@ function OrderModal({
     </div>
   )
 }
-
-// ─── Main Orders Page ─────────────────────────────────────────────────────────
 
 export default function OrdersPage() {
   const [orders, setOrders]          = useState<Order[]>([])
@@ -404,7 +361,8 @@ export default function OrdersPage() {
             {total} total orders · Manage and track all customer orders
           </p>
         </div>
-        <button
+        {/* ✅ suppressHydrationWarning — line 407, the reported button */}
+        <button suppressHydrationWarning
           onClick={fetchOrders}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
@@ -424,7 +382,7 @@ export default function OrdersPage() {
           const active = statusFilter === tab.key
           const cfg    = tab.key ? STATUS_CONFIG[tab.key as OrderStatus] : null
           return (
-            <button
+            <button suppressHydrationWarning
               key={tab.key}
               onClick={() => setStatus(tab.key)}
               style={{
@@ -452,7 +410,7 @@ export default function OrdersPage() {
           padding: '0 14px', height: '42px',
         }}>
           <Search size={15} style={{ color: '#94a3b8', flexShrink: 0 }} />
-          <input
+          <input suppressHydrationWarning
             type="text"
             placeholder="Search order #, customer name, phone…"
             value={search}
@@ -460,7 +418,7 @@ export default function OrdersPage() {
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
           />
           {search && (
-            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}>
+            <button suppressHydrationWarning onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}>
               <X size={14} />
             </button>
           )}
@@ -468,7 +426,7 @@ export default function OrdersPage() {
 
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <Filter size={14} style={{ position: 'absolute', left: '12px', color: '#94a3b8', pointerEvents: 'none' }} />
-          <select
+          <select suppressHydrationWarning
             value={paymentFilter}
             onChange={e => setPayment(e.target.value)}
             style={{
@@ -492,7 +450,6 @@ export default function OrdersPage() {
         background: '#ffffff', borderRadius: '20px',
         border: '1px solid #f1f5f9', boxShadow: '0 1px 2px rgba(0,0,0,0.04)', overflow: 'hidden',
       }}>
-        {/* Head */}
         <div style={{
           display: 'grid', gridTemplateColumns: '1fr 160px 140px 110px 90px 56px',
           padding: '11px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8',
@@ -503,7 +460,6 @@ export default function OrdersPage() {
           <span>Payment</span><span style={{ textAlign: 'right' }}>Amount</span><span />
         </div>
 
-        {/* Loading */}
         {loading && (
           <div style={{ padding: '60px 20px', textAlign: 'center' }}>
             <div style={{
@@ -515,7 +471,6 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* Empty */}
         {!loading && orders.length === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', textAlign: 'center' }}>
             <div style={{
@@ -531,12 +486,10 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* Rows */}
         {!loading && orders.map((order, i) => {
           const pay = PAYMENT_CONFIG[order.payment] ?? PAYMENT_CONFIG.cod
           return (
-            <div
-              key={order._id}
+            <div key={order._id}
               style={{
                 display: 'grid', gridTemplateColumns: '1fr 160px 140px 110px 90px 56px',
                 padding: '14px 20px', borderBottom: i < orders.length - 1 ? '1px solid #f8fafc' : 'none',
@@ -545,7 +498,6 @@ export default function OrdersPage() {
               onMouseEnter={e => (e.currentTarget.style.background = '#fafbfc')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              {/* Order # */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: '38px', height: '38px', borderRadius: '11px', flexShrink: 0,
@@ -565,7 +517,6 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              {/* Customer */}
               <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: '0.84rem', fontWeight: 600, color: '#334155', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {order.shipping?.fullName ?? 'Guest'}
@@ -577,7 +528,6 @@ export default function OrdersPage() {
 
               <StatusBadge status={order.status} />
 
-              {/* Payment */}
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '5px',
                 fontSize: '0.72rem', fontWeight: 700, padding: '4px 9px',
@@ -586,14 +536,13 @@ export default function OrdersPage() {
                 {pay.label}
               </span>
 
-              {/* Amount */}
               <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0, textAlign: 'right' }}>
                 ৳{order.total.toLocaleString()}
               </p>
 
-              {/* View */}
               <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <button
+                {/* ✅ suppressHydrationWarning */}
+                <button suppressHydrationWarning
                   onClick={() => setSelected(order)}
                   style={{
                     width: '34px', height: '34px', borderRadius: '9px',
@@ -619,7 +568,8 @@ export default function OrdersPage() {
             Showing <strong style={{ color: '#1e293b' }}>{(page - 1) * limit + 1}–{Math.min(page * limit, total)}</strong> of <strong style={{ color: '#1e293b' }}>{total}</strong> orders
           </p>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button
+            {/* ✅ suppressHydrationWarning on all pagination buttons */}
+            <button suppressHydrationWarning
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
               style={{
@@ -640,7 +590,7 @@ export default function OrdersPage() {
                 else p = page - 2 + i
               }
               return (
-                <button
+                <button suppressHydrationWarning
                   key={p}
                   onClick={() => setPage(p)}
                   style={{
@@ -656,7 +606,7 @@ export default function OrdersPage() {
               )
             })}
 
-            <button
+            <button suppressHydrationWarning
               onClick={() => setPage(p => Math.min(pages, p + 1))}
               disabled={page === pages}
               style={{
@@ -672,7 +622,6 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* ── Modal ── */}
       {selectedOrder && (
         <OrderModal
           order={selectedOrder}
