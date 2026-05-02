@@ -49,11 +49,20 @@ export default function ShoppingAssistant() {
     setInput("");
     setLoading(true);
     try {
-      const res  = await fetch("/api/ai/chat", {
+      const allMsgs = [...msgs, userMsg];
+      // ✅ Filter out the static WELCOME message — Gemini requires strict user/model alternation
+      const apiMessages = allMsgs.filter(m => m !== WELCOME);
+
+      const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...msgs, userMsg] }),
+        body: JSON.stringify({ messages: apiMessages }),
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
       const data = await res.json();
       setMsgs(p => [...p, { role: "assistant", content: data.message ?? "Sorry, try again!" }]);
     } catch {
@@ -93,7 +102,6 @@ export default function ShoppingAssistant() {
               position: "relative",
               overflow: "hidden",
             }}>
-              {/* decorative circles */}
               <div style={{
                 position: "absolute", top: -20, right: -20,
                 width: 80, height: 80, borderRadius: "50%",
@@ -108,7 +116,6 @@ export default function ShoppingAssistant() {
               }} />
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-                {/* Avatar + name */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ position: "relative" }}>
                     <div style={{
@@ -119,7 +126,6 @@ export default function ShoppingAssistant() {
                     }}>
                       👜
                     </div>
-                    {/* Online dot */}
                     <div style={{
                       position: "absolute", bottom: -2, right: -2,
                       width: 11, height: 11, borderRadius: "50%",
@@ -138,7 +144,6 @@ export default function ShoppingAssistant() {
                   </div>
                 </div>
 
-                {/* Action buttons */}
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
                     { icon: <RotateCcw size={13}/>, action: () => setMsgs([WELCOME]), title: "New chat" },
@@ -170,7 +175,6 @@ export default function ShoppingAssistant() {
                 </div>
               </div>
 
-              {/* Tagline */}
               <p style={{
                 color: "rgba(255,255,255,0.35)", fontSize: 11,
                 margin: "8px 0 0", position: "relative",
@@ -375,7 +379,6 @@ export default function ShoppingAssistant() {
           transition: "background 0.3s, box-shadow 0.3s",
         }}
       >
-        {/* Pulse */}
         {!open && (
           <motion.div
             style={{
@@ -411,7 +414,6 @@ export default function ShoppingAssistant() {
           )}
         </AnimatePresence>
 
-        {/* Unread badge */}
         <AnimatePresence>
           {badge && !open && (
             <motion.div

@@ -25,28 +25,36 @@ export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json();
 
-    if (!messages || !Array.isArray(messages)) {
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+
+    // ✅ Ensure last message is from user
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role !== "user") {
+      return NextResponse.json({ error: "Last message must be from user" }, { status: 400 });
     }
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Build chat history (exclude last user message)
-    const history = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
+    // ✅ Build history from all messages except the last user message
+    // Only include messages that form valid user/assistant pairs
+    const historyMessages = messages.slice(0, -1);
+
+    const history = historyMessages.map((msg: { role: string; content: string }) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
 
     const chat = model.startChat({
       history: [
-        { role: "user", parts: [{ text: "System instructions: " + SYSTEM_PROMPT }] },
+        { role: "user",  parts: [{ text: "System instructions: " + SYSTEM_PROMPT }] },
         { role: "model", parts: [{ text: "Understood! I'm BagBliss AI, ready to help customers find their perfect bag. How can I assist?" }] },
         ...history,
       ],
     });
 
-    const lastMessage = messages[messages.length - 1].content;
-    const result = await chat.sendMessage(lastMessage);
+    const result = await chat.sendMessage(lastMessage.content);
     const text = result.response.text();
 
     return NextResponse.json({ message: text });
