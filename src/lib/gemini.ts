@@ -1,33 +1,30 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY is not set in environment variables");
-}
+const getClient = () => {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) {
+    console.warn("⚠️  GEMINI_API_KEY is not set — AI features will be disabled");
+    return null;
+  }
+  return new GoogleGenerativeAI(key);
+};
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = getClient();
 
-export const geminiFlash = genAI.getGenerativeModel({
+export const geminiFlash = genAI?.getGenerativeModel({
   model: "gemini-1.5-flash",
-  generationConfig: {
-    temperature: 0.7,
-    maxOutputTokens: 1024,
-  },
-});
-
-export const geminiFlashFast = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash-8b", // even faster, still free
-  generationConfig: {
-    temperature: 0.5,
-    maxOutputTokens: 512,
-  },
+  generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
 });
 
 export async function generateText(prompt: string): Promise<string> {
-  const result = await geminiFlash.generateContent(prompt);
+  if (!genAI) throw new Error("Gemini API key not configured");
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const result = await model.generateContent(prompt);
   return result.response.text();
 }
 
 export async function generateJSON<T>(prompt: string): Promise<T> {
+  if (!genAI) throw new Error("Gemini API key not configured");
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
     generationConfig: {
@@ -36,6 +33,5 @@ export async function generateJSON<T>(prompt: string): Promise<T> {
     },
   });
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  return JSON.parse(text) as T;
+  return JSON.parse(result.response.text()) as T;
 }

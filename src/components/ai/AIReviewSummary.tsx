@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Sparkles, Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDebouncedCallback } from "use-debounce"; // or implement manually
+
 
 interface SearchIntent {
   keywords: string[];
