@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";   // ← NextAuth v5: use auth() not getServerSession
 
 interface ProductDescriptionInput {
   name: string;
@@ -15,18 +14,18 @@ interface ProductDescriptionInput {
 }
 
 interface GeneratedContent {
-  shortDescription: string;   // 1–2 sentences for cards
-  longDescription: string;    // Full product page description
-  bulletPoints: string[];     // 4–6 key selling points
-  seoTitle: string;           // SEO-optimized title
-  seoDescription: string;     // Meta description (155 chars)
-  tags: string[];             // Product tags
+  shortDescription: string;
+  longDescription: string;
+  bulletPoints: string[];
+  seoTitle: string;
+  seoDescription: string;
+  tags: string[];
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // Only admins can generate descriptions
-    const session = await getServerSession(authOptions);
+    // NextAuth v5 — call auth() directly, no authOptions needed
+    const session = await auth();
     if (!session || session.user?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -62,7 +61,7 @@ Product Details:
 Return ONLY valid JSON (no markdown, no backticks) in this exact shape:
 {
   "shortDescription": "1-2 sentence product summary for product cards",
-  "longDescription": "3-4 paragraph full description for product page, highlighting craftsmanship, functionality, and lifestyle fit",
+  "longDescription": "3-4 paragraph full description for product page",
   "bulletPoints": ["4 to 6 specific selling points starting with action verbs"],
   "seoTitle": "SEO-optimized product title under 60 characters",
   "seoDescription": "Meta description under 155 characters with primary keyword",
@@ -70,8 +69,8 @@ Return ONLY valid JSON (no markdown, no backticks) in this exact shape:
 }`;
 
     const content = await generateJSON<GeneratedContent>(prompt);
-
     return NextResponse.json({ content });
+
   } catch (error) {
     console.error("AI Description error:", error);
     return NextResponse.json({ error: "Failed to generate description" }, { status: 500 });
