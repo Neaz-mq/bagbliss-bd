@@ -6,7 +6,8 @@ import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/cart/CartDrawer'
 import VisitorTracker from '@/components/VisitorTracker'
 import WhatsAppButton from '@/components/ui/WhatsAppButton'
-import GoogleOneTap from '@/components/auth/GoogleOneTap'   // ← added
+import GoogleOneTap from '@/components/auth/GoogleOneTap'
+import ShoppingAssistant from '@/components/ai/ShoppingAssistant'  // ← added
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -21,13 +22,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <>
-      <GoogleOneTap />           {/* ← added, renders no DOM */}
+      <GoogleOneTap />
       <Navbar />
       <div className="navbar-spacer" />
       {children}
       <Footer />
       <WhatsAppButton />
       <CartDrawer />
+      <ShoppingAssistant />   {/* ← added: floating AI chat widget */}
       <VisitorTracker />
     </>
   )
