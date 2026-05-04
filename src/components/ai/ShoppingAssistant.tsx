@@ -179,7 +179,7 @@ export default function ShoppingAssistant() {
                 color: "rgba(255,255,255,0.35)", fontSize: 11,
                 margin: "8px 0 0", position: "relative",
               }}>
-                Your AI personal shopper · Powered by Gemini
+                Your AI personal shopper · Powered by Groq AI
               </p>
             </div>
 
@@ -350,7 +350,7 @@ export default function ShoppingAssistant() {
                 textAlign: "center", fontSize: 10,
                 color: "#bbb", marginTop: 8,
               }}>
-                Powered by Gemini AI · Free
+                Powered by Groq AI · Free
               </p>
             </div>
           </motion.div>
