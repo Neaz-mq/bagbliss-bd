@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions";
 import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
 
@@ -10,7 +11,6 @@ let cachedContext: string | null = null;
 let cacheExpiry: number = 0;
 
 async function getProductContext(): Promise<string> {
-  // Return cache if still valid
   if (cachedContext && Date.now() < cacheExpiry) {
     return cachedContext;
   }
@@ -53,7 +53,6 @@ async function getProductContext(): Promise<string> {
       ].filter(Boolean).join("\n");
     }).join("\n\n");
 
-    // Cache for 5 minutes
     cachedContext = context;
     cacheExpiry   = Date.now() + 5 * 60 * 1000;
 
@@ -80,8 +79,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch product context and build prompt in parallel with nothing
-    // (cache makes this instant after first request)
     const productContext = await getProductContext();
 
     const SYSTEM_PROMPT = `You are BagBliss AI 👜 — a warm, expert shopping assistant for BagBliss BD, a premium bag store in Bangladesh.
@@ -114,16 +111,17 @@ RULES:
 - Keep responses short: 1 pick for specific asks, 2-3 for broad asks
 - Never be pushy — be genuinely helpful`;
 
-    const groqMessages = messages.map(
+    // ✅ FIX: Cast role to the literal union type Groq SDK expects
+    const groqMessages: ChatCompletionMessageParam[] = messages.map(
       (msg: { role: string; content: string }) => ({
-        role: msg.role === "user" ? "user" : "assistant",
+        role: (msg.role === "user" ? "user" : "assistant") as "user" | "assistant",
         content: msg.content,
       })
     );
 
     const response = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
-      max_tokens: 500,   // reduced from 700
+      max_tokens: 500,
       temperature: 0.5,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
