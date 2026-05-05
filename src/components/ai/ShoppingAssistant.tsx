@@ -17,7 +17,25 @@ const WELCOME: Message = {
   content: "Hey! 👜 I'm your personal bag stylist. Share your budget, occasion, or vibe — I'll find your perfect match!",
 };
 
-const QUICK = ["Under ৳1,000", "Office bag", "Travel bag", "Laptop bag"];
+const QUICK = ["Under ৳1,000", "New Arrivals", "Sale Bags"];
+
+// ── Render **bold** and line breaks from AI response ──
+function renderMessage(content: string) {
+  return content.split("\n").map((line, lineIdx) => {
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <span key={lineIdx} style={{ display: "block" }}>
+        {parts.map((part, i) =>
+          part.startsWith("**") && part.endsWith("**") ? (
+            <strong key={i}>{part.slice(2, -2)}</strong>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </span>
+    );
+  });
+}
 
 export default function ShoppingAssistant() {
   const [open, setOpen]       = useState(false);
@@ -49,19 +67,16 @@ export default function ShoppingAssistant() {
     setInput("");
     setLoading(true);
     try {
-      const allMsgs = [...msgs, userMsg];
-      // ✅ Filter out the static WELCOME message — Gemini requires strict user/model alternation
+      const allMsgs    = [...msgs, userMsg];
       const apiMessages = allMsgs.filter(m => m !== WELCOME);
 
       const res = await fetch("/api/ai/chat", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages }),
+        body:    JSON.stringify({ messages: apiMessages }),
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
       setMsgs(p => [...p, { role: "assistant", content: data.message ?? "Sorry, try again!" }]);
@@ -147,7 +162,7 @@ export default function ShoppingAssistant() {
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
                     { icon: <RotateCcw size={13}/>, action: () => setMsgs([WELCOME]), title: "New chat" },
-                    { icon: <X size={14}/>,         action: () => setOpen(false),    title: "Close" },
+                    { icon: <X size={14}/>,         action: () => setOpen(false),    title: "Close"    },
                   ].map((btn, i) => (
                     <button
                       key={i}
@@ -179,7 +194,7 @@ export default function ShoppingAssistant() {
                 color: "rgba(255,255,255,0.35)", fontSize: 11,
                 margin: "8px 0 0", position: "relative",
               }}>
-                Your AI personal shopper · Powered by Groq AI
+                Your AI personal shopper
               </p>
             </div>
 
@@ -194,23 +209,30 @@ export default function ShoppingAssistant() {
                 <div key={i} style={{
                   display: "flex",
                   justifyContent: m.role === "user" ? "flex-end" : "flex-start",
+                  alignItems: "flex-end",
+                  gap: 6,
                 }}>
+                  {/* Avatar */}
                   {m.role === "assistant" && (
                     <div style={{
                       width: 24, height: 24, borderRadius: 8, flexShrink: 0,
                       background: `linear-gradient(135deg, ${BRAND}, #9c1060)`,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 12, marginRight: 6, alignSelf: "flex-end",
+                      fontSize: 12,
                     }}>
                       👜
                     </div>
                   )}
+
+                  {/* Bubble */}
                   <div style={{
                     maxWidth: "75%",
                     padding: "10px 14px",
-                    borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                    borderRadius: m.role === "user"
+                      ? "18px 18px 4px 18px"
+                      : "18px 18px 18px 4px",
                     fontSize: 13,
-                    lineHeight: 1.55,
+                    lineHeight: 1.6,
                     ...(m.role === "user"
                       ? {
                           background: `linear-gradient(135deg, ${BRAND}, #c4166f)`,
@@ -225,7 +247,8 @@ export default function ShoppingAssistant() {
                         }
                     ),
                   }}>
-                    {m.content}
+                    {/* ✅ Render bold + line breaks for assistant, plain for user */}
+                    {m.role === "assistant" ? renderMessage(m.content) : m.content}
                   </div>
                 </div>
               ))}
@@ -256,10 +279,13 @@ export default function ShoppingAssistant() {
                 </div>
               )}
 
-              {/* Quick replies */}
+              {/* Quick replies — only on first message */}
               {msgs.length === 1 && !loading && (
                 <div style={{ marginTop: 4 }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "#aaa", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+                  <p style={{
+                    fontSize: 10, fontWeight: 700, color: "#aaa",
+                    letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8,
+                  }}>
                     Try asking
                   </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
@@ -306,15 +332,16 @@ export default function ShoppingAssistant() {
               padding: "10px 12px 12px",
               background: "#fff",
             }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8,
-                border: "1.5px solid #e8e8e8",
-                borderRadius: 14, padding: "8px 10px",
-                background: "#fafafa",
-                transition: "border-color 0.15s",
-              }}
-              onFocus={e => (e.currentTarget.style.borderColor = BRAND)}
-              onBlur={e  => (e.currentTarget.style.borderColor = "#e8e8e8")}
+              <div
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  border: "1.5px solid #e8e8e8",
+                  borderRadius: 14, padding: "8px 10px",
+                  background: "#fafafa",
+                  transition: "border-color 0.15s",
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = BRAND)}
+                onBlur={e  => (e.currentTarget.style.borderColor = "#e8e8e8")}
               >
                 <input
                   ref={inputRef}
@@ -334,7 +361,9 @@ export default function ShoppingAssistant() {
                   disabled={!input.trim() || loading}
                   style={{
                     width: 32, height: 32, borderRadius: 10, border: "none",
-                    background: input.trim() ? `linear-gradient(135deg, ${BRAND}, #c4166f)` : "#e8e8e8",
+                    background: input.trim()
+                      ? `linear-gradient(135deg, ${BRAND}, #c4166f)`
+                      : "#e8e8e8",
                     color: input.trim() ? "#fff" : "#aaa",
                     cursor: input.trim() ? "pointer" : "not-allowed",
                     display: "flex", alignItems: "center", justifyContent: "center",
@@ -346,18 +375,13 @@ export default function ShoppingAssistant() {
                   <Send size={13} />
                 </button>
               </div>
-              <p style={{
-                textAlign: "center", fontSize: 10,
-                color: "#bbb", marginTop: 8,
-              }}>
-                Powered by Groq AI · Free
-              </p>
+              
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── FAB Trigger Button ── */}
+      {/* ── FAB Trigger ── */}
       <motion.button
         onClick={() => setOpen(p => !p)}
         initial={{ scale: 0, opacity: 0 }}
@@ -394,8 +418,8 @@ export default function ShoppingAssistant() {
           {open ? (
             <motion.div key="x"
               initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
+              animate={{ rotate: 0,   opacity: 1 }}
+              exit   ={{ rotate: 90,  opacity: 0 }}
               transition={{ duration: 0.2 }}
               style={{ color: "#fff", display: "flex" }}
             >
@@ -403,9 +427,9 @@ export default function ShoppingAssistant() {
             </motion.div>
           ) : (
             <motion.div key="chat"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
+              initial={{ rotate: 90,  opacity: 0 }}
+              animate={{ rotate: 0,   opacity: 1 }}
+              exit   ={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.2 }}
               style={{ color: "#fff", display: "flex" }}
             >
@@ -419,7 +443,7 @@ export default function ShoppingAssistant() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
+              exit   ={{ scale: 0 }}
               style={{
                 position: "absolute", top: -2, right: -2,
                 width: 18, height: 18, borderRadius: "50%",
