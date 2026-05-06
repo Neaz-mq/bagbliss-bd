@@ -8,6 +8,7 @@ import VisitorTracker from '@/components/VisitorTracker'
 import WhatsAppButton from '@/components/ui/WhatsAppButton'
 import GoogleOneTap from '@/components/auth/GoogleOneTap'
 import ShoppingAssistant from '@/components/ai/ShoppingAssistant'  // ← added
+import Topbar from './Topbar'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -20,17 +21,20 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     return <>{children}</>
   }
 
-  return (
-    <>
-      <GoogleOneTap />
+ return (
+  <>
+    <GoogleOneTap />
+    <div className="sticky top-0 z-[100]">   {/* ← wrap these two */}
+      <Topbar />
       <Navbar />
-      <div className="navbar-spacer" />
-      {children}
-      <Footer />
-      <WhatsAppButton />
-      <CartDrawer />
-      <ShoppingAssistant />   {/* ← added: floating AI chat widget */}
-      <VisitorTracker />
-    </>
-  )
+    </div>
+    {/* ← delete <div className="navbar-spacer" /> */}
+    {children}
+    <Footer />
+    <WhatsAppButton />
+    <CartDrawer />
+    <ShoppingAssistant />
+    <VisitorTracker />
+  </>
+)
 }

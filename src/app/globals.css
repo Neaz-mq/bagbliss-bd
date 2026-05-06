@@ -800,10 +800,7 @@ p {
    ============================================ */
 
 .navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: relative;   /* sticky wrapper handles positioning now */
   z-index: 100;
   transition: all var(--transition-base);
 }
@@ -9349,3 +9346,8 @@ p {
 .admin-panel .space-y-6 > * + * { margin-top: 1.5rem; }
 .admin-panel .space-y-3 > * + * { margin-top: 0.75rem; }
 .admin-panel .space-y-1 > * + * { margin-top: 0.25rem; }
+
+@keyframes topbar-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
