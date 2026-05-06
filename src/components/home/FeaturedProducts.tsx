@@ -7,170 +7,62 @@ import ProductCard from '@/components/product/ProductCard'
 import ProductSkeleton from '@/components/product/ProductSkeleton'
 import { IProduct } from '@/types'
 
-// ✅ FIX: Fixed ISO string instead of new Date().toISOString()
-//         new Date() differs between SSR and client → hydration mismatch
-const FIXED_DATE = '2025-01-01T00:00:00.000Z'
+// ── Normalize raw DB product → IProduct shape ────────────────────────────
+function normalizeProduct(raw: Record<string, unknown>): IProduct {
+  const hasDiscount =
+    raw.originalPrice &&
+    typeof raw.originalPrice === 'number' &&
+    typeof raw.price === 'number' &&
+    raw.originalPrice > (raw.price as number)
 
-const MOCK_PRODUCTS: IProduct[] = [
-  {
-    _id: '1',
-    name: 'Pearl Mini Crossbody',
-    slug: 'pearl-mini-crossbody',
-    description: 'Elegant pearl-finish mini crossbody bag',
-    shortDescription: 'Perfect for daily use',
-    price: 1200,
-    discountPrice: 950,
-    category: 'Mini Crossbody',
-    tags: ['trending', 'new'],
-    colors: [
-      { name: 'Pearl White', hex: '#f8f4f0', images: [], stock: 15 },
-      { name: 'Blush Pink',  hex: '#E91E8C', images: [], stock: 10 },
-      { name: 'Midnight',    hex: '#1A1A2E', images: [], stock: 8  },
-    ],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Pearl Mini Crossbody' },
-    status: 'active', isFeatured: true, isFlashSale: false,
-    soldCount: 234, stock: 33,
-    ratings: { average: 4.8, count: 127 },
-    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
-  },
-  {
-    _id: '2',
-    name: 'Gold Chain Sling',
-    slug: 'gold-chain-sling',
-    description: 'Luxury gold chain strap crossbody',
-    shortDescription: 'Statement piece for any outfit',
-    price: 1800, discountPrice: undefined,
-    category: 'Chain Strap',
-    tags: ['luxury', 'trending'],
-    colors: [
-      { name: 'Champagne', hex: '#C9A84C', images: [], stock: 12 },
-      { name: 'Black',     hex: '#1A1A2E', images: [], stock: 7  },
-    ],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Gold Chain Sling' },
-    status: 'active', isFeatured: true, isFlashSale: true, flashSalePrice: 1400,
-    soldCount: 189, stock: 19,
-    ratings: { average: 4.9, count: 89 },
-    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
-  },
-  {
-    _id: '3',
-    name: 'Candy Quilted Bag',
-    slug: 'candy-quilted-bag',
-    description: 'Cute quilted pattern mini bag',
-    shortDescription: 'Sweet and stylish',
-    price: 950, discountPrice: 750,
-    category: 'Mini Crossbody',
-    tags: ['cute', 'new'],
-    colors: [
-      { name: 'Hot Pink', hex: '#E91E8C', images: [], stock: 20 },
-      { name: 'Sky Blue', hex: '#3b82f6', images: [], stock: 15 },
-      { name: 'Mint',     hex: '#10b981', images: [], stock: 10 },
-      { name: 'Lilac',    hex: '#8b5cf6', images: [], stock: 8  },
-    ],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Candy Quilted Bag' },
-    status: 'active', isFeatured: true, isFlashSale: false,
-    soldCount: 312, stock: 53,
-    ratings: { average: 4.7, count: 203 },
-    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
-  },
-  {
-    _id: '4',
-    name: 'Vintage Leather Satchel',
-    slug: 'vintage-leather-satchel',
-    description: 'Classic vintage-inspired leather bag',
-    shortDescription: 'Timeless elegance',
-    price: 2200, discountPrice: 1800,
-    category: 'Leather',
-    tags: ['vintage', 'premium'],
-    colors: [
-      { name: 'Tan Brown',  hex: '#92400e', images: [], stock: 6 },
-      { name: 'Dark Brown', hex: '#451a03', images: [], stock: 4 },
-    ],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Vintage Leather Satchel' },
-    status: 'active', isFeatured: true, isFlashSale: false,
-    soldCount: 98, stock: 10,
-    ratings: { average: 5.0, count: 45 },
-    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
-  },
-  {
-    _id: '5',
-    name: 'Boho Canvas Tote',
-    slug: 'boho-canvas-tote',
-    description: 'Bohemian canvas crossbody bag',
-    shortDescription: 'Free-spirited style',
-    price: 850, discountPrice: undefined,
-    category: 'Canvas',
-    tags: ['boho', 'casual'],
-    colors: [
-      { name: 'Natural', hex: '#d4b896', images: [], stock: 25 },
-      { name: 'Navy',    hex: '#1e3a5f', images: [], stock: 18 },
-    ],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Boho Canvas Tote' },
-    status: 'active', isFeatured: true, isFlashSale: false,
-    soldCount: 156, stock: 43,
-    ratings: { average: 4.6, count: 78 },
-    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
-  },
-  {
-    _id: '6',
-    name: 'Party Glitter Clutch',
-    slug: 'party-glitter-clutch',
-    description: 'Glamorous glitter evening bag',
-    shortDescription: 'Shine at every party',
-    price: 1500, discountPrice: 1200,
-    category: 'Party & Evening',
-    tags: ['party', 'glam'],
-    colors: [
-      { name: 'Gold Glitter', hex: '#C9A84C', images: [], stock: 12 },
-      { name: 'Silver',       hex: '#9ca3af', images: [], stock: 10 },
-      { name: 'Rose Gold',    hex: '#f9a8d4', images: [], stock: 8  },
-    ],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Party Glitter Clutch' },
-    status: 'active', isFeatured: true, isFlashSale: true, flashSalePrice: 999,
-    soldCount: 267, stock: 30,
-    ratings: { average: 4.8, count: 156 },
-    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
-  },
-  {
-    _id: '7',
-    name: 'Minimalist Crossbody',
-    slug: 'minimalist-crossbody',
-    description: 'Clean lines, pure style',
-    shortDescription: 'Less is more',
-    price: 1100, discountPrice: undefined,
-    category: 'Mini Crossbody',
-    tags: ['minimal', 'clean'],
-    colors: [
-      { name: 'White', hex: '#ffffff', images: [], stock: 20 },
-      { name: 'Black', hex: '#1A1A2E', images: [], stock: 20 },
-      { name: 'Beige', hex: '#f5f0eb', images: [], stock: 15 },
-    ],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Minimalist Crossbody' },
-    status: 'active', isFeatured: true, isFlashSale: false,
-    soldCount: 445, stock: 55,
-    ratings: { average: 4.9, count: 312 },
-    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
-  },
-  {
-    _id: '8',
-    name: 'Floral Summer Bag',
-    slug: 'floral-summer-bag',
-    description: 'Vibrant floral print crossbody',
-    shortDescription: 'Summer vibes only',
-    price: 780, discountPrice: 650,
-    category: 'Canvas',
-    tags: ['floral', 'summer'],
-    colors: [
-      { name: 'Pink Floral', hex: '#E91E8C', images: [], stock: 18 },
-      { name: 'Blue Floral', hex: '#3b82f6', images: [], stock: 14 },
-    ],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Floral Summer Bag' },
-    status: 'active', isFeatured: true, isFlashSale: false,
-    soldCount: 178, stock: 32,
-    ratings: { average: 4.7, count: 94 },
-    createdAt: FIXED_DATE, updatedAt: FIXED_DATE,
-  },
-]
+  const rawColors = (raw.colors as Record<string, unknown>[]) ?? []
+  const colors = rawColors.map((c) => ({
+    name: (c.name as string) ?? 'Default',
+    hex: (c.hex as string) ?? '#E91E8C',
+    images: [],
+    stock: typeof c.stock === 'number' ? c.stock : 0,
+  }))
+
+  // ✅ raw.images is string[] in DB — handle plain strings
+  const rawImages = (raw.images as unknown[]) ?? []
+  const firstImageUrl =
+    rawImages.length > 0 && typeof rawImages[0] === 'string'
+      ? (rawImages[0] as string)
+      : ''
+
+  return {
+    _id: raw._id as string,
+    name: (raw.name as string) ?? '',
+    slug: (raw.slug as string) ?? '',
+    description: (raw.description as string) ?? '',
+    shortDescription: (raw.shortDescription as string) ?? '',
+
+    price: hasDiscount ? (raw.originalPrice as number) : (raw.price as number),
+    discountPrice: hasDiscount ? (raw.price as number) : undefined,
+
+    category: (raw.category as string) ?? '',
+    tags: (raw.tags as string[]) ?? [],
+    colors,
+    mainImage: {
+      url: firstImageUrl,
+      cloudinaryId: '',
+      alt: (raw.name as string) ?? 'Product',
+    },
+
+    status: raw.isActive ? 'active' : 'inactive',
+    isFeatured: (raw.isFeatured as boolean) ?? false,
+    isFlashSale: (raw.isFlashSale as boolean) ?? false,
+    flashSalePrice: raw.flashSalePrice as number | undefined,
+    soldCount: (raw.soldCount as number) ?? 0,
+    stock: (raw.totalStock as number) ?? 0,
+    ratings: {
+      average: (raw.rating as number) ?? 0,
+      count: (raw.reviewCount as number) ?? 0,
+    },
+    createdAt: (raw.createdAt as string) ?? new Date().toISOString(),
+    updatedAt: (raw.updatedAt as string) ?? new Date().toISOString(),
+  }
+}
 
 const TABS = [
   { label: 'All',             value: 'all'      },
@@ -182,28 +74,37 @@ const TABS = [
 export default function FeaturedProducts() {
   const [activeTab, setActiveTab] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
-  const [products,  setProducts]  = useState<IProduct[]>([])
+  const [allProducts, setAllProducts] = useState<IProduct[]>([])
+  const [error, setError] = useState(false)
 
+  // ── Fetch real products from API on mount ──────────────────────────────
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setProducts(MOCK_PRODUCTS)
-      setIsLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
+    fetch('/api/products?featured=true&limit=8')
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then((data) => {
+        const normalized: IProduct[] = (data.products ?? []).map(
+          (p: Record<string, unknown>) => normalizeProduct(p)
+        )
+        setAllProducts(normalized)
+      })
+      .catch(() => setError(true))
+      .finally(() => setIsLoading(false))
   }, [])
 
-  const filteredProducts = products.filter((p) => {
+  // ── Tab filtering ──────────────────────────────────────────────────────
+  const filteredProducts = allProducts.filter((p) => {
     if (activeTab === 'all')      return true
-    if (activeTab === 'trending') return p.soldCount > 150
+    if (activeTab === 'trending') return p.soldCount > 50
     if (activeTab === 'new')      return p.tags.includes('new')
     if (activeTab === 'sale')     return p.isFlashSale
     return true
   })
 
   const handleTabClick = (value: string) => {
-    setIsLoading(true)
     setActiveTab(value)
-    setTimeout(() => setIsLoading(false), 300)
   }
 
   return (
@@ -235,7 +136,6 @@ export default function FeaturedProducts() {
               type="button"
               onClick={() => handleTabClick(tab.value)}
               className={`featured-tab ${activeTab === tab.value ? 'featured-tab-active' : ''}`}
-              suppressHydrationWarning
             >
               {tab.label}
             </button>
@@ -244,19 +144,40 @@ export default function FeaturedProducts() {
 
         {/* Products Grid */}
         <div className="products-grid">
-          {isLoading
-            ? Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)
-            : filteredProducts.map((product, i) => (
-                <ProductCard
-                  key={product._id}
-                  product={product}
-                  index={i}
-                />
-              ))}
+          {isLoading ? (
+            // Loading skeletons
+            Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)
+          ) : error ? (
+            // Error state
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
+              <p style={{ color: '#888', marginBottom: '1rem' }}>
+                Could not load products. Please try again.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="btn-primary"
+              >
+                Retry
+              </button>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            // Empty state for tab
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
+              <p style={{ color: '#888' }}>No products found for this filter.</p>
+            </div>
+          ) : (
+            filteredProducts.map((product, i) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                index={i}
+              />
+            ))
+          )}
         </div>
 
         {/* Bottom CTA */}
-        {!isLoading && filteredProducts.length > 0 && (
+        {!isLoading && !error && filteredProducts.length > 0 && (
           <div style={{ textAlign: 'center', marginTop: '3rem' }}>
             <Link href="/shop" className="btn-primary">
               <ShoppingBag size={18} />

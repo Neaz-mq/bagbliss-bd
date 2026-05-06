@@ -85,17 +85,21 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
 
 // ── Helper: normalize a single raw image object ──────────────────────────
 function normalizeImage(
-  img: Record<string, unknown>,
+  img: unknown,
   altText: string
 ): NormalizedImage {
-  return {
-    // ✅ handles both { url } and { secure_url } from Cloudinary
-    url: (img.url as string) ?? (img.secure_url as string) ?? '',
-    // ✅ handles both { cloudinaryId } and { public_id }
-    cloudinaryId:
-      (img.cloudinaryId as string) ?? (img.public_id as string) ?? '',
-    alt: altText,
+  if (typeof img === 'string') {
+    return { url: img, cloudinaryId: '', alt: altText }
   }
+  if (img && typeof img === 'object') {
+    const o = img as Record<string, unknown>
+    return {
+      url: (o.url as string) ?? (o.secure_url as string) ?? '',
+      cloudinaryId: (o.cloudinaryId as string) ?? (o.public_id as string) ?? '',
+      alt: altText,
+    }
+  }
+  return { url: '', cloudinaryId: '', alt: altText }
 }
 
 // ── Normalize raw DB document → IProduct shape ────────────────────────────
@@ -118,7 +122,7 @@ function normalizeProduct(raw: Record<string, unknown>): IProductWithImages {
   }))
 
   // ✅ Normalize ALL product-level images (used for gallery)
-  const rawImages = (raw.images as Record<string, unknown>[]) ?? []
+  const rawImages = (raw.images as unknown[]) ?? []
   const normalizedImages = rawImages
     .map((img) => normalizeImage(img, (raw.name as string) ?? 'Product'))
     .filter((img) => !!img.url) // ✅ drop items with empty URL
