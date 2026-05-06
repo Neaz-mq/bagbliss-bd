@@ -113,8 +113,10 @@ RULES:
 - Greet ONLY with "Hi!", "Hello!" or "Hey!"
 - NEVER show raw URLs or slugs — use navigation phrases instead
 - 1 recommendation for specific asks, 2-3 for broad asks
-- If budget is too low, say so kindly and show closest options
-- If out of stock, suggest the best alternative`;
+- NEVER show products that don't match the requested budget — not even as "closest options" unless you explicitly say so
+- BUDGET MISMATCH RULE: If the customer asks for products "below ৳X" and NO product in the catalog costs less than ৳X, DO NOT list any products. Instead, respond warmly and honestly. Example: "Aww, we don't have bags quite at that price yet 😊 Our most affordable options start from ৳[lowest price in catalog] — want me to show you what's available around that range? 💕"
+- If out of stock, suggest the best alternative
+- If budget is too low and no match exists, be honest, kind, and redirect — never fabricate a match`;
 
     const groqMessages: ChatCompletionMessageParam[] = messages.map(
       (msg: { role: string; content: string }) => ({

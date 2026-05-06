@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Heart,
@@ -23,38 +24,6 @@ import { IProduct } from '@/types'
 import ProductGallery from '@/components/product/ProductGallery'
 import ProductCard from '@/components/product/ProductCard'
 import toast from 'react-hot-toast'
-
-// ── Mock product data (will be replaced with real API) ──
-const MOCK_PRODUCT: IProduct = {
-  _id: 'p1',
-  name: 'Pearl Mini Crossbody Bag',
-  slug: 'pearl-mini-crossbody',
-  description: `This stunning Pearl Mini Crossbody Bag is the perfect accessory for the modern Bangladeshi woman. Crafted with premium PU leather and featuring an elegant pearl-finish exterior, this bag combines luxury with everyday functionality.
-
-The adjustable strap allows you to wear it across the body or on the shoulder, making it versatile for any occasion — from college to casual outings to evening events.`,
-  shortDescription: 'Premium pearl-finish mini crossbody bag — perfect for daily use.',
-  price: 1200,
-  discountPrice: 950,
-  category: 'Mini Crossbody',
-  tags: ['trending', 'new', 'premium'],
-  colors: [
-    { name: 'Pearl White', hex: '#f8f4f0', images: [], stock: 15 },
-    { name: 'Blush Pink', hex: '#E91E8C', images: [], stock: 10 },
-    { name: 'Midnight Navy', hex: '#1A1A2E', images: [], stock: 8 },
-    { name: 'Champagne Gold', hex: '#C9A84C', images: [], stock: 5 },
-  ],
-  mainImage: { url: '', cloudinaryId: '', alt: 'Pearl Mini Crossbody' },
-  status: 'active',
-  isFeatured: true,
-  isFlashSale: false,
-  soldCount: 234,
-  stock: 38,
-  weight: 0.3,
-  dimensions: { length: 22, width: 8, height: 16 },
-  ratings: { average: 4.8, count: 127 },
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-}
 
 const MOCK_REVIEWS = [
   {
@@ -86,92 +55,6 @@ const MOCK_REVIEWS = [
   },
 ]
 
-const RELATED_PRODUCTS: IProduct[] = [
-  {
-    _id: 'r1',
-    name: 'Gold Chain Sling',
-    slug: 'gold-chain-sling',
-    description: 'Luxury gold chain strap',
-    shortDescription: 'Statement piece',
-    price: 1800,
-    discountPrice: 1400,
-    category: 'Chain Strap',
-    tags: ['luxury'],
-    colors: [{ name: 'Champagne', hex: '#C9A84C', images: [], stock: 12 }],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Gold Chain Sling' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: true,
-    soldCount: 189,
-    stock: 19,
-    ratings: { average: 4.9, count: 89 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'r2',
-    name: 'Candy Quilted Bag',
-    slug: 'candy-quilted-bag',
-    description: 'Cute quilted mini bag',
-    shortDescription: 'Sweet and stylish',
-    price: 950,
-    discountPrice: 750,
-    category: 'Mini Crossbody',
-    tags: ['cute'],
-    colors: [{ name: 'Hot Pink', hex: '#E91E8C', images: [], stock: 20 }],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Candy Quilted Bag' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: false,
-    soldCount: 312,
-    stock: 53,
-    ratings: { average: 4.7, count: 203 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'r3',
-    name: 'Minimalist Crossbody',
-    slug: 'minimalist-crossbody',
-    description: 'Clean lines pure style',
-    shortDescription: 'Less is more',
-    price: 1100,
-    category: 'Mini Crossbody',
-    tags: ['minimal'],
-    colors: [{ name: 'White', hex: '#ffffff', images: [], stock: 20 }],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Minimalist Crossbody' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: false,
-    soldCount: 445,
-    stock: 55,
-    ratings: { average: 4.9, count: 312 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'r4',
-    name: 'Party Glitter Clutch',
-    slug: 'party-glitter-clutch',
-    description: 'Glamorous glitter evening bag',
-    shortDescription: 'Shine at every party',
-    price: 1500,
-    discountPrice: 1200,
-    category: 'Party & Evening',
-    tags: ['party'],
-    colors: [{ name: 'Gold Glitter', hex: '#C9A84C', images: [], stock: 12 }],
-    mainImage: { url: '', cloudinaryId: '', alt: 'Party Glitter Clutch' },
-    status: 'active',
-    isFeatured: true,
-    isFlashSale: true,
-    soldCount: 267,
-    stock: 30,
-    ratings: { average: 4.8, count: 156 },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-]
-
 // ── Star Rating Display ───────────────────────
 function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
   return (
@@ -188,24 +71,154 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
   )
 }
 
+// ── Normalize raw DB document → IProduct shape ────────────────────────────
+// The DB stores: price (sale price), originalPrice (original), rating, reviewCount, totalStock
+// IProduct expects: price (original), discountPrice (sale), ratings.average, ratings.count, stock
+function normalizeProduct(raw: Record<string, unknown>): IProduct {
+  const hasDiscount =
+    raw.originalPrice &&
+    typeof raw.originalPrice === 'number' &&
+    typeof raw.price === 'number' &&
+    raw.originalPrice > (raw.price as number)
+
+  // Normalize colors — DB may store hex as colorHex or hex
+  const rawColors = (raw.colors as Record<string, unknown>[]) ?? []
+  const colors = rawColors.map((c) => ({
+    name: (c.name as string) ?? 'Default',
+    hex: (c.hex as string) ?? (c.colorHex as string) ?? '#E91E8C',
+    images: (c.images as []) ?? [],
+    stock: typeof c.stock === 'number' ? c.stock : 0,
+  }))
+
+  // Normalize images → mainImage
+  const rawImages = (raw.images as Record<string, unknown>[]) ?? []
+  const mainImage =
+    rawImages.length > 0
+      ? {
+          url: (rawImages[0].url as string) ?? '',
+          cloudinaryId: (rawImages[0].cloudinaryId as string) ?? '',
+          alt: (raw.name as string) ?? 'Product image',
+        }
+      : { url: '', cloudinaryId: '', alt: (raw.name as string) ?? 'Product' }
+
+  return {
+    _id: raw._id as string,
+    name: (raw.name as string) ?? '',
+    slug: (raw.slug as string) ?? '',
+    description: (raw.description as string) ?? '',
+    shortDescription: (raw.shortDescription as string) ?? '',
+
+    // IProduct.price = original (strikethrough), discountPrice = sale price shown
+    price: hasDiscount ? (raw.originalPrice as number) : (raw.price as number),
+    discountPrice: hasDiscount ? (raw.price as number) : undefined,
+
+    category: (raw.category as string) ?? '',
+    tags: (raw.tags as string[]) ?? [],
+    colors,
+    mainImage,
+    status: raw.isActive ? 'active' : 'inactive',
+    isFeatured: (raw.isFeatured as boolean) ?? false,
+    isFlashSale: (raw.isFlashSale as boolean) ?? false,
+    flashSalePrice: raw.flashSalePrice as number | undefined,
+    soldCount: (raw.soldCount as number) ?? 0,
+    stock: (raw.totalStock as number) ?? 0,
+    weight: raw.weight as number | undefined,
+    dimensions: raw.dimensions as IProduct['dimensions'] | undefined,
+    ratings: {
+      average: (raw.rating as number) ?? 0,
+      count: (raw.reviewCount as number) ?? 0,
+    },
+    createdAt: (raw.createdAt as string) ?? new Date().toISOString(),
+    updatedAt: (raw.updatedAt as string) ?? new Date().toISOString(),
+  }
+}
+
 // ── Main Product Detail Page ──────────────────
 export default function ProductDetailPage() {
-  const product = MOCK_PRODUCT
-  const [selectedColor, setSelectedColor] = useState(product.colors[0])
+  const { slug } = useParams<{ slug: string }>()
+
+  const [product, setProduct] = useState<IProduct | null>(null)
+  const [relatedProducts, setRelatedProducts] = useState<IProduct[]>([])
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+
+  const [selectedColor, setSelectedColor] = useState<IProduct['colors'][0] | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState<'description' | 'reviews' | 'shipping'>('description')
   const [isAdding, setIsAdding] = useState(false)
 
   const { addItem, openCart } = useCartStore()
   const { toggleItem, isWishlisted } = useWishlistStore()
-  const wishlisted = isWishlisted(product._id)
 
-  const currentPrice = product.discountPrice || product.price
+  // ── Fetch product by slug ─────────────────
+  useEffect(() => {
+    if (!slug) return
+    setLoading(true)
+    setNotFound(false)
+
+    fetch(`/api/products/slug/${slug}`)
+      .then((r) => {
+        if (r.status === 404) { setNotFound(true); return null }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then((raw) => {
+        if (!raw) return
+        const normalized = normalizeProduct(raw)
+        setProduct(normalized)
+        setSelectedColor(normalized.colors[0] ?? null)
+
+        // Fetch related products from the same category
+        fetch(`/api/products?category=${encodeURIComponent(normalized.category)}&limit=4`)
+          .then((r) => r.json())
+          .then((data) => {
+            const related: IProduct[] = (data.products ?? [])
+              .filter((p: Record<string, unknown>) => p.slug !== slug)
+              .slice(0, 4)
+              .map(normalizeProduct)
+            setRelatedProducts(related)
+          })
+          .catch(() => {/* related products are non-critical */})
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false))
+  }, [slug])
+
+  // ── Loading state ─────────────────────────
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', flexDirection: 'column', gap: 16 }}>
+        <span
+          className="spinner"
+          style={{ width: 44, height: 44, borderTopColor: '#E91E8C' }}
+        />
+        <p style={{ color: '#888', fontSize: 14 }}>Loading product…</p>
+      </div>
+    )
+  }
+
+  // ── Not found state ───────────────────────
+  if (notFound || !product || !selectedColor) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+        <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
+        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Product not found</h2>
+        <p style={{ color: '#888', marginBottom: 24 }}>
+          This product may have been removed or the link is incorrect.
+        </p>
+        <Link href="/shop" className="btn-primary">
+          ← Back to Shop
+        </Link>
+      </div>
+    )
+  }
+
+  const wishlisted = isWishlisted(product._id)
+  const currentPrice = product.discountPrice ?? product.price
   const discountPercent = product.discountPrice
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0
 
-  // All images for gallery
   const allImages = [
     product.mainImage,
     ...(selectedColor.images || []),
@@ -285,9 +298,14 @@ export default function ProductDetailPage() {
               {product.isFlashSale && (
                 <span className="badge badge-gold">⚡ Flash Sale</span>
               )}
-              {product.stock <= 10 && (
+              {product.stock <= 10 && product.stock > 0 && (
                 <span className="detail-stock-badge">
                   Only {product.stock} left!
+                </span>
+              )}
+              {product.stock === 0 && (
+                <span className="detail-stock-badge" style={{ background: '#ef4444' }}>
+                  Out of Stock
                 </span>
               )}
             </div>
@@ -314,17 +332,34 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="product-detail-price">
-              <span className="detail-price-current">
-                {CURRENCY_SYMBOL}{currentPrice.toLocaleString()}
-              </span>
-              {product.discountPrice && (
+              {/* Flash sale price takes priority */}
+              {product.isFlashSale && product.flashSalePrice ? (
                 <>
+                  <span className="detail-price-current">
+                    {CURRENCY_SYMBOL}{product.flashSalePrice.toLocaleString()}
+                  </span>
                   <span className="detail-price-original">
                     {CURRENCY_SYMBOL}{product.price.toLocaleString()}
                   </span>
                   <span className="detail-price-discount">
-                    Save {discountPercent}%
+                    Save {Math.round(((product.price - product.flashSalePrice) / product.price) * 100)}%
                   </span>
+                </>
+              ) : (
+                <>
+                  <span className="detail-price-current">
+                    {CURRENCY_SYMBOL}{currentPrice.toLocaleString()}
+                  </span>
+                  {product.discountPrice && (
+                    <>
+                      <span className="detail-price-original">
+                        {CURRENCY_SYMBOL}{product.price.toLocaleString()}
+                      </span>
+                      <span className="detail-price-discount">
+                        Save {discountPercent}%
+                      </span>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -348,7 +383,10 @@ export default function ProductDetailPage() {
                 {product.colors.map((color) => (
                   <button
                     key={color.name}
-                    onClick={() => setSelectedColor(color)}
+                    onClick={() => {
+                      setSelectedColor(color)
+                      setQuantity(1) // reset quantity when color changes
+                    }}
                     className={`detail-color-btn ${
                       selectedColor.name === color.name
                         ? 'detail-color-btn-active'
@@ -382,7 +420,9 @@ export default function ProductDetailPage() {
                 ))}
               </div>
               <p className="detail-color-stock">
-                {selectedColor.stock} in stock for {selectedColor.name}
+                {selectedColor.stock > 0
+                  ? `${selectedColor.stock} in stock for ${selectedColor.name}`
+                  : `${selectedColor.name} is out of stock`}
               </p>
             </div>
 
@@ -416,7 +456,7 @@ export default function ProductDetailPage() {
             <div className="detail-actions">
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding || product.stock === 0}
+                disabled={isAdding || product.stock === 0 || selectedColor.stock === 0}
                 className="detail-add-cart-btn"
               >
                 {isAdding ? (
@@ -427,7 +467,7 @@ export default function ProductDetailPage() {
                 ) : (
                   <>
                     <ShoppingBag size={20} />
-                    Add to Cart
+                    {selectedColor.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                   </>
                 )}
               </button>
@@ -450,7 +490,10 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Buy Now */}
-            <button className="detail-buy-now-btn">
+            <button
+              className="detail-buy-now-btn"
+              disabled={product.stock === 0 || selectedColor.stock === 0}
+            >
               <Zap size={18} />
               Buy Now — Instant Checkout
             </button>
@@ -481,24 +524,26 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Product Meta */}
-            {product.dimensions && (
-              <div className="detail-meta">
+            <div className="detail-meta">
+              {product.dimensions && (
                 <div className="detail-meta-item">
                   <span className="detail-meta-label">Dimensions:</span>
                   <span className="detail-meta-value">
                     {product.dimensions.length} × {product.dimensions.width} × {product.dimensions.height} cm
                   </span>
                 </div>
-                {product.weight && (
-                  <div className="detail-meta-item">
-                    <span className="detail-meta-label">Weight:</span>
-                    <span className="detail-meta-value">{product.weight} kg</span>
-                  </div>
-                )}
+              )}
+              {product.weight && (
                 <div className="detail-meta-item">
-                  <span className="detail-meta-label">Category:</span>
-                  <span className="detail-meta-value">{product.category}</span>
+                  <span className="detail-meta-label">Weight:</span>
+                  <span className="detail-meta-value">{product.weight} kg</span>
                 </div>
+              )}
+              <div className="detail-meta-item">
+                <span className="detail-meta-label">Category:</span>
+                <span className="detail-meta-value">{product.category}</span>
+              </div>
+              {product.tags.length > 0 && (
                 <div className="detail-meta-item">
                   <span className="detail-meta-label">Tags:</span>
                   <div className="detail-tags">
@@ -509,8 +554,8 @@ export default function ProductDetailPage() {
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
@@ -542,7 +587,7 @@ export default function ProductDetailPage() {
                 <div className="detail-features">
                   <h4>What&apos;s Included:</h4>
                   <ul>
-                    <li>✅ 1x Mini Crossbody Bag</li>
+                    <li>✅ 1x {product.category} Bag</li>
                     <li>✅ Adjustable shoulder strap</li>
                     <li>✅ Dust bag for storage</li>
                     <li>✅ BagBliss authenticity card</li>
@@ -554,7 +599,6 @@ export default function ProductDetailPage() {
             {/* Reviews */}
             {activeTab === 'reviews' && (
               <div className="detail-reviews">
-                {/* Rating Summary */}
                 <div className="reviews-summary">
                   <div className="reviews-avg">
                     <span className="reviews-avg-number">
@@ -574,13 +618,9 @@ export default function ProductDetailPage() {
                             className="reviews-bar-fill"
                             style={{
                               width:
-                                star === 5
-                                  ? '70%'
-                                  : star === 4
-                                  ? '20%'
-                                  : star === 3
-                                  ? '7%'
-                                  : '3%',
+                                star === 5 ? '70%' :
+                                star === 4 ? '20%' :
+                                star === 3 ? '7%' : '3%',
                             }}
                           />
                         </div>
@@ -589,14 +629,11 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
 
-                {/* Review Cards */}
                 <div className="reviews-list">
                   {MOCK_REVIEWS.map((review) => (
                     <div key={review.id} className="review-card">
                       <div className="review-header">
-                        <div className="review-avatar">
-                          {review.avatar}
-                        </div>
+                        <div className="review-avatar">{review.avatar}</div>
                         <div className="review-meta">
                           <div className="review-name-row">
                             <span className="review-name">{review.name}</span>
@@ -658,22 +695,24 @@ export default function ProductDetailPage() {
         </div>
 
         {/* ── Related Products ──────────────── */}
-        <div className="detail-related">
-          <div className="detail-related-header">
-            <h2 className="section-title" style={{ textAlign: 'left' }}>
-              You Might Also Like
-            </h2>
-            <Link href="/shop" className="featured-view-all">
-              View All
-              <ChevronRight size={16} />
-            </Link>
+        {relatedProducts.length > 0 && (
+          <div className="detail-related">
+            <div className="detail-related-header">
+              <h2 className="section-title" style={{ textAlign: 'left' }}>
+                You Might Also Like
+              </h2>
+              <Link href="/shop" className="featured-view-all">
+                View All
+                <ChevronRight size={16} />
+              </Link>
+            </div>
+            <div className="products-grid">
+              {relatedProducts.map((p, i) => (
+                <ProductCard key={p._id} product={p} index={i} />
+              ))}
+            </div>
           </div>
-          <div className="products-grid">
-            {RELATED_PRODUCTS.map((p, i) => (
-              <ProductCard key={p._id} product={p} index={i} />
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )
