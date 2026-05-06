@@ -25,6 +25,18 @@ import ProductGallery from '@/components/product/ProductGallery'
 import ProductCard from '@/components/product/ProductCard'
 import toast from 'react-hot-toast'
 
+// ── Normalized image type ─────────────────────
+type NormalizedImage = {
+  url: string
+  cloudinaryId: string
+  alt: string
+}
+
+// ── Extended IProduct with images array ───────
+type IProductWithImages = IProduct & {
+  images?: NormalizedImage[]
+}
+
 const MOCK_REVIEWS = [
   {
     id: '1',
@@ -71,34 +83,50 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
   )
 }
 
+// ── Helper: normalize a single raw image object ──────────────────────────
+function normalizeImage(
+  img: Record<string, unknown>,
+  altText: string
+): NormalizedImage {
+  return {
+    // ✅ handles both { url } and { secure_url } from Cloudinary
+    url: (img.url as string) ?? (img.secure_url as string) ?? '',
+    // ✅ handles both { cloudinaryId } and { public_id }
+    cloudinaryId:
+      (img.cloudinaryId as string) ?? (img.public_id as string) ?? '',
+    alt: altText,
+  }
+}
+
 // ── Normalize raw DB document → IProduct shape ────────────────────────────
-// The DB stores: price (sale price), originalPrice (original), rating, reviewCount, totalStock
-// IProduct expects: price (original), discountPrice (sale), ratings.average, ratings.count, stock
-function normalizeProduct(raw: Record<string, unknown>): IProduct {
+function normalizeProduct(raw: Record<string, unknown>): IProductWithImages {
   const hasDiscount =
     raw.originalPrice &&
     typeof raw.originalPrice === 'number' &&
     typeof raw.price === 'number' &&
     raw.originalPrice > (raw.price as number)
 
-  // Normalize colors — DB may store hex as colorHex or hex
+  // ✅ Normalize colors — also normalize each color's images array
   const rawColors = (raw.colors as Record<string, unknown>[]) ?? []
   const colors = rawColors.map((c) => ({
     name: (c.name as string) ?? 'Default',
     hex: (c.hex as string) ?? (c.colorHex as string) ?? '#E91E8C',
-    images: (c.images as []) ?? [],
+    images: ((c.images as Record<string, unknown>[]) ?? [])
+      .map((img) => normalizeImage(img, (c.name as string) ?? 'Product'))
+      .filter((img) => !!img.url), // ✅ drop items with empty URL
     stock: typeof c.stock === 'number' ? c.stock : 0,
   }))
 
-  // Normalize images → mainImage
+  // ✅ Normalize ALL product-level images (used for gallery)
   const rawImages = (raw.images as Record<string, unknown>[]) ?? []
-  const mainImage =
-    rawImages.length > 0
-      ? {
-          url: (rawImages[0].url as string) ?? '',
-          cloudinaryId: (rawImages[0].cloudinaryId as string) ?? '',
-          alt: (raw.name as string) ?? 'Product image',
-        }
+  const normalizedImages = rawImages
+    .map((img) => normalizeImage(img, (raw.name as string) ?? 'Product'))
+    .filter((img) => !!img.url) // ✅ drop items with empty URL
+
+  // mainImage = first valid product image
+  const mainImage: NormalizedImage =
+    normalizedImages.length > 0
+      ? normalizedImages[0]
       : { url: '', cloudinaryId: '', alt: (raw.name as string) ?? 'Product' }
 
   return {
@@ -108,7 +136,6 @@ function normalizeProduct(raw: Record<string, unknown>): IProduct {
     description: (raw.description as string) ?? '',
     shortDescription: (raw.shortDescription as string) ?? '',
 
-    // IProduct.price = original (strikethrough), discountPrice = sale price shown
     price: hasDiscount ? (raw.originalPrice as number) : (raw.price as number),
     discountPrice: hasDiscount ? (raw.price as number) : undefined,
 
@@ -116,6 +143,10 @@ function normalizeProduct(raw: Record<string, unknown>): IProduct {
     tags: (raw.tags as string[]) ?? [],
     colors,
     mainImage,
+
+    // ✅ Keep full images array so gallery can show all product photos
+    images: normalizedImages,
+
     status: raw.isActive ? 'active' : 'inactive',
     isFeatured: (raw.isFeatured as boolean) ?? false,
     isFlashSale: (raw.isFlashSale as boolean) ?? false,
@@ -137,7 +168,7 @@ function normalizeProduct(raw: Record<string, unknown>): IProduct {
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
 
-  const [product, setProduct] = useState<IProduct | null>(null)
+  const [product, setProduct] = useState<IProductWithImages | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<IProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -153,6 +184,10 @@ export default function ProductDetailPage() {
   // ── Fetch product by slug ─────────────────
   useEffect(() => {
     if (!slug) return
+
+    // ✅ Scroll to top on every product navigation
+    window.scrollTo({ top: 0, behavior: 'instant' })
+
     setLoading(true)
     setNotFound(false)
 
@@ -219,10 +254,28 @@ export default function ProductDetailPage() {
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0
 
-  const allImages = [
-    product.mainImage,
-    ...(selectedColor.images || []),
-  ].filter(Boolean)
+  // ✅ Build gallery images:
+  //    1. Use all product-level images (from DB images[]) — these are the main product photos
+  //    2. Append color-specific images if they exist and have valid URLs
+  //    3. Final filter removes anything with an empty URL
+  const productLevelImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : [product.mainImage] // fallback to mainImage if images[] somehow empty
+
+  const colorImages = (selectedColor.images ?? []).filter(
+    (img) => !!img.url
+  )
+
+  // Deduplicate: don't add color images that are already in productLevelImages
+  const productImageUrls = new Set(productLevelImages.map((i) => i.url))
+  const uniqueColorImages = colorImages.filter(
+    (img) => !productImageUrls.has(img.url)
+  )
+
+  const allImages = [...productLevelImages, ...uniqueColorImages].filter(
+    (img) => !!img?.url
+  )
 
   const handleAddToCart = async () => {
     setIsAdding(true)
@@ -332,7 +385,6 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="product-detail-price">
-              {/* Flash sale price takes priority */}
               {product.isFlashSale && product.flashSalePrice ? (
                 <>
                   <span className="detail-price-current">
@@ -385,7 +437,7 @@ export default function ProductDetailPage() {
                     key={color.name}
                     onClick={() => {
                       setSelectedColor(color)
-                      setQuantity(1) // reset quantity when color changes
+                      setQuantity(1)
                     }}
                     className={`detail-color-btn ${
                       selectedColor.name === color.name
