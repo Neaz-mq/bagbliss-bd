@@ -35,12 +35,7 @@ function Counter({
     requestAnimationFrame(step)
   }, [started, end, duration])
 
-  return (
-    <span>
-      {count}
-      {suffix}
-    </span>
-  )
+  return <span>{count}{suffix}</span>
 }
 
 // ── Hero Section ──────────────────────────────
@@ -52,252 +47,350 @@ export default function HeroSection() {
     return () => clearTimeout(timer)
   }, [])
 
-  return (
-    <section className="hero-section">
-      {/* Background decorative elements */}
-      <div className="hero-bg-circle hero-bg-circle-1" />
-      <div className="hero-bg-circle hero-bg-circle-2" />
-      <div className="hero-bg-circle hero-bg-circle-3" />
+  const FONT     = 'Nunito, system-ui, sans-serif'
+  const SERIF    = '"Cormorant Garamond", Georgia, serif'
+  const C        = '#CA865D'
+  const CD       = '#b5724a'
 
-      <div className="container-bagbliss hero-container">
-        {/* ── Left Content ────────────────── */}
+  return (
+    <section
+      style={{
+        position: 'relative',
+        width: '100%',
+        minHeight: 'min(90vh, 720px)',
+        display: 'flex',
+        alignItems: 'center',
+        overflow: 'hidden',
+        background: '#1a120b',
+      }}
+    >
+      {/* ── Background image ────────────────────── */}
+      {/* Replace the src below with your real hero image */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url('/images/hero-bg.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 30%',
+          opacity: 0.55,
+          transition: 'opacity 1.2s ease',
+        }}
+      />
+
+      {/* ── Gradient overlay (left darkens, right fades) ── */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(to right, rgba(20,14,8,0.88) 0%, rgba(20,14,8,0.60) 45%, rgba(20,14,8,0.15) 100%)',
+        }}
+      />
+
+      {/* ── Content container ─────────────────────── */}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          width: '100%',
+          padding: '5rem 3rem',
+        }}
+      >
         <div
-          className="hero-content"
           style={{
+            maxWidth: 580,
             opacity: isVisible ? 1 : 0,
             transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
-            transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: 'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {/* Top Badge */}
-          <div className="hero-badge">
-            <Star size={12} fill="currentColor" />
-            <span>New Collection 2026</span>
-            <Star size={12} fill="currentColor" />
+          {/* Badge */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              background: 'rgba(202,134,93,0.15)',
+              border: '1px solid rgba(202,134,93,0.35)',
+              color: C,
+              fontFamily: FONT,
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              padding: '5px 14px',
+              borderRadius: 99,
+              marginBottom: '1.5rem',
+            }}
+          >
+            <Star size={10} fill={C} color={C} />
+            New Collection 2026
+            <Star size={10} fill={C} color={C} />
           </div>
 
-          {/* Main Heading */}
-          <h1 className="hero-heading">
-            Carry Your
-            <span className="hero-heading-accent"> Style</span>
+          {/* Heading */}
+          <h1
+            style={{
+              fontFamily: SERIF,
+              fontSize: 'clamp(2.6rem, 5vw, 4.2rem)',
+              fontWeight: 400,
+              lineHeight: 1.12,
+              color: '#fff',
+              margin: '0 0 1.25rem',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Carry Your{' '}
+            <em style={{ color: C, fontStyle: 'italic' }}>Style</em>
             <br />
             Everywhere
-            <span className="hero-heading-dot">.</span>
+            <span style={{ color: C }}>.</span>
           </h1>
 
           {/* Subtitle */}
           <p
-            className="hero-subtitle"
             style={{
+              fontFamily: FONT,
+              fontSize: '0.95rem',
+              lineHeight: 1.7,
+              color: 'rgba(255,255,255,0.62)',
+              margin: '0 0 2.25rem',
+              maxWidth: 400,
               opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-              transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s',
+              transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
+              transition: 'opacity 0.9s ease 0.18s, transform 0.9s cubic-bezier(0.16,1,0.3,1) 0.18s',
             }}
           >
-            Discover Bangladesh&apos;s most trendy mini crossbody bags. Premium
-            imported styles at prices you&apos;ll love.
+            Discover Bangladesh&apos;s most trendy mini crossbody bags.
+            Premium imported styles at prices you&apos;ll love.
           </p>
 
           {/* CTA Buttons */}
           <div
-            className="hero-buttons"
             style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              flexWrap: 'wrap',
+              marginBottom: '2.5rem',
               opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-              transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.35s',
+              transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
+              transition: 'opacity 0.9s ease 0.32s, transform 0.9s cubic-bezier(0.16,1,0.3,1) 0.32s',
             }}
           >
-            <Link href="/shop" className="btn-primary hero-btn-primary">
-              <ShoppingBag size={18} />
-              Shop Now
-              <ArrowRight size={16} />
-            </Link>
             <Link
-              href="/shop?filter=new"
-              className="btn-secondary hero-btn-secondary"
+              href="/shop"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: C,
+                color: '#fff',
+                fontFamily: FONT,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                padding: '0.85rem 2rem',
+                borderRadius: 2,
+                transition: 'background 150ms',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
+            >
+              <ShoppingBag size={15} strokeWidth={2} />
+              Shop Now
+              <ArrowRight size={14} strokeWidth={2.5} />
+            </Link>
+
+            <Link
+              href="/shop?sort=newest"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'transparent',
+                color: '#fff',
+                fontFamily: FONT,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                padding: '0.85rem 2rem',
+                borderRadius: 2,
+                border: '1px solid rgba(255,255,255,0.35)',
+                transition: 'border-color 150ms, color 150ms',
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement
+                el.style.borderColor = 'rgba(255,255,255,0.7)'
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement
+                el.style.borderColor = 'rgba(255,255,255,0.35)'
+              }}
             >
               New Arrivals
             </Link>
           </div>
 
-          {/* Trust Badges */}
+          {/* Trust + Stats */}
           <div
-            className="hero-trust"
             style={{
               opacity: isVisible ? 1 : 0,
-              transition: 'all 0.8s ease 0.5s',
+              transition: 'opacity 0.9s ease 0.48s',
             }}
           >
-            <div className="hero-trust-item">
-              <Truck size={16} />
-              <span>Free delivery over ৳1500</span>
+            {/* Trust row */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 20,
+                marginBottom: '1.75rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              {[
+                { icon: <Truck size={14} strokeWidth={2} />, text: 'Free delivery over ৳1500' },
+                { icon: <Shield size={14} strokeWidth={2} />, text: 'Secure payment' },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    fontFamily: FONT,
+                    fontSize: '0.75rem',
+                    color: 'rgba(255,255,255,0.5)',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  <span style={{ color: C }}>{item.icon}</span>
+                  {item.text}
+                </div>
+              ))}
             </div>
-            <div className="hero-trust-divider" />
-            <div className="hero-trust-item">
-              <Shield size={16} />
-              <span>Secure payment</span>
-            </div>
-          </div>
 
-          {/* Stats */}
-          <div
-            className="hero-stats"
-            style={{
-              opacity: isVisible ? 1 : 0,
-              transition: 'all 0.8s ease 0.6s',
-            }}
-          >
-            <div className="hero-stat">
-              <span className="hero-stat-number">
-                <Counter end={500} suffix="+" />
-              </span>
-              <span className="hero-stat-label">Bag Styles</span>
-            </div>
-            <div className="hero-stat-divider" />
-            <div className="hero-stat">
-              <span className="hero-stat-number">
-                <Counter end={2000} suffix="+" />
-              </span>
-              <span className="hero-stat-label">Happy Customers</span>
-            </div>
-            <div className="hero-stat-divider" />
-            <div className="hero-stat">
-              <span className="hero-stat-number">
-                <Counter end={4} suffix=".9★" />
-              </span>
-              <span className="hero-stat-label">Average Rating</span>
+            {/* Stats row */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0,
+                paddingTop: '1.5rem',
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+              }}
+            >
+              {[
+                { end: 500, suffix: '+', label: 'Bag Styles' },
+                { end: 2000, suffix: '+', label: 'Happy Customers' },
+                { end: 4, suffix: '.9★', label: 'Avg Rating' },
+              ].map((stat, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    textAlign: i === 0 ? 'left' : 'center',
+                    paddingRight: i < 2 ? '1rem' : 0,
+                    borderRight: i < 2 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                    paddingLeft: i > 0 ? '1rem' : 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: SERIF,
+                      fontSize: '1.6rem',
+                      fontWeight: 600,
+                      color: '#fff',
+                      lineHeight: 1.1,
+                      marginBottom: 3,
+                    }}
+                  >
+                    <Counter end={stat.end} suffix={stat.suffix} />
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: FONT,
+                      fontSize: '0.65rem',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: 'rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* ── Right Visual ────────────────── */}
+      {/* ── Scroll indicator ─────────────────────── */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 6,
+          opacity: isVisible ? 0.5 : 0,
+          transition: 'opacity 1s ease 1s',
+        }}
+      >
         <div
-          className="hero-visual"
           style={{
-            opacity: isVisible ? 1 : 0,
-            transform: isVisible ? 'translateX(0)' : 'translateX(40px)',
-            transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s',
+            width: 22,
+            height: 34,
+            border: '1.5px solid rgba(255,255,255,0.4)',
+            borderRadius: 99,
+            display: 'flex',
+            justifyContent: 'center',
+            paddingTop: 6,
           }}
         >
-          {/* Main bag display card */}
-          <div className="hero-card">
-            {/* Decorative background */}
-            <div className="hero-card-bg" />
-
-            {/* Bag placeholder — will be replaced with real product image */}
-            <div className="hero-bag-display">
-              <div className="hero-bag-mockup">
-                {/* Stylized bag SVG */}
-                <svg
-                  viewBox="0 0 200 220"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="hero-bag-svg"
-                >
-                  {/* Bag strap */}
-                  <path
-                    d="M70 80 Q70 40 100 40 Q130 40 130 80"
-                    stroke="#C9A84C"
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    fill="none"
-                  />
-                  {/* Bag body */}
-                  <rect
-                    x="30"
-                    y="80"
-                    width="140"
-                    height="110"
-                    rx="16"
-                    fill="#E91E8C"
-                  />
-                  {/* Bag flap */}
-                  <path
-                    d="M30 120 Q100 95 170 120 L170 80 Q100 60 30 80 Z"
-                    fill="#b5156d"
-                  />
-                  {/* Clasp */}
-                  <circle cx="100" cy="122" r="10" fill="#C9A84C" />
-                  <circle cx="100" cy="122" r="5" fill="#1A1A2E" />
-                  {/* Decorative lines */}
-                  <line
-                    x1="50"
-                    y1="150"
-                    x2="150"
-                    y2="150"
-                    stroke="rgba(255,255,255,0.2)"
-                    strokeWidth="1"
-                  />
-                  <line
-                    x1="50"
-                    y1="165"
-                    x2="130"
-                    y2="165"
-                    stroke="rgba(255,255,255,0.15)"
-                    strokeWidth="1"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {/* Floating tags */}
-            <div className="hero-float-tag hero-float-tag-1">
-              <span className="badge badge-gold">New Arrival</span>
-            </div>
-
-            <div className="hero-float-tag hero-float-tag-2">
-              <div className="hero-price-tag">
-                <span className="hero-price-label">Starting from</span>
-                <span className="hero-price-value">৳ 850</span>
-              </div>
-            </div>
-
-            <div className="hero-float-tag hero-float-tag-3">
-              <div className="hero-rating-tag">
-                <Star size={12} fill="#C9A84C" color="#C9A84C" />
-                <span>4.9 Rating</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Color swatches */}
-          <div className="hero-colors">
-            <span className="hero-colors-label">Available in</span>
-            <div className="hero-color-dots">
-              {[
-                '#E91E8C',
-                '#1A1A2E',
-                '#C9A84C',
-                '#ffffff',
-                '#ef4444',
-                '#3b82f6',
-              ].map((color) => (
-                <div
-                  key={color}
-                  className="hero-color-dot"
-                  style={{
-                    background: color,
-                    border:
-                      color === '#ffffff'
-                        ? '2px solid #e5e7eb'
-                        : '2px solid transparent',
-                  }}
-                  title={color}
-                />
-              ))}
-              <span className="hero-colors-more">+20</span>
-            </div>
-          </div>
+          <div
+            style={{
+              width: 3,
+              height: 6,
+              background: 'rgba(255,255,255,0.6)',
+              borderRadius: 99,
+              animation: 'heroScrollWheel 1.6s ease infinite',
+            }}
+          />
         </div>
+        <span
+          style={{
+            fontFamily: FONT,
+            fontSize: '0.6rem',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.4)',
+          }}
+        >
+          Scroll
+        </span>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="hero-scroll">
-        <div className="hero-scroll-mouse">
-          <div className="hero-scroll-wheel" />
-        </div>
-        <span>Scroll to explore</span>
-      </div>
+      <style>{`
+        @keyframes heroScrollWheel {
+          0%   { opacity: 1; transform: translateY(0); }
+          80%  { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 0; transform: translateY(0); }
+        }
+        @media (max-width: 640px) {
+          .hero-content-inner { padding: 4rem 1.25rem !important; }
+        }
+      `}</style>
     </section>
   )
 }
