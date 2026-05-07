@@ -25,27 +25,20 @@ export default function Topbar() {
 
   useEffect(() => {
     startTimer();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const variants = {
-    enter: {
-      y: 14,
-      opacity: 0,
-    },
-    center: {
-      y: 0,
-      opacity: 1,
-    },
-    exit: {
-      y: -14,
-      opacity: 0,
-    },
+    enter:  { y: 14, opacity: 0 },
+    center: { y: 0,  opacity: 1 },
+    exit:   { y: -14, opacity: 0 },
   };
 
   return (
-    <div className="relative bg-[#f4f0eb] border-b border-[#e0d8d0] h-9 overflow-hidden flex items-center">
+    <div className="relative bg-[#f4f0eb] border-b border-[#e0d8d0] overflow-hidden flex items-center min-h-[36px] py-1 sm:py-0 sm:h-9">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -55,12 +48,18 @@ export default function Topbar() {
           exit="exit"
           transition={{
             duration: 0.55,
-            ease: [0.16, 1, 0.3, 1],   /* expo-out — fast start, silk finish */
+            ease: [0.16, 1, 0.3, 1],
             opacity: { duration: 0.3, ease: "easeOut" },
           }}
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none px-4"
         >
-          <span className="text-[11.5px] tracking-[0.15em] uppercase font-medium text-[#2a2a2a] select-none">
+          <span className="
+            text-[10px] sm:text-[11.5px]
+            tracking-[0.08em] sm:tracking-[0.15em]
+            uppercase font-medium text-[#2a2a2a] select-none
+            text-center leading-tight
+            line-clamp-1
+          ">
             {MESSAGES[index]}
           </span>
         </motion.div>
