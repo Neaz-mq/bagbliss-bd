@@ -10,6 +10,12 @@ const DEFAULT_MESSAGE = 'Hello BagBliss BD! 👜 I have a question about your ba
 const BRAND = '#E91E8C'
 const DARK = '#0f0f13'
 
+// ── Bottom nav height + margin — must match your Navbar.tsx floating pill
+// pill height ≈ 62px, bottom margin 0.875rem (14px), gap above = 12px buffer
+const BOTTOM_NAV_HEIGHT = 62
+const BOTTOM_NAV_MARGIN = 10    // ← was 14 (no more bottom margin since nav is flush)
+const FAB_CLEARANCE     = BOTTOM_NAV_HEIGHT + BOTTOM_NAV_MARGIN + 12  // = 74px
+
 const QUICK_WA_MESSAGES = [
   { emoji: '👜', label: 'Ask about a bag',      text: 'Hi! I want to know more about one of your bags.' },
   { emoji: '📦', label: 'Track my order',       text: 'Hi! I want to track my order. My order number is: ' },
@@ -47,7 +53,7 @@ function renderMessage(content: string) {
 }
 
 // ── WhatsApp Panel ────────────────────────────────────────────────────────
-function WhatsAppPanel({ onClose }: { onClose: () => void }) {
+function WhatsAppPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean }) {
   const [customMessage, setCustomMessage] = useState('')
 
   const handleQuick = (text: string) => {
@@ -66,7 +72,9 @@ function WhatsAppPanel({ onClose }: { onClose: () => void }) {
       exit={{ opacity: 0, y: 16, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 300, damping: 26 }}
       style={{
-        width: 320, borderRadius: 20, overflow: 'hidden',
+        width: isMobile ? 'calc(100vw - 32px)' : 320,
+        maxWidth: 340,
+        borderRadius: 20, overflow: 'hidden',
         background: 'white',
         boxShadow: '0 32px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06)',
       }}
@@ -176,7 +184,7 @@ function WhatsAppPanel({ onClose }: { onClose: () => void }) {
 }
 
 // ── AI Shopping Panel ─────────────────────────────────────────────────────
-function AIPanel({ onClose }: { onClose: () => void }) {
+function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean }) {
   const [msgs, setMsgs] = useState<Message[]>([WELCOME])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -210,6 +218,10 @@ function AIPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
+  // On mobile: nearly full-screen height minus nav bar clearance
+  const panelHeight = isMobile ? `calc(100dvh - ${FAB_CLEARANCE + 58 + 16}px)` : '500px'
+  const panelWidth  = isMobile ? 'calc(100vw - 32px)' : '330px'
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16, scale: 0.95 }}
@@ -217,7 +229,10 @@ function AIPanel({ onClose }: { onClose: () => void }) {
       exit={{ opacity: 0, y: 16, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 300, damping: 26 }}
       style={{
-        width: 330, height: 500, borderRadius: 20, overflow: 'hidden',
+        width: panelWidth,
+        maxWidth: 340,
+        height: panelHeight,
+        borderRadius: 20, overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
         background: '#fff',
         boxShadow: '0 32px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06)',
@@ -227,6 +242,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
       <div style={{
         background: `linear-gradient(135deg, ${DARK} 0%, #1a0a1a 50%, #2a0a20 100%)`,
         padding: '14px 16px', position: 'relative', overflow: 'hidden',
+        flexShrink: 0,
       }}>
         <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${BRAND}40, transparent)`, filter: 'blur(16px)' }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
@@ -306,7 +322,7 @@ function AIPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Input */}
-      <div style={{ borderTop: '1px solid #efefef', padding: '10px 12px 12px', background: '#fff' }}>
+      <div style={{ borderTop: '1px solid #efefef', padding: '10px 12px 12px', background: '#fff', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1.5px solid #e8e8e8', borderRadius: 14, padding: '8px 10px', background: '#fafafa', transition: 'border-color 0.15s' }}
           onFocus={e => (e.currentTarget.style.borderColor = BRAND)}
           onBlur={e => (e.currentTarget.style.borderColor = '#e8e8e8')}
@@ -338,7 +354,17 @@ type ActivePanel = null | 'picker' | 'whatsapp' | 'ai'
 
 export default function ChatLauncher() {
   const [active, setActive] = useState<ActivePanel>(null)
-  const [badge, setBadge] = useState(false)
+  const [badge, setBadge]   = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect mobile (< 1024px — matches your Navbar breakpoint)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)')
+    setIsMobile(mq.matches)
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setBadge(true), 5000)
@@ -346,7 +372,6 @@ export default function ChatLauncher() {
   }, [])
 
   const isOpen = active !== null
-  const showPanel = active === 'whatsapp' || active === 'ai'
 
   const handleFAB = () => {
     if (isOpen) {
@@ -357,14 +382,34 @@ export default function ChatLauncher() {
     }
   }
 
+  // ── Bottom offset:
+  // Desktop: 24px (standard)
+  // Mobile:  bottom nav pill (62px) + its own margin (14px) + gap (12px) = 88px
+  //          + safe-area-inset-bottom for notched phones
+  const bottomOffset = isMobile
+    ? `calc(${FAB_CLEARANCE}px + env(safe-area-inset-bottom, 0px))`
+    : '24px'
+
+  // On mobile panels open LEFT-anchored (right: 16px keeps it in frame)
+  const rightOffset = '16px'
+
   return (
     <>
-      <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
+      <div style={{
+        position: 'fixed',
+        bottom: bottomOffset,
+        right: rightOffset,
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: 10,
+      }}>
 
         {/* Panels */}
         <AnimatePresence mode="wait">
-          {active === 'whatsapp' && <WhatsAppPanel key="wa" onClose={() => setActive(null)} />}
-          {active === 'ai' && <AIPanel key="ai" onClose={() => setActive(null)} />}
+          {active === 'whatsapp' && <WhatsAppPanel key="wa" onClose={() => setActive(null)} isMobile={isMobile} />}
+          {active === 'ai'       && <AIPanel       key="ai" onClose={() => setActive(null)} isMobile={isMobile} />}
         </AnimatePresence>
 
         {/* Speed-dial picker */}
@@ -455,7 +500,9 @@ export default function ChatLauncher() {
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}
           style={{
-            width: 58, height: 58, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            width: 52,
+            height: 52,
+            borderRadius: '50%', border: 'none', cursor: 'pointer',
             background: isOpen
               ? '#1a1a1a'
               : `linear-gradient(135deg, ${BRAND} 0%, #9c1060 100%)`,
@@ -465,6 +512,8 @@ export default function ChatLauncher() {
               : `0 8px 28px ${BRAND}60`,
             position: 'relative',
             transition: 'background 0.3s, box-shadow 0.3s',
+            // Slightly smaller on mobile so it doesn't feel chunky
+            ...(isMobile && { width: 48, height: 48 } as any),
           }}
         >
           {/* Pulse ring */}
@@ -485,7 +534,7 @@ export default function ChatLauncher() {
                 transition={{ duration: 0.2 }}
                 style={{ color: '#fff', display: 'flex' }}
               >
-                <X size={22} />
+                <X size={20} />
               </motion.div>
             ) : (
               <motion.div key="chat"
@@ -495,7 +544,7 @@ export default function ChatLauncher() {
                 transition={{ duration: 0.2 }}
                 style={{ color: '#fff', display: 'flex' }}
               >
-                <MessageCircle size={24} />
+                <MessageCircle size={22} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -520,13 +569,6 @@ export default function ChatLauncher() {
           </AnimatePresence>
         </motion.button>
       </div>
-
-      <style>{`
-        @keyframes waPanelIn {
-          from { opacity: 0; transform: scale(0.85) translateY(10px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
     </>
   )
 }

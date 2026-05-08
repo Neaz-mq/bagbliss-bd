@@ -19,12 +19,15 @@ const NAV_LINKS = [
   { label: 'Flash Sale',   href: '/shop?filter=flash-sale' },
 ] as const
 
-const C    = '#CA865D'
-const CD   = '#b5724a'
-const BG   = '#F4F0EB'
-const DARK = '#1a1a2e'
-const FONT = 'Nunito, system-ui, sans-serif'
-const SERIF = '"Cormorant Garamond", Georgia, serif'
+const C     = '#CA865D'
+const CD    = '#b5724a'
+const BG    = '#F4F0EB'
+const DARK  = '#1a1a2e'
+const FONT  = 'Inter, system-ui, sans-serif'
+const SERIF = '"Poppins", system-ui, sans-serif'
+
+// Menu link color (idle state)
+const MENU_COLOR = '#333333'
 
 function NavbarInner() {
   const pathname     = usePathname()
@@ -102,111 +105,78 @@ function NavbarInner() {
     }
   }
 
-  const navLinkSt = (href: string): React.CSSProperties => ({
-    fontFamily: FONT,
-    fontSize: '0.775rem',
-    fontWeight: 700,
-    letterSpacing: '0.07em',
-    textTransform: 'uppercase',
-    textDecoration: 'none',
-    whiteSpace: 'nowrap',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.35rem',
-    color: isActive(href) || hovered === href ? C : '#7c7c8a',
-    transition: 'color 150ms ease',
-  })
-
-  const actionSt = (key: string): React.CSSProperties => ({
-    fontFamily: FONT,
-    fontSize: '0.775rem',
-    fontWeight: 700,
-    letterSpacing: '0.07em',
-    textTransform: 'uppercase',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 0,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.35rem',
-    whiteSpace: 'nowrap',
-    textDecoration: 'none',
-    color: hovered === key ? C : '#7c7c8a',
-    transition: 'color 150ms ease',
-  })
-
-  const mobileNavSt = (active: boolean): React.CSSProperties => ({
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 3,
-    fontSize: '0.57rem',
-    fontFamily: FONT,
-    fontWeight: 700,
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-    color: active ? '#fff' : 'rgba(255,255,255,0.38)',
-    textDecoration: 'none',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '0.3rem 0',
-    minWidth: 48,
-    transition: 'color 200ms ease',
-  })
-
-  const mobilePillSt = (active: boolean): React.CSSProperties => ({
-    padding: '6px',
-    borderRadius: '12px',
-    background: active ? `rgba(202,134,93,0.22)` : 'transparent',
-    transition: 'background 200ms ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  })
-
   const renderDesktopAuth = () => {
     if (!isMounted || status === 'loading')
       return (
-        <span style={{ ...actionSt('auth'), opacity: 0, pointerEvents: 'none' }}>
+        <span
+          className="flex items-center gap-[0.35rem] text-[0.775rem] font-bold tracking-[0.07em] uppercase opacity-0 pointer-events-none"
+          style={{ color: MENU_COLOR, fontFamily: FONT }}
+        >
           <User size={15} /> Sign In
         </span>
       )
 
     if (session)
       return (
-        <div ref={userMenuRef} style={{ position: 'relative' }} suppressHydrationWarning>
+        <div ref={userMenuRef} className="relative" suppressHydrationWarning>
           <button
             type="button"
             onClick={() => setIsUserMenuOpen(v => !v)}
             suppressHydrationWarning
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0"
           >
             {session.user?.image ? (
               <img
                 src={session.user.image}
                 alt=""
                 suppressHydrationWarning
-                style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: `1.5px solid rgba(202,134,93,.35)` }}
+                className="w-[30px] h-[30px] rounded-full object-cover"
+                style={{ border: `1.5px solid rgba(202,134,93,.35)` }}
               />
             ) : (
-              <div suppressHydrationWarning style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(202,134,93,.12)', color: C, fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1.5px solid rgba(202,134,93,.25)`, fontFamily: FONT }}>
+              <div
+                suppressHydrationWarning
+                className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[0.75rem] font-bold"
+                style={{
+                  background: 'rgba(202,134,93,.12)',
+                  color: C,
+                  border: `1.5px solid rgba(202,134,93,.25)`,
+                  fontFamily: FONT,
+                }}
+              >
                 {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
               </div>
             )}
-            <ChevronDown size={12} style={{ color: '#aaa', transition: 'transform 150ms', transform: isUserMenuOpen ? 'rotate(180deg)' : 'none' }} />
+            <ChevronDown
+              size={12}
+              style={{
+                color: '#aaa',
+                transition: 'transform 150ms',
+                transform: isUserMenuOpen ? 'rotate(180deg)' : 'none',
+              }}
+            />
           </button>
 
           {isUserMenuOpen && (
-            <div suppressHydrationWarning style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#fff', border: '1px solid rgba(26,26,46,.08)', borderRadius: '1.25rem', minWidth: 215, boxShadow: '0 8px 32px rgba(26,26,46,.12)', zIndex: 200, overflow: 'hidden' }}>
-              <div style={{ padding: '0.875rem 1rem', background: BG }}>
-                <p style={{ fontFamily: FONT, fontWeight: 700, fontSize: '0.9rem', color: DARK, margin: 0 }}>{session.user?.name ?? ''}</p>
-                <p style={{ fontFamily: FONT, fontSize: '0.75rem', color: '#9ca3af', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.user?.email ?? ''}</p>
+            <div
+              suppressHydrationWarning
+              className="absolute top-[calc(100%+12px)] right-0 bg-white border border-[rgba(26,26,46,0.08)] rounded-[1.25rem] min-w-[215px] shadow-[0_8px_32px_rgba(26,26,46,0.12)] z-[200] overflow-hidden"
+            >
+              <div className="px-4 py-[0.875rem]" style={{ background: BG }}>
+                <p
+                  className="font-bold text-[0.9rem] m-0"
+                  style={{ color: DARK, fontFamily: FONT }}
+                >
+                  {session.user?.name ?? ''}
+                </p>
+                <p
+                  className="text-[0.75rem] text-[#9ca3af] mt-[2px] overflow-hidden text-ellipsis whitespace-nowrap m-0"
+                  style={{ fontFamily: FONT }}
+                >
+                  {session.user?.email ?? ''}
+                </p>
               </div>
-              <div style={{ height: 1, background: 'rgba(26,26,46,.06)' }} />
+              <div className="h-px bg-[rgba(26,26,46,0.06)]" />
               {[
                 { href: '/account',        icon: <User size={15} />,    label: 'My Account' },
                 { href: '/account/orders', icon: <Package size={15} />, label: 'My Orders'  },
@@ -218,19 +188,21 @@ function NavbarInner() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsUserMenuOpen(false)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.7rem 1rem', fontFamily: FONT, fontSize: '0.875rem', fontWeight: 500, color: '#6b7280', textDecoration: 'none' }}
+                  className="flex items-center gap-[10px] px-4 py-[0.7rem] text-[0.875rem] font-medium no-underline transition-[background,color] duration-150"
+                  style={{ color: '#6b7280', fontFamily: FONT }}
                   onMouseEnter={e => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(202,134,93,.06)', color: C })}
                   onMouseLeave={e => Object.assign((e.currentTarget as HTMLElement).style, { background: '', color: '#6b7280' })}
                 >
                   {item.icon} {item.label}
                 </Link>
               ))}
-              <div style={{ height: 1, background: 'rgba(26,26,46,.06)' }} />
+              <div className="h-px bg-[rgba(26,26,46,0.06)]" />
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: '/' })}
                 suppressHydrationWarning
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.7rem 1rem', fontFamily: FONT, fontSize: '0.875rem', fontWeight: 500, color: '#ef4444', background: 'none', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left' }}
+                className="flex items-center gap-[10px] px-4 py-[0.7rem] text-[0.875rem] font-medium text-[#ef4444] bg-transparent border-none w-full cursor-pointer text-left transition-[background] duration-150"
+                style={{ fontFamily: FONT }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.06)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '' }}
               >
@@ -245,7 +217,8 @@ function NavbarInner() {
       <Link
         href="/login"
         suppressHydrationWarning
-        style={actionSt('signin') as React.CSSProperties}
+        className="flex items-center gap-[0.35rem] text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline transition-colors duration-150"
+        style={{ color: hovered === 'signin' ? C : MENU_COLOR, fontFamily: FONT }}
         onMouseEnter={() => setHovered('signin')}
         onMouseLeave={() => setHovered(null)}
       >
@@ -257,42 +230,68 @@ function NavbarInner() {
 
   return (
     <>
+      {/* ── Animation keyframes ── */}
+      <style>{`
+        @keyframes menuIconIn {
+          from { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+          to   { opacity: 1; transform: rotate(0deg)   scale(1);   }
+        }
+        @keyframes mobileDropdownIn {
+          0%   { opacity: 0; transform: scaleY(0.92) translateY(-6px); }
+          60%  { opacity: 1; }
+          100% { opacity: 1; transform: scaleY(1)    translateY(0px);  }
+        }
+        @keyframes mobileDropdownItemIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0);    }
+        }
+        .mobile-menu-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: menuIconIn 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        .mobile-dropdown {
+          transform-origin: top center;
+          animation: mobileDropdownIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .mobile-dropdown-item {
+          opacity: 0;
+          animation: mobileDropdownItemIn 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+        }
+        .mobile-dropdown-item:active {
+          background: rgba(202,134,93,0.08) !important;
+        }
+      `}</style>
+
+      {/* ── Header ── */}
       <header
         suppressHydrationWarning
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          background: isScrolled ? `rgba(244,240,235,0.95)` : BG,
-          backdropFilter: isScrolled ? 'blur(18px)' : 'none',
-          WebkitBackdropFilter: isScrolled ? 'blur(18px)' : 'none',
-          borderBottom: `1px solid ${isScrolled ? 'rgba(26,26,46,.09)' : 'rgba(26,26,46,.07)'}`,
-          boxShadow: isScrolled ? '0 2px 20px rgba(26,26,46,.06)' : 'none',
-          transition: 'background 300ms, box-shadow 300ms, border-color 300ms',
-        }}
+        className={`sticky top-0 z-[100] border-b transition-[background,box-shadow,border-color] duration-300 ${
+          isScrolled
+            ? 'bg-[rgba(244,240,235,0.95)] backdrop-blur-[18px] shadow-[0_2px_20px_rgba(26,26,46,0.06)] border-[rgba(26,26,46,0.09)]'
+            : 'bg-[#F4F0EB] border-[rgba(26,26,46,0.07)]'
+        }`}
       >
-        {/* ── inner grid ── */}
+        {/* Inner grid */}
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isDesktop ? '1fr auto 1fr' : '44px 1fr 44px',
-            alignItems: 'center',
-            width: '100%',
-            margin: '0 auto',
-            // ↓ THE ONLY CHANGE: clamp scales padding with viewport width
-            padding: isDesktop ? '0 clamp(1.5rem, 5vw, 7rem)' : '0 1rem',
-            height: isDesktop ? 68 : 58,
-            boxSizing: 'border-box',
-          }}
+          className={`grid w-full mx-auto items-center box-border ${
+            isDesktop
+              ? 'grid-cols-[1fr_auto_1fr] h-[68px]'
+              : 'grid-cols-[44px_1fr_44px] h-[58px]'
+          }`}
+          style={{ padding: isDesktop ? '0 clamp(1.5rem, 5vw, 7rem)' : '0 1rem' }}
         >
-          {/* LEFT */}
+          {/* ── LEFT — Desktop nav links ── */}
           {isDesktop ? (
-            <nav style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+            <nav className="flex items-center gap-7">
               {NAV_LINKS.map(({ label, href }) => (
                 <Link
                   key={href}
                   href={href}
-                  style={navLinkSt(href)}
+                  className="text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline whitespace-nowrap flex items-center gap-[0.35rem] transition-colors duration-150"
+                  style={{ color: isActive(href) || hovered === href ? C : MENU_COLOR, fontFamily: FONT }}
                   onMouseEnter={() => setHovered(href)}
                   onMouseLeave={() => setHovered(null)}
                 >
@@ -306,111 +305,137 @@ function NavbarInner() {
               onClick={() => { setIsMobileMenuOpen(v => !v); setIsSearchOpen(false) }}
               aria-label="Menu"
               suppressHydrationWarning
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: DARK, borderRadius: 8 }}
+              className="bg-transparent border-none cursor-pointer p-1 flex items-center justify-center rounded-lg w-9 h-9"
+              style={{ color: DARK }}
             >
-              {isMobileMenuOpen ? <X size={22} strokeWidth={2} /> : <Menu size={22} strokeWidth={2} />}
+              <span key={isMobileMenuOpen ? 'close' : 'open'} className="mobile-menu-icon">
+                {isMobileMenuOpen
+                  ? <X size={22} strokeWidth={2} color={DARK} />
+                  : <Menu size={22} strokeWidth={2} color={DARK} />
+                }
+              </span>
             </button>
           )}
 
-          {/* CENTER */}
+          {/* ── CENTER — Logo ── */}
           <Link
             href="/"
+            className="flex items-center gap-[7px] no-underline whitespace-nowrap justify-self-center"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              textDecoration: 'none',
               color: DARK,
               fontFamily: SERIF,
               fontSize: isDesktop ? '1.4rem' : '1.2rem',
               fontWeight: 600,
               letterSpacing: '.01em',
-              whiteSpace: 'nowrap',
-              justifySelf: 'center',
             }}
           >
             <ShoppingBag size={isDesktop ? 20 : 18} strokeWidth={1.5} style={{ color: C }} />
             BagBliss BD
           </Link>
 
-          {/* RIGHT */}
+          {/* ── RIGHT — Desktop actions ── */}
           {isDesktop ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 24 }}>
+            <div className="flex items-center justify-end gap-6">
+              {/* Search */}
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(v => !v)}
                 aria-label="Search"
                 suppressHydrationWarning
-                style={actionSt('search')}
+                className="text-[0.775rem] font-medium tracking-[0.07em] uppercase bg-transparent border-none cursor-pointer p-0 flex items-center gap-[0.35rem] whitespace-nowrap transition-colors duration-150"
+                style={{ color: hovered === 'search' ? C : MENU_COLOR, fontFamily: FONT }}
                 onMouseEnter={() => setHovered('search')}
                 onMouseLeave={() => setHovered(null)}
               >
                 <Search size={14} strokeWidth={2.2} />
                 Search
               </button>
+
+              {/* Wishlist */}
               <Link
                 href="/wishlist"
                 aria-label="Wishlist"
-                style={actionSt('wishlist') as React.CSSProperties}
+                suppressHydrationWarning
+                className="text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline flex items-center gap-[0.35rem] whitespace-nowrap transition-colors duration-150"
+                style={{ color: hovered === 'wishlist' ? C : MENU_COLOR, fontFamily: FONT }}
                 onMouseEnter={() => setHovered('wishlist')}
                 onMouseLeave={() => setHovered(null)}
-                suppressHydrationWarning
               >
                 <Heart size={14} strokeWidth={2.2} />
                 Wishlist
                 {isMounted && safeWishlist > 0 && (
-                  <span style={{ color: C, fontWeight: 800, fontSize: '0.72rem' }}>({safeWishlist})</span>
+                  <span className="font-extrabold text-[0.72rem]" style={{ color: C }}>
+                    ({safeWishlist})
+                  </span>
                 )}
               </Link>
+
+              {/* Cart */}
               <button
                 type="button"
                 onClick={openCart}
                 aria-label="Cart"
                 suppressHydrationWarning
-                style={actionSt('cart')}
+                className="text-[0.775rem] font-medium tracking-[0.07em] uppercase bg-transparent border-none cursor-pointer p-0 flex items-center gap-[0.35rem] whitespace-nowrap transition-colors duration-150"
+                style={{ color: hovered === 'cart' ? C : MENU_COLOR, fontFamily: FONT }}
                 onMouseEnter={() => setHovered('cart')}
                 onMouseLeave={() => setHovered(null)}
               >
                 <ShoppingBag size={14} strokeWidth={2.2} />
                 Cart
                 {isMounted && safeCart > 0 && (
-                  <span style={{ color: C, fontWeight: 800, fontSize: '0.72rem' }}>({safeCart})</span>
+                  <span className="font-extrabold text-[0.72rem]" style={{ color: C }}>
+                    ({safeCart})
+                  </span>
                 )}
               </button>
+
               {renderDesktopAuth()}
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            /* Mobile — cart icon top-right */
+            <div className="flex items-center justify-end">
               {isMounted ? (
                 <button
                   type="button"
                   onClick={openCart}
                   aria-label="Cart"
                   suppressHydrationWarning
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', color: DARK, borderRadius: 8 }}
+                  className="bg-transparent border-none cursor-pointer p-1 flex items-center justify-center relative rounded-lg"
                 >
-                  <ShoppingBag size={22} strokeWidth={1.8} style={{ color: safeCart > 0 ? C : DARK }} />
+                  <ShoppingBag
+                    size={22}
+                    strokeWidth={1.8}
+                    style={{ color: safeCart > 0 ? C : DARK }}
+                  />
                   {safeCart > 0 && (
-                    <span style={{ position: 'absolute', top: 0, right: 0, minWidth: 16, height: 16, background: C, color: '#fff', fontSize: '0.5rem', fontWeight: 800, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', fontFamily: FONT, border: `1.5px solid ${BG}`, lineHeight: 1 }}>
+                    <span
+                      className="absolute top-0 right-0 min-w-[16px] h-4 text-white text-[0.5rem] font-extrabold rounded-full flex items-center justify-center px-[3px] leading-none"
+                      style={{ background: C, fontFamily: FONT, border: `1.5px solid ${BG}` }}
+                    >
                       {safeCart}
                     </span>
                   )}
                 </button>
               ) : (
-                <div style={{ width: 30, height: 30 }} />
+                <div className="w-[30px] h-[30px]" />
               )}
             </div>
           )}
         </div>
 
-        {/* Search bar */}
+        {/* ── Search bar (desktop) ── */}
         {isSearchOpen && (
-          <div suppressHydrationWarning style={{ borderTop: '1px solid rgba(26,26,46,.07)', padding: '0.75rem 1rem', background: BG }}>
+          <div
+            suppressHydrationWarning
+            className="border-t border-[rgba(26,26,46,0.07)] py-3 px-4"
+            style={{ background: BG }}
+          >
             <form
               onSubmit={handleSearch}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 580, margin: '0 auto', background: '#fff', border: '1.5px solid rgba(26,26,46,.1)', borderRadius: 9999, padding: '0.4rem 0.5rem 0.4rem 1rem', transition: 'border-color 150ms' }}
+              className="flex items-center gap-2 max-w-[580px] mx-auto bg-white border-[1.5px] border-[rgba(26,26,46,0.1)] rounded-full pl-4 pr-2 py-[0.4rem] transition-[border-color] duration-150"
             >
-              <Search size={16} style={{ color: '#bbb', flexShrink: 0 }} />
+              <Search size={16} className="text-[#bbb] shrink-0" />
               <input
                 ref={searchRef}
                 type="text"
@@ -418,17 +443,24 @@ function NavbarInner() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 suppressHydrationWarning
-                style={{ flex: 1, border: 'none', outline: 'none', fontSize: '0.875rem', color: DARK, background: 'transparent', fontFamily: FONT }}
+                className="flex-1 border-none outline-none text-sm bg-transparent"
+                style={{ color: DARK, fontFamily: FONT }}
               />
               {searchQuery && (
-                <button type="button" onClick={() => setSearchQuery('')} suppressHydrationWarning style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', padding: 0, display: 'flex' }}>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  suppressHydrationWarning
+                  className="bg-transparent border-none cursor-pointer text-[#bbb] p-0 flex"
+                >
                   <X size={15} />
                 </button>
               )}
               <button
                 type="submit"
                 suppressHydrationWarning
-                style={{ background: C, color: '#fff', border: 'none', borderRadius: 9999, padding: '0.35rem 1rem', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap', transition: 'background 150ms' }}
+                className="text-white border-none rounded-full px-4 py-[0.35rem] text-[0.78rem] font-bold tracking-[0.05em] uppercase cursor-pointer whitespace-nowrap transition-colors duration-150"
+                style={{ background: C, fontFamily: FONT }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
               >
@@ -438,45 +470,76 @@ function NavbarInner() {
           </div>
         )}
 
-        {/* Mobile menu */}
+        {/* ── Mobile dropdown menu ── */}
         {isMobileMenuOpen && !isDesktop && (
-          <div suppressHydrationWarning style={{ borderTop: '1px solid rgba(26,26,46,.07)', background: BG, display: 'flex', flexDirection: 'column', animation: 'mobileMenuIn 200ms ease both' }}>
+          <div
+            suppressHydrationWarning
+            className="mobile-dropdown border-t border-[rgba(26,26,46,0.07)] flex flex-col"
+            style={{ background: BG }}
+          >
+            {/* Search in dropdown */}
             <div style={{ padding: '0.75rem 1rem 0' }}>
               <form
                 onSubmit={handleSearch}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1.5px solid rgba(26,26,46,.1)', borderRadius: 9999, padding: '0.4rem 0.5rem 0.4rem 1rem' }}
+                className="flex items-center gap-2 bg-white rounded-full"
+                style={{ border: '1.5px solid rgba(26,26,46,0.1)', padding: '0.4rem 0.5rem 0.4rem 1rem' }}
               >
-                <Search size={15} style={{ color: '#bbb', flexShrink: 0 }} />
+                <Search size={15} className="text-[#bbb] shrink-0" />
                 <input
                   type="text"
                   placeholder="Search bags…"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   suppressHydrationWarning
-                  style={{ flex: 1, border: 'none', outline: 'none', fontSize: '0.875rem', color: DARK, background: 'transparent', fontFamily: FONT }}
+                  className="flex-1 border-none outline-none text-sm bg-transparent"
+                  style={{ color: DARK, fontFamily: FONT }}
                 />
-                <button type="submit" suppressHydrationWarning style={{ background: C, color: '#fff', border: 'none', borderRadius: 9999, padding: '0.3rem 0.875rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                <button
+                  type="submit"
+                  suppressHydrationWarning
+                  className="text-white border-none rounded-full text-[0.75rem] font-bold cursor-pointer"
+                  style={{ background: C, fontFamily: FONT, padding: '0.3rem 0.875rem' }}
+                >
                   Go
                 </button>
               </form>
             </div>
+
+            {/* Nav links */}
             <nav style={{ padding: '0.5rem 0' }}>
-              {NAV_LINKS.map(({ label, href }) => (
+              {NAV_LINKS.map(({ label, href }, i) => (
                 <Link
                   key={href}
                   href={href}
-                  style={{ padding: '0.8rem 1.25rem', fontFamily: FONT, fontSize: '0.875rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: isActive(href) ? C : '#4b4b5e', textDecoration: 'none', display: 'flex', alignItems: 'center', borderLeft: isActive(href) ? `3px solid ${C}` : '3px solid transparent', transition: 'all 150ms' }}
+                  className="mobile-dropdown-item text-[0.875rem] font-medium tracking-[0.04em] uppercase no-underline flex items-center"
+                  style={{
+                    animationDelay: `${40 + i * 45}ms`,
+                    padding: '0.8rem 1.25rem',
+                    color: isActive(href) ? C : MENU_COLOR,
+                    borderLeft: isActive(href) ? `3px solid ${C}` : '3px solid transparent',
+                    fontFamily: FONT,
+                  }}
                 >
                   {label}
                 </Link>
               ))}
             </nav>
+
+            {/* Auth buttons */}
             {isMounted && !session && (
-              <div style={{ display: 'flex', gap: 8, padding: '0.75rem 1.25rem 1.25rem' }}>
-                <Link href="/login" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.65rem', background: C, color: '#fff', borderRadius: 9999, fontFamily: FONT, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.05em', textDecoration: 'none', textTransform: 'uppercase' }}>
+              <div className="flex gap-2" style={{ padding: '0.75rem 1.25rem 1.25rem' }}>
+                <Link
+                  href="/login"
+                  className="flex-1 flex items-center justify-center text-white rounded-full text-[0.8rem] font-medium tracking-[0.05em] no-underline uppercase"
+                  style={{ background: C, fontFamily: FONT, padding: '0.65rem' }}
+                >
                   Sign In
                 </Link>
-                <Link href="/register" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.65rem', background: 'transparent', color: DARK, border: `1.5px solid rgba(26,26,46,.2)`, borderRadius: 9999, fontFamily: FONT, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.05em', textDecoration: 'none', textTransform: 'uppercase' }}>
+                <Link
+                  href="/register"
+                  className="flex-1 flex items-center justify-center bg-transparent rounded-full text-[0.8rem] font-medium tracking-[0.05em] no-underline uppercase"
+                  style={{ color: DARK, fontFamily: FONT, padding: '0.65rem', border: '1.5px solid rgba(26,26,46,0.2)' }}
+                >
                   Register
                 </Link>
               </div>
@@ -485,48 +548,108 @@ function NavbarInner() {
         )}
       </header>
 
-      {/* Mobile bottom nav */}
+      {/* ── Mobile bottom nav ── */}
       {isMounted && !isDesktop && (
         <nav
           suppressHydrationWarning
-          style={{ position: 'fixed', bottom: `calc(0.875rem + env(safe-area-inset-bottom, 0px))`, left: '0.875rem', right: '0.875rem', zIndex: 100, background: DARK, borderRadius: '26px', padding: '0.45rem 0.5rem', boxShadow: '0 12px 48px rgba(26,26,46,.35), 0 2px 8px rgba(26,26,46,.2)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}
+          className="fixed bottom-0 left-0 right-0 z-[100] border-t border-[rgba(255,255,255,0.07)] flex items-center justify-around shadow-[0_-4px_24px_rgba(26,26,46,0.25)]"
+          style={{
+            background: DARK,
+            padding: `0.6rem 0.5rem calc(0.6rem + env(safe-area-inset-bottom, 0px))`,
+          }}
         >
-          <Link href="/" style={mobileNavSt(pathname === '/' && searchParams.toString() === '')}>
-            <div style={mobilePillSt(pathname === '/' && searchParams.toString() === '')}>
-              <Home size={20} strokeWidth={pathname === '/' && searchParams.toString() === '' ? 2.5 : 1.8} color={pathname === '/' && searchParams.toString() === '' ? C : 'rgba(255,255,255,0.38)'} />
+          {/* Home */}
+          <Link
+            href="/"
+            className="flex-1 flex flex-col items-center gap-[3px] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline min-w-[48px] py-[0.3rem] transition-colors duration-200"
+            style={{ color: isActive('/') ? '#fff' : 'rgba(255,255,255,0.38)', fontFamily: FONT }}
+          >
+            <div
+              className="p-[6px] rounded-xl flex items-center justify-center relative transition-[background] duration-200"
+              style={{ background: isActive('/') ? 'rgba(202,134,93,0.22)' : 'transparent' }}
+            >
+              <Home
+                size={20}
+                strokeWidth={isActive('/') ? 2.5 : 1.8}
+                color={isActive('/') ? C : 'rgba(255,255,255,0.38)'}
+              />
             </div>
             <span>Home</span>
           </Link>
 
-          <Link href="/shop" style={mobileNavSt(pathname === '/shop' && searchParams.toString() === '')}>
-            <div style={mobilePillSt(pathname === '/shop' && searchParams.toString() === '')}>
-              <Grid3X3 size={20} strokeWidth={pathname === '/shop' && searchParams.toString() === '' ? 2.5 : 1.8} color={pathname === '/shop' && searchParams.toString() === '' ? C : 'rgba(255,255,255,0.38)'} />
+          {/* Shop */}
+          <Link
+            href="/shop"
+            className="flex-1 flex flex-col items-center gap-[3px] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline min-w-[48px] py-[0.3rem] transition-colors duration-200"
+            style={{ color: isActive('/shop') ? '#fff' : 'rgba(255,255,255,0.38)', fontFamily: FONT }}
+          >
+            <div
+              className="p-[6px] rounded-xl flex items-center justify-center relative transition-[background] duration-200"
+              style={{ background: isActive('/shop') ? 'rgba(202,134,93,0.22)' : 'transparent' }}
+            >
+              <Grid3X3
+                size={20}
+                strokeWidth={isActive('/shop') ? 2.5 : 1.8}
+                color={isActive('/shop') ? C : 'rgba(255,255,255,0.38)'}
+              />
             </div>
             <span>Shop</span>
           </Link>
 
+          {/* Cart — floating center FAB */}
           <button
             type="button"
             onClick={openCart}
             suppressHydrationWarning
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', marginTop: '-1.5rem', padding: '0.2rem 0', minWidth: 52, gap: 3 }}
+            className="flex-1 flex flex-col items-center bg-transparent border-none cursor-pointer min-w-[52px] gap-[3px]"
+            style={{ marginTop: '-1.5rem', padding: '0.2rem 0' }}
           >
-            <div style={{ position: 'relative', width: 52, height: 52, borderRadius: '50%', background: `linear-gradient(135deg, ${C} 0%, ${CD} 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 6px 24px rgba(202,134,93,.55), 0 2px 6px rgba(202,134,93,.3)`, border: `3px solid ${DARK}` }}>
+            <div
+              className="relative w-[52px] h-[52px] rounded-full flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${C} 0%, ${CD} 100%)`,
+                boxShadow: `0 6px 24px rgba(202,134,93,.55), 0 2px 6px rgba(202,134,93,.3)`,
+                border: `3px solid ${DARK}`,
+              }}
+            >
               <ShoppingBag size={21} color="white" strokeWidth={2} />
               {safeCart > 0 && (
-                <span style={{ position: 'absolute', top: -3, right: -3, minWidth: 17, height: 17, background: '#fff', color: DARK, fontSize: '0.58rem', fontWeight: 800, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', border: `2px solid ${DARK}`, fontFamily: FONT }}>
+                <span
+                  className="absolute -top-[3px] -right-[3px] min-w-[17px] h-[17px] text-[0.58rem] font-extrabold rounded-full flex items-center justify-center px-[3px]"
+                  style={{ background: '#fff', color: DARK, border: `2px solid ${DARK}`, fontFamily: FONT }}
+                >
                   {safeCart}
                 </span>
               )}
             </div>
-            <span style={{ fontSize: '0.57rem', fontFamily: FONT, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)' }}>Cart</span>
+            <span
+              className="text-[0.57rem] font-bold tracking-[0.05em] uppercase"
+              style={{ color: 'rgba(255,255,255,0.45)', fontFamily: FONT }}
+            >
+              Cart
+            </span>
           </button>
 
-          <Link href="/wishlist" style={mobileNavSt(pathname === '/wishlist')}>
-            <div style={{ ...mobilePillSt(pathname === '/wishlist'), position: 'relative' }}>
-              <Heart size={20} strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8} color={pathname === '/wishlist' ? C : 'rgba(255,255,255,0.38)'} />
+          {/* Wishlist */}
+          <Link
+            href="/wishlist"
+            className="flex-1 flex flex-col items-center gap-[3px] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline min-w-[48px] py-[0.3rem] transition-colors duration-200"
+            style={{ color: pathname === '/wishlist' ? '#fff' : 'rgba(255,255,255,0.38)', fontFamily: FONT }}
+          >
+            <div
+              className="p-[6px] rounded-xl flex items-center justify-center relative transition-[background] duration-200"
+              style={{ background: pathname === '/wishlist' ? 'rgba(202,134,93,0.22)' : 'transparent' }}
+            >
+              <Heart
+                size={20}
+                strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8}
+                color={pathname === '/wishlist' ? C : 'rgba(255,255,255,0.38)'}
+              />
               {safeWishlist > 0 && (
-                <span style={{ position: 'absolute', top: 0, right: 0, minWidth: 14, height: 14, background: C, color: '#fff', fontSize: '0.5rem', fontWeight: 800, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 2px', border: `2px solid ${DARK}`, fontFamily: FONT }}>
+                <span
+                  className="absolute top-0 right-0 min-w-[14px] h-[14px] text-white text-[0.5rem] font-extrabold rounded-full flex items-center justify-center px-[2px]"
+                  style={{ background: C, border: `2px solid ${DARK}`, fontFamily: FONT }}
+                >
                   {safeWishlist}
                 </span>
               )}
@@ -534,12 +657,42 @@ function NavbarInner() {
             <span>Wishlist</span>
           </Link>
 
-          <Link href={session ? '/account' : '/login'} suppressHydrationWarning style={mobileNavSt(pathname === '/account' || pathname === '/login')}>
-            <div style={mobilePillSt(pathname === '/account' || pathname === '/login')}>
+          {/* Account / Sign In */}
+          <Link
+            href={session ? '/account' : '/login'}
+            suppressHydrationWarning
+            className="flex-1 flex flex-col items-center gap-[3px] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline min-w-[48px] py-[0.3rem] transition-colors duration-200"
+            style={{
+              color: (pathname === '/account' || pathname === '/login') ? '#fff' : 'rgba(255,255,255,0.38)',
+              fontFamily: FONT,
+            }}
+          >
+            <div
+              className="p-[6px] rounded-xl flex items-center justify-center transition-[background] duration-200"
+              style={{
+                background: (pathname === '/account' || pathname === '/login')
+                  ? 'rgba(202,134,93,0.22)'
+                  : 'transparent',
+              }}
+            >
               {session?.user?.image ? (
-                <img src={session.user.image} alt="" suppressHydrationWarning style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover', border: pathname === '/account' ? `2px solid ${C}` : '2px solid rgba(255,255,255,0.2)' }} />
+                <img
+                  src={session.user.image}
+                  alt=""
+                  suppressHydrationWarning
+                  className="w-5 h-5 rounded-full object-cover"
+                  style={{
+                    border: pathname === '/account'
+                      ? `2px solid ${C}`
+                      : '2px solid rgba(255,255,255,0.2)',
+                  }}
+                />
               ) : (
-                <User size={20} strokeWidth={pathname === '/account' || pathname === '/login' ? 2.5 : 1.8} color={pathname === '/account' || pathname === '/login' ? C : 'rgba(255,255,255,0.38)'} />
+                <User
+                  size={20}
+                  strokeWidth={(pathname === '/account' || pathname === '/login') ? 2.5 : 1.8}
+                  color={(pathname === '/account' || pathname === '/login') ? C : 'rgba(255,255,255,0.38)'}
+                />
               )}
             </div>
             <span suppressHydrationWarning>{session ? 'Account' : 'Sign In'}</span>
@@ -552,7 +705,7 @@ function NavbarInner() {
 
 export default function Navbar() {
   return (
-    <Suspense fallback={<div style={{ height: 58, background: BG, borderBottom: '1px solid rgba(26,26,46,.07)' }} />}>
+    <Suspense fallback={<div className="h-[58px] bg-[#F4F0EB] border-b border-[rgba(26,26,46,0.07)]" />}>
       <NavbarInner />
     </Suspense>
   )
