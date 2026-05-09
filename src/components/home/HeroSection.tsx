@@ -2,331 +2,382 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ShoppingBag, Star, Truck, Shield } from 'lucide-react'
+import { ArrowRight, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 
-// ── Animated Counter ──────────────────────────
-function Counter({
-  end,
-  duration = 2000,
-  suffix = '',
-}: {
-  end: number
-  duration?: number
-  suffix?: string
-}) {
-  const [count, setCount] = useState(0)
-  const [started, setStarted] = useState(false)
-
-  useEffect(() => {
-    const timer = setTimeout(() => setStarted(true), 500)
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    if (!started) return
-    let startTime: number
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setCount(Math.floor(eased * end))
-      if (progress < 1) requestAnimationFrame(step)
-    }
-    requestAnimationFrame(step)
-  }, [started, end, duration])
-
-  return <span>{count}{suffix}</span>
-}
-
-// ── Hero Section ──────────────────────────────
 export default function HeroSection() {
   const [isVisible, setIsVisible] = useState(false)
+  const [popupOpen, setPopupOpen] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 100)
     return () => clearTimeout(timer)
   }, [])
 
-  const FONT     = 'Nunito, system-ui, sans-serif'
-  const SERIF    = '"Cormorant Garamond", Georgia, serif'
-  const C        = '#CA865D'
-  const CD       = '#b5724a'
+  const C    = '#CA865D'
+  const CD   = '#b5724a'
+  const FONT  = 'Nunito, system-ui, sans-serif'
+  const SERIF = '"Cormorant Garamond", Georgia, serif'
 
   return (
     <section
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: 'min(90vh, 720px)',
+        minHeight: 'min(90vh, 680px)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
         background: '#1a120b',
       }}
     >
-      {/* ── Background image ────────────────────── */}
-      {/* Replace the src below with your real hero image */}
+      {/* ── Background image ─────────────────────── */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `url('/images/hero-bg.jpg')`,
+          backgroundImage: `url('https://res.cloudinary.com/dzi3u164c/image/upload/v1778296243/slider_dnwgz0.webp')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center 30%',
           opacity: 0.55,
-          transition: 'opacity 1.2s ease',
         }}
       />
 
-      {/* ── Gradient overlay (left darkens, right fades) ── */}
+      {/* ── Gradient overlay ─────────────────────── */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           background:
-            'linear-gradient(to right, rgba(20,14,8,0.88) 0%, rgba(20,14,8,0.60) 45%, rgba(20,14,8,0.15) 100%)',
+            'linear-gradient(to right, rgba(20,14,8,0.88) 0%, rgba(20,14,8,0.65) 45%, rgba(20,14,8,0.15) 100%)',
         }}
       />
 
-      {/* ── Content container ─────────────────────── */}
+      {/* ── Main content row ─────────────────────── */}
       <div
         style={{
           position: 'relative',
           zIndex: 2,
           width: '100%',
-          padding: '5rem 3rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '5rem 4rem',
+          gap: '2rem',
+          boxSizing: 'border-box',
         }}
+        className="hero-inner"
       >
+        {/* ── Left: Text ────────────────────────── */}
         <div
           style={{
-            maxWidth: 580,
+            flex: '1 1 0',
+            minWidth: 0,
             opacity: isVisible ? 1 : 0,
-            transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+            transform: isVisible ? 'translateY(0)' : 'translateY(28px)',
             transition: 'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {/* Badge */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 7,
-              background: 'rgba(202,134,93,0.15)',
-              border: '1px solid rgba(202,134,93,0.35)',
-              color: C,
-              fontFamily: FONT,
-              fontSize: '0.68rem',
-              fontWeight: 700,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              padding: '5px 14px',
-              borderRadius: 99,
-              marginBottom: '1.5rem',
-            }}
-          >
-            <Star size={10} fill={C} color={C} />
-            New Collection 2026
-            <Star size={10} fill={C} color={C} />
-          </div>
-
-          {/* Heading */}
-          <h1
-            style={{
-              fontFamily: SERIF,
-              fontSize: 'clamp(2.6rem, 5vw, 4.2rem)',
-              fontWeight: 400,
-              lineHeight: 1.12,
-              color: '#fff',
-              margin: '0 0 1.25rem',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Carry Your{' '}
-            <em style={{ color: C, fontStyle: 'italic' }}>Style</em>
-            <br />
-            Everywhere
-            <span style={{ color: C }}>.</span>
-          </h1>
-
-          {/* Subtitle */}
           <p
             style={{
               fontFamily: FONT,
-              fontSize: '0.95rem',
-              lineHeight: 1.7,
-              color: 'rgba(255,255,255,0.62)',
-              margin: '0 0 2.25rem',
-              maxWidth: 400,
-              opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
-              transition: 'opacity 0.9s ease 0.18s, transform 0.9s cubic-bezier(0.16,1,0.3,1) 0.18s',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.58)',
+              margin: '0 0 1rem',
             }}
           >
-            Discover Bangladesh&apos;s most trendy mini crossbody bags.
-            Premium imported styles at prices you&apos;ll love.
+            The best kind of surprise party!
           </p>
 
-          {/* CTA Buttons */}
-          <div
+          <h1
             style={{
-              display: 'flex',
+              fontFamily: SERIF,
+              fontSize: 'clamp(2.4rem, 4.5vw, 3.8rem)',
+              fontWeight: 600,
+              lineHeight: 1.1,
+              color: '#fff',
+              margin: '0 0 2rem',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Sophistication
+            <br />
+            in every stitch.
+          </h1>
+
+          <Link
+            href="/shop"
+            style={{
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: 14,
-              flexWrap: 'wrap',
-              marginBottom: '2.5rem',
-              opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
-              transition: 'opacity 0.9s ease 0.32s, transform 0.9s cubic-bezier(0.16,1,0.3,1) 0.32s',
+              gap: 9,
+              background: C,
+              color: '#fff',
+              fontFamily: FONT,
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+              padding: '0.85rem 2rem',
+              borderRadius: 2,
+              transition: 'background 150ms',
             }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
           >
-            <Link
-              href="/shop"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                background: C,
-                color: '#fff',
-                fontFamily: FONT,
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                textDecoration: 'none',
-                padding: '0.85rem 2rem',
-                borderRadius: 2,
-                transition: 'background 150ms',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
-            >
-              <ShoppingBag size={15} strokeWidth={2} />
-              Shop Now
-              <ArrowRight size={14} strokeWidth={2.5} />
-            </Link>
+            Shop Now
+            <ArrowRight size={14} strokeWidth={2.5} />
+          </Link>
+        </div>
 
-            <Link
-              href="/shop?sort=newest"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'transparent',
-                color: '#fff',
-                fontFamily: FONT,
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                textDecoration: 'none',
-                padding: '0.85rem 2rem',
-                borderRadius: 2,
-                border: '1px solid rgba(255,255,255,0.35)',
-                transition: 'border-color 150ms, color 150ms',
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement
-                el.style.borderColor = 'rgba(255,255,255,0.7)'
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement
-                el.style.borderColor = 'rgba(255,255,255,0.35)'
-              }}
-            >
-              New Arrivals
-            </Link>
-          </div>
+        {/* ── Right: Card column ────────────────── */}
+        <div
+          style={{
+            flex: '0 0 auto',
+            width: 'min(360px, 44%)',
+            opacity: isVisible ? 1 : 0,
+            transform: isVisible ? 'translateY(0)' : 'translateY(32px)',
+            transition: 'opacity 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s, transform 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s',
+            // Extra bottom padding so popup card has room to overflow below
+            paddingBottom: popupOpen ? '100px' : '0px',
+            transition2: 'padding-bottom 0.25s ease',
+          }}
+          className="hero-card-wrap"
+        >
+          {/*
+            Outer wrapper: overflow visible so popup spills outside the image.
+            The image itself is clipped inside its own div.
+          */}
+          <div style={{ position: 'relative', overflow: 'visible' }}>
 
-          {/* Trust + Stats */}
-          <div
-            style={{
-              opacity: isVisible ? 1 : 0,
-              transition: 'opacity 0.9s ease 0.48s',
-            }}
-          >
-            {/* Trust row */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 20,
-                marginBottom: '1.75rem',
-                flexWrap: 'wrap',
-              }}
-            >
-              {[
-                { icon: <Truck size={14} strokeWidth={2} />, text: 'Free delivery over ৳1500' },
-                { icon: <Shield size={14} strokeWidth={2} />, text: 'Secure payment' },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 7,
-                    fontFamily: FONT,
-                    fontSize: '0.75rem',
-                    color: 'rgba(255,255,255,0.5)',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  <span style={{ color: C }}>{item.icon}</span>
-                  {item.text}
-                </div>
-              ))}
+            {/* Product image — clipped to rounded corners */}
+            <div style={{
+              borderRadius: 4,
+              overflow: 'hidden',
+              boxShadow: '0 28px 70px rgba(0,0,0,0.5)',
+            }}>
+              <img
+                src="https://res.cloudinary.com/dzi3u164c/image/upload/v1778296301/slider_mini_f14602db-1260-4fbd-89a9-3e395ba94f45_bnuhhj.webp"
+                alt="Model holding a pink tote bag with blue straps"
+                style={{ display: 'block', width: '100%', height: 'auto', objectFit: 'cover' }}
+              />
             </div>
 
-            {/* Stats row */}
+            {/* ── Hotspot ──────────────────────────
+                Positioned at 35% from left, 55% from top.
+                The popup is rendered as sibling BELOW the button,
+                overflowing outside the image naturally.
+            */}
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0,
-                paddingTop: '1.5rem',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
+                position: 'absolute',
+                left: '35%',
+                top: '55%',
+                // Center the 42px button on this anchor point
+                transform: 'translate(-50%, -50%)',
+                zIndex: 20,
+                width: 42,
+                height: 42,
               }}
             >
-              {[
-                { end: 500, suffix: '+', label: 'Bag Styles' },
-                { end: 2000, suffix: '+', label: 'Happy Customers' },
-                { end: 4, suffix: '.9★', label: 'Avg Rating' },
-              ].map((stat, i) => (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1,
-                    textAlign: i === 0 ? 'left' : 'center',
-                    paddingRight: i < 2 ? '1rem' : 0,
-                    borderRight: i < 2 ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                    paddingLeft: i > 0 ? '1rem' : 0,
-                  }}
-                >
-                  <div
+              {/* Smooth pulse rings — hidden when open */}
+              {!popupOpen && (
+                <>
+                  <span className="hotspot-ring hotspot-ring-1" />
+                  <span className="hotspot-ring hotspot-ring-2" />
+                </>
+              )}
+
+              {/* Button */}
+              <button
+                aria-label={popupOpen ? 'Close quick view' : 'Quick view product'}
+                onClick={() => setPopupOpen(v => !v)}
+                style={{
+                  position: 'relative',
+                  zIndex: 2,
+                  width: 42,
+                  height: 42,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.93)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 14px rgba(0,0,0,0.2)',
+                  transition: 'background 150ms, transform 200ms',
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.background = '#fff'
+                  el.style.transform = 'scale(1.1)'
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.background = 'rgba(255,255,255,0.93)'
+                  el.style.transform = 'scale(1)'
+                }}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {popupOpen ? (
+                    <motion.span
+                      key="x"
+                      initial={{ rotate: -90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <X size={16} strokeWidth={2.5} color="#333" />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="plus"
+                      initial={{ rotate: 90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: -90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5" strokeLinecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+
+              {/* ── Popup card ──────────────────────
+                  top: calc(100% + 8px) = directly below the 42px button.
+                  left: 50% + translateX(-50%) = centered on the button.
+                  Width wider than button so it spills left/right evenly.
+              */}
+              <AnimatePresence>
+                {popupOpen && (
+                  <motion.div
+                    key="popup"
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 5, scale: 0.97 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                     style={{
-                      fontFamily: SERIF,
-                      fontSize: '1.6rem',
-                      fontWeight: 600,
-                      color: '#fff',
-                      lineHeight: 1.1,
-                      marginBottom: 3,
+                      position: 'absolute',
+                      // Sits directly below the button
+                      top: 'calc(100% + 8px)',
+                      // Centered on the button anchor
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      // Wide card — spills outside the button width
+                      width: 270,
+                      background: '#fff',
+                      borderRadius: 12,
+                      padding: '12px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
+                      zIndex: 30,
+                      // Allow it to overflow the parent image div
+                      pointerEvents: 'auto',
                     }}
                   >
-                    <Counter end={stat.end} suffix={stat.suffix} />
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: FONT,
-                      fontSize: '0.65rem',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(255,255,255,0.4)',
-                    }}
-                  >
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
+                    {/* Caret pointing UP to the button */}
+                    <div style={{
+                      position: 'absolute',
+                      top: -9,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 0,
+                      height: 0,
+                      borderLeft: '9px solid transparent',
+                      borderRight: '9px solid transparent',
+                      borderBottom: '9px solid #fff',
+                      filter: 'drop-shadow(0 -2px 2px rgba(0,0,0,0.06))',
+                    }} />
+
+                    {/* Thumbnail */}
+                    <Link href="/products/backpack-bag" style={{ flexShrink: 0, display: 'block' }}>
+                      <div style={{
+                        width: 54,
+                        height: 54,
+                        borderRadius: 10,
+                        overflow: 'hidden',
+                        background: '#fdf0e8',
+                      }}>
+                        <img
+                          src="https://isabel-demo.myshopify.com/cdn/shop/files/p-6-_2.jpg?crop=center&height=620&v=1735018282&width=645"
+                          alt="Backpack bag"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center top',
+                          }}
+                        />
+                      </div>
+                    </Link>
+
+                    {/* Product info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Link
+                        href="/products/backpack-bag"
+                        style={{
+                          display: 'block',
+                          fontFamily: FONT,
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          color: '#1a1a1a',
+                          textDecoration: 'none',
+                          marginBottom: 5,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        Backpack bag
+                      </Link>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <span style={{ fontFamily: FONT, fontSize: '0.88rem', fontWeight: 800, color: C }}>
+                          ৳2,690
+                        </span>
+                        <span style={{ fontFamily: FONT, fontSize: '0.78rem', color: '#bbb', textDecoration: 'line-through' }}>
+                          ৳5,990
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Arrow CTA */}
+                    <Link
+                      href="/products/backpack-bag"
+                      aria-label="View product"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        background: C,
+                        flexShrink: 0,
+                        textDecoration: 'none',
+                        transition: 'background 150ms',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
+                    >
+                      <ArrowRight size={14} color="#fff" strokeWidth={2.5} />
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+            {/* ── End Hotspot ── */}
+
           </div>
         </div>
       </div>
@@ -343,8 +394,8 @@ export default function HeroSection() {
           flexDirection: 'column',
           alignItems: 'center',
           gap: 6,
-          opacity: isVisible ? 0.5 : 0,
-          transition: 'opacity 1s ease 1s',
+          opacity: isVisible ? 0.45 : 0,
+          transition: 'opacity 1s ease 1.1s',
         }}
       >
         <div
@@ -382,13 +433,48 @@ export default function HeroSection() {
       </div>
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&family=Cormorant+Garamond:wght@400;500;600&display=swap');
+
+        /* ── Smooth hotspot ping rings ── */
+        .hotspot-ring {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.45);
+          animation: smoothPing 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+        }
+        .hotspot-ring-2 {
+          background: rgba(255, 255, 255, 0.25);
+          animation-delay: 0.7s;
+        }
+
+        @keyframes smoothPing {
+          0%   { transform: scale(1);   opacity: 0.7; }
+          70%  { transform: scale(2.2); opacity: 0;   }
+          100% { transform: scale(2.2); opacity: 0;   }
+        }
+
         @keyframes heroScrollWheel {
           0%   { opacity: 1; transform: translateY(0); }
           80%  { opacity: 0; transform: translateY(8px); }
           100% { opacity: 0; transform: translateY(0); }
         }
-        @media (max-width: 640px) {
-          .hero-content-inner { padding: 4rem 1.25rem !important; }
+
+        @media (max-width: 768px) {
+          .hero-inner {
+            flex-direction: column-reverse !important;
+            padding: 3rem 1.5rem !important;
+            text-align: center;
+          }
+          .hero-card-wrap {
+            width: min(300px, 80%) !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .hero-inner {
+            padding: 2.5rem 1.25rem !important;
+          }
         }
       `}</style>
     </section>
