@@ -19,14 +19,12 @@ const NAV_LINKS = [
   { label: 'Flash Sale',   href: '/shop?filter=flash-sale' },
 ] as const
 
-const C     = '#CA865D'
-const CD    = '#b5724a'
-const BG    = '#F4F0EB'
-const DARK  = '#1a1a2e'
-const FONT  = 'Inter, system-ui, sans-serif'
-const SERIF = '"Poppins", system-ui, sans-serif'
-
-// Menu link color (idle state)
+const C          = '#CA865D'
+const CD         = '#b5724a'
+const BG         = '#F4F0EB'
+const DARK       = '#1a1a2e'
+const FONT       = 'Inter, system-ui, sans-serif'
+const SERIF      = '"Poppins", system-ui, sans-serif'
 const MENU_COLOR = '#333333'
 
 function NavbarInner() {
@@ -45,7 +43,6 @@ function NavbarInner() {
   const [isUserMenuOpen,   setIsUserMenuOpen]   = useState(false)
   const [searchQuery,      setSearchQuery]      = useState('')
   const [isMounted,        setIsMounted]        = useState(false)
-  const [isDesktop,        setIsDesktop]        = useState(false)
   const [hovered,          setHovered]          = useState<string | null>(null)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -63,14 +60,12 @@ function NavbarInner() {
     return pathname === p && searchParams.toString() === ''
   }
 
-  useEffect(() => {
-    setIsMounted(true)
-    const mq = window.matchMedia('(min-width: 1024px)')
-    setIsDesktop(mq.matches)
-    const h = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
-    mq.addEventListener('change', h)
-    return () => mq.removeEventListener('change', h)
-  }, [])
+  // ── Effects ──────────────────────────────────────────────────────────
+  // NOTE: No isDesktop state here — layout switching is handled purely by
+  // CSS (Tailwind `lg:` breakpoint). This prevents the server/client
+  // mismatch that caused the hamburger flash on desktop refresh.
+
+  useEffect(() => { setIsMounted(true) }, [])
 
   useEffect(() => {
     const h = () => setIsScrolled(window.scrollY > 20)
@@ -105,6 +100,7 @@ function NavbarInner() {
     }
   }
 
+  // ── Desktop auth widget ───────────────────────────────────────────────
   const renderDesktopAuth = () => {
     if (!isMounted || status === 'loading')
       return (
@@ -118,24 +114,21 @@ function NavbarInner() {
 
     if (session)
       return (
-        <div ref={userMenuRef} className="relative" suppressHydrationWarning>
+        <div ref={userMenuRef} className="relative">
           <button
             type="button"
             onClick={() => setIsUserMenuOpen(v => !v)}
-            suppressHydrationWarning
             className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0"
           >
             {session.user?.image ? (
               <img
                 src={session.user.image}
                 alt=""
-                suppressHydrationWarning
                 className="w-[30px] h-[30px] rounded-full object-cover"
                 style={{ border: `1.5px solid rgba(202,134,93,.35)` }}
               />
             ) : (
               <div
-                suppressHydrationWarning
                 className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[0.75rem] font-bold"
                 style={{
                   background: 'rgba(202,134,93,.12)',
@@ -158,21 +151,12 @@ function NavbarInner() {
           </button>
 
           {isUserMenuOpen && (
-            <div
-              suppressHydrationWarning
-              className="absolute top-[calc(100%+12px)] right-0 bg-white border border-[rgba(26,26,46,0.08)] rounded-[1.25rem] min-w-[215px] shadow-[0_8px_32px_rgba(26,26,46,0.12)] z-[200] overflow-hidden"
-            >
+            <div className="absolute top-[calc(100%+12px)] right-0 bg-white border border-[rgba(26,26,46,0.08)] rounded-[1.25rem] min-w-[215px] shadow-[0_8px_32px_rgba(26,26,46,0.12)] z-[200] overflow-hidden">
               <div className="px-4 py-[0.875rem]" style={{ background: BG }}>
-                <p
-                  className="font-bold text-[0.9rem] m-0"
-                  style={{ color: DARK, fontFamily: FONT }}
-                >
+                <p className="font-bold text-[0.9rem] m-0" style={{ color: DARK, fontFamily: FONT }}>
                   {session.user?.name ?? ''}
                 </p>
-                <p
-                  className="text-[0.75rem] text-[#9ca3af] mt-[2px] overflow-hidden text-ellipsis whitespace-nowrap m-0"
-                  style={{ fontFamily: FONT }}
-                >
+                <p className="text-[0.75rem] text-[#9ca3af] mt-[2px] overflow-hidden text-ellipsis whitespace-nowrap m-0" style={{ fontFamily: FONT }}>
                   {session.user?.email ?? ''}
                 </p>
               </div>
@@ -200,7 +184,6 @@ function NavbarInner() {
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: '/' })}
-                suppressHydrationWarning
                 className="flex items-center gap-[10px] px-4 py-[0.7rem] text-[0.875rem] font-medium text-[#ef4444] bg-transparent border-none w-full cursor-pointer text-left transition-[background] duration-150"
                 style={{ fontFamily: FONT }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.06)' }}
@@ -216,7 +199,6 @@ function NavbarInner() {
     return (
       <Link
         href="/login"
-        suppressHydrationWarning
         className="flex items-center gap-[0.35rem] text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline transition-colors duration-150"
         style={{ color: hovered === 'signin' ? C : MENU_COLOR, fontFamily: FONT }}
         onMouseEnter={() => setHovered('signin')}
@@ -230,8 +212,20 @@ function NavbarInner() {
 
   return (
     <>
-      {/* ── Animation keyframes ── */}
       <style>{`
+        /* ── Responsive padding via CSS (not JS) ─────────────────────────────
+           This runs immediately — no flash, no layout shift.
+        ── */
+        .nav-grid {
+          padding: 0 1rem;
+        }
+        @media (min-width: 1024px) {
+          .nav-grid {
+            padding: 0 clamp(1.5rem, 5vw, 7rem);
+          }
+        }
+
+        /* ── Animations ── */
         @keyframes menuIconIn {
           from { opacity: 0; transform: rotate(-90deg) scale(0.6); }
           to   { opacity: 1; transform: rotate(0deg)   scale(1);   }
@@ -265,7 +259,7 @@ function NavbarInner() {
         }
       `}</style>
 
-      {/* ── Header ── */}
+      {/* ── Header ───────────────────────────────────────────────────── */}
       <header
         suppressHydrationWarning
         className={`sticky top-0 z-[100] border-b transition-[background,box-shadow,border-color] duration-300 ${
@@ -274,18 +268,41 @@ function NavbarInner() {
             : 'bg-[#F4F0EB] border-[rgba(26,26,46,0.07)]'
         }`}
       >
-        {/* Inner grid */}
-        <div
-          className={`grid w-full mx-auto items-center box-border ${
-            isDesktop
-              ? 'grid-cols-[1fr_auto_1fr] h-[68px]'
-              : 'grid-cols-[44px_1fr_44px] h-[58px]'
-          }`}
-          style={{ padding: isDesktop ? '0 clamp(1.5rem, 5vw, 7rem)' : '0 1rem' }}
-        >
-          {/* ── LEFT — Desktop nav links ── */}
-          {isDesktop ? (
-            <nav className="flex items-center gap-7">
+        {/*
+          KEY FIX: grid-cols is set for BOTH breakpoints via Tailwind classes.
+          The server renders this correctly — no JS needed, no flash.
+            Mobile:  44px | 1fr | 44px   (h-[58px])
+            Desktop: 1fr  | auto | 1fr   (lg:h-[68px])
+        */}
+        <div className="nav-grid grid w-full mx-auto items-center box-border h-[58px] lg:h-[68px] grid-cols-[44px_1fr_44px] lg:grid-cols-[1fr_auto_1fr]">
+
+          {/* ── LEFT column ──────────────────────────────────────────── */}
+          <div className="flex items-center">
+            {/*
+              Mobile hamburger — visible below lg, hidden at lg+.
+              Rendered in the DOM on both breakpoints; CSS decides visibility.
+            */}
+            <button
+              type="button"
+              onClick={() => { setIsMobileMenuOpen(v => !v); setIsSearchOpen(false) }}
+              aria-label="Menu"
+              suppressHydrationWarning
+              className="lg:hidden bg-transparent border-none cursor-pointer p-1 flex items-center justify-center rounded-lg w-9 h-9"
+              style={{ color: DARK }}
+            >
+              <span key={isMobileMenuOpen ? 'close' : 'open'} className="mobile-menu-icon">
+                {isMobileMenuOpen
+                  ? <X size={22} strokeWidth={2} color={DARK} />
+                  : <Menu size={22} strokeWidth={2} color={DARK} />
+                }
+              </span>
+            </button>
+
+            {/*
+              Desktop nav links — hidden below lg, visible at lg+.
+              Also rendered in DOM on both; CSS decides visibility.
+            */}
+            <nav className="hidden lg:flex items-center gap-7">
               {NAV_LINKS.map(({ label, href }) => (
                 <Link
                   key={href}
@@ -299,49 +316,36 @@ function NavbarInner() {
                 </Link>
               ))}
             </nav>
-          ) : (
-            <button
-              type="button"
-              onClick={() => { setIsMobileMenuOpen(v => !v); setIsSearchOpen(false) }}
-              aria-label="Menu"
-              suppressHydrationWarning
-              className="bg-transparent border-none cursor-pointer p-1 flex items-center justify-center rounded-lg w-9 h-9"
-              style={{ color: DARK }}
-            >
-              <span key={isMobileMenuOpen ? 'close' : 'open'} className="mobile-menu-icon">
-                {isMobileMenuOpen
-                  ? <X size={22} strokeWidth={2} color={DARK} />
-                  : <Menu size={22} strokeWidth={2} color={DARK} />
-                }
-              </span>
-            </button>
-          )}
+          </div>
 
-          {/* ── CENTER — Logo ── */}
+          {/* ── CENTER — Logo ─────────────────────────────────────────── */}
           <Link
             href="/"
             className="flex items-center gap-[7px] no-underline whitespace-nowrap justify-self-center"
             style={{
               color: DARK,
               fontFamily: SERIF,
-              fontSize: isDesktop ? '1.4rem' : '1.2rem',
               fontWeight: 600,
               letterSpacing: '.01em',
             }}
           >
-            <ShoppingBag size={isDesktop ? 20 : 18} strokeWidth={1.5} style={{ color: C }} />
-            BagBliss BD
+            {/* Icon: slightly different size per breakpoint via two elements */}
+            <ShoppingBag size={18} strokeWidth={1.5} style={{ color: C }} className="lg:hidden" />
+            <ShoppingBag size={20} strokeWidth={1.5} style={{ color: C }} className="hidden lg:block" />
+            {/* Font size via CSS breakpoint */}
+            <span className="text-[1.2rem] lg:text-[1.4rem]">BagBliss BD</span>
           </Link>
 
-          {/* ── RIGHT — Desktop actions ── */}
-          {isDesktop ? (
-            <div className="flex items-center justify-end gap-6">
+          {/* ── RIGHT column ─────────────────────────────────────────── */}
+          <div className="flex items-center justify-end">
+
+            {/* Desktop actions — hidden below lg */}
+            <div className="hidden lg:flex items-center gap-6">
               {/* Search */}
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(v => !v)}
                 aria-label="Search"
-                suppressHydrationWarning
                 className="text-[0.775rem] font-medium tracking-[0.07em] uppercase bg-transparent border-none cursor-pointer p-0 flex items-center gap-[0.35rem] whitespace-nowrap transition-colors duration-150"
                 style={{ color: hovered === 'search' ? C : MENU_COLOR, fontFamily: FONT }}
                 onMouseEnter={() => setHovered('search')}
@@ -355,7 +359,6 @@ function NavbarInner() {
               <Link
                 href="/wishlist"
                 aria-label="Wishlist"
-                suppressHydrationWarning
                 className="text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline flex items-center gap-[0.35rem] whitespace-nowrap transition-colors duration-150"
                 style={{ color: hovered === 'wishlist' ? C : MENU_COLOR, fontFamily: FONT }}
                 onMouseEnter={() => setHovered('wishlist')}
@@ -375,7 +378,6 @@ function NavbarInner() {
                 type="button"
                 onClick={openCart}
                 aria-label="Cart"
-                suppressHydrationWarning
                 className="text-[0.775rem] font-medium tracking-[0.07em] uppercase bg-transparent border-none cursor-pointer p-0 flex items-center gap-[0.35rem] whitespace-nowrap transition-colors duration-150"
                 style={{ color: hovered === 'cart' ? C : MENU_COLOR, fontFamily: FONT }}
                 onMouseEnter={() => setHovered('cart')}
@@ -392,9 +394,9 @@ function NavbarInner() {
 
               {renderDesktopAuth()}
             </div>
-          ) : (
-            /* Mobile — cart icon top-right */
-            <div className="flex items-center justify-end">
+
+            {/* Mobile cart icon — hidden at lg+ */}
+            <div className="flex lg:hidden items-center">
               {isMounted ? (
                 <button
                   type="button"
@@ -421,14 +423,14 @@ function NavbarInner() {
                 <div className="w-[30px] h-[30px]" />
               )}
             </div>
-          )}
+
+          </div>
         </div>
 
-        {/* ── Search bar (desktop) ── */}
+        {/* ── Desktop search bar ──────────────────────────────────────── */}
         {isSearchOpen && (
           <div
-            suppressHydrationWarning
-            className="border-t border-[rgba(26,26,46,0.07)] py-3 px-4"
+            className="hidden lg:block border-t border-[rgba(26,26,46,0.07)] py-3 px-4"
             style={{ background: BG }}
           >
             <form
@@ -450,7 +452,6 @@ function NavbarInner() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  suppressHydrationWarning
                   className="bg-transparent border-none cursor-pointer text-[#bbb] p-0 flex"
                 >
                   <X size={15} />
@@ -458,7 +459,6 @@ function NavbarInner() {
               )}
               <button
                 type="submit"
-                suppressHydrationWarning
                 className="text-white border-none rounded-full px-4 py-[0.35rem] text-[0.78rem] font-bold tracking-[0.05em] uppercase cursor-pointer whitespace-nowrap transition-colors duration-150"
                 style={{ background: C, fontFamily: FONT }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
@@ -470,14 +470,14 @@ function NavbarInner() {
           </div>
         )}
 
-        {/* ── Mobile dropdown menu ── */}
-        {isMobileMenuOpen && !isDesktop && (
+        {/* ── Mobile dropdown menu ────────────────────────────────────── */}
+        {isMobileMenuOpen && (
           <div
             suppressHydrationWarning
-            className="mobile-dropdown border-t border-[rgba(26,26,46,0.07)] flex flex-col"
+            className="mobile-dropdown lg:hidden border-t border-[rgba(26,26,46,0.07)] flex flex-col"
             style={{ background: BG }}
           >
-            {/* Search in dropdown */}
+            {/* Search in mobile dropdown */}
             <div style={{ padding: '0.75rem 1rem 0' }}>
               <form
                 onSubmit={handleSearch}
@@ -548,11 +548,13 @@ function NavbarInner() {
         )}
       </header>
 
-      {/* ── Mobile bottom nav ── */}
-      {isMounted && !isDesktop && (
+      {/* ── Mobile bottom nav ───────────────────────────────────────────
+          CSS hides this at lg+. isMounted keeps session/cart data safe.
+      ── */}
+      {isMounted && (
         <nav
           suppressHydrationWarning
-          className="fixed bottom-0 left-0 right-0 z-[100] border-t border-[rgba(255,255,255,0.07)] flex items-center justify-around shadow-[0_-4px_24px_rgba(26,26,46,0.25)]"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] border-t border-[rgba(255,255,255,0.07)] flex items-center justify-around shadow-[0_-4px_24px_rgba(26,26,46,0.25)]"
           style={{
             background: DARK,
             padding: `0.6rem 0.5rem calc(0.6rem + env(safe-area-inset-bottom, 0px))`,
@@ -568,11 +570,7 @@ function NavbarInner() {
               className="p-[6px] rounded-xl flex items-center justify-center relative transition-[background] duration-200"
               style={{ background: isActive('/') ? 'rgba(202,134,93,0.22)' : 'transparent' }}
             >
-              <Home
-                size={20}
-                strokeWidth={isActive('/') ? 2.5 : 1.8}
-                color={isActive('/') ? C : 'rgba(255,255,255,0.38)'}
-              />
+              <Home size={20} strokeWidth={isActive('/') ? 2.5 : 1.8} color={isActive('/') ? C : 'rgba(255,255,255,0.38)'} />
             </div>
             <span>Home</span>
           </Link>
@@ -587,16 +585,12 @@ function NavbarInner() {
               className="p-[6px] rounded-xl flex items-center justify-center relative transition-[background] duration-200"
               style={{ background: isActive('/shop') ? 'rgba(202,134,93,0.22)' : 'transparent' }}
             >
-              <Grid3X3
-                size={20}
-                strokeWidth={isActive('/shop') ? 2.5 : 1.8}
-                color={isActive('/shop') ? C : 'rgba(255,255,255,0.38)'}
-              />
+              <Grid3X3 size={20} strokeWidth={isActive('/shop') ? 2.5 : 1.8} color={isActive('/shop') ? C : 'rgba(255,255,255,0.38)'} />
             </div>
             <span>Shop</span>
           </Link>
 
-          {/* Cart — floating center FAB */}
+          {/* Cart FAB */}
           <button
             type="button"
             onClick={openCart}
@@ -622,10 +616,7 @@ function NavbarInner() {
                 </span>
               )}
             </div>
-            <span
-              className="text-[0.57rem] font-bold tracking-[0.05em] uppercase"
-              style={{ color: 'rgba(255,255,255,0.45)', fontFamily: FONT }}
-            >
+            <span className="text-[0.57rem] font-bold tracking-[0.05em] uppercase" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: FONT }}>
               Cart
             </span>
           </button>
@@ -640,11 +631,7 @@ function NavbarInner() {
               className="p-[6px] rounded-xl flex items-center justify-center relative transition-[background] duration-200"
               style={{ background: pathname === '/wishlist' ? 'rgba(202,134,93,0.22)' : 'transparent' }}
             >
-              <Heart
-                size={20}
-                strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8}
-                color={pathname === '/wishlist' ? C : 'rgba(255,255,255,0.38)'}
-              />
+              <Heart size={20} strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8} color={pathname === '/wishlist' ? C : 'rgba(255,255,255,0.38)'} />
               {safeWishlist > 0 && (
                 <span
                   className="absolute top-0 right-0 min-w-[14px] h-[14px] text-white text-[0.5rem] font-extrabold rounded-full flex items-center justify-center px-[2px]"
@@ -657,7 +644,7 @@ function NavbarInner() {
             <span>Wishlist</span>
           </Link>
 
-          {/* Account / Sign In */}
+          {/* Account */}
           <Link
             href={session ? '/account' : '/login'}
             suppressHydrationWarning
@@ -705,7 +692,7 @@ function NavbarInner() {
 
 export default function Navbar() {
   return (
-    <Suspense fallback={<div className="h-[58px] bg-[#F4F0EB] border-b border-[rgba(26,26,46,0.07)]" />}>
+    <Suspense fallback={<div className="h-[58px] lg:h-[68px] bg-[#F4F0EB] border-b border-[rgba(26,26,46,0.07)]" />}>
       <NavbarInner />
     </Suspense>
   )
