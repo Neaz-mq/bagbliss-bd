@@ -5,10 +5,6 @@ import Link from 'next/link'
 import { ArrowRight, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Animation variants
-// ─────────────────────────────────────────────────────────────────────────────
-
 const staggerContainer = {
   hidden: {},
   visible: {
@@ -49,9 +45,9 @@ const cardWrapper = {
 }
 
 const imageReveal = {
-  hidden: { clipPath: 'inset(100% 0 0 0 round 4px)' },
+  hidden: { clipPath: 'inset(100% 0 0 0 round 0px)' },
   visible: {
-    clipPath: 'inset(0% 0 0 0 round 4px)',
+    clipPath: 'inset(0% 0 0 0 round 0px)',
     transition: {
       duration: 1.25,
       ease: [0.22, 1, 0.36, 1],
@@ -96,8 +92,6 @@ const scrollIndicator = {
   },
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [popupOpen, setPopupOpen] = useState(false)
@@ -107,9 +101,37 @@ export default function HeroSection() {
     return () => clearTimeout(t)
   }, [])
 
-  const C = '#CA865D'
-  const CD = '#b5724a'
+  const C    = '#CA865D'
+  const CD   = '#b5724a'
   const FONT = "'Poppins', system-ui, sans-serif"
+
+  const ctaButton = (extraStyle: React.CSSProperties = {}) => (
+    <Link
+      href="/shop"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 9,
+        background: C,
+        color: '#fff',
+        fontFamily: FONT,
+        fontSize: '0.76rem',
+        fontWeight: 600,
+        letterSpacing: '0.10em',
+        textTransform: 'uppercase',
+        textDecoration: 'none',
+        padding: '0.6rem 1.6rem',
+        borderRadius: 0,
+        transition: 'background 150ms',
+        ...extraStyle,
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
+    >
+      Explore Collection
+      <ArrowRight size={14} strokeWidth={2.5} />
+    </Link>
+  )
 
   return (
     <section
@@ -146,12 +168,6 @@ export default function HeroSection() {
       />
 
       {/* ── Main content row ─────────────────────────────────────── */}
-      {/*
-        FIX: padding now uses the SAME clamp() formula as .nav-grid in Navbar.
-        Navbar desktop: padding: 0 clamp(1.5rem, 5vw, 7rem)
-        Hero desktop:   padding: 5rem clamp(1.5rem, 5vw, 7rem)
-        This guarantees left/right edges are always pixel-perfect aligned.
-      */}
       <div
         style={{
           position: 'relative',
@@ -162,14 +178,14 @@ export default function HeroSection() {
           justifyContent: 'space-between',
           gap: '2rem',
           boxSizing: 'border-box',
-          /* ↓ THE KEY FIX — matches .nav-grid padding exactly */
           padding: '7rem clamp(1.5rem, 5vw, 7rem)',
         }}
         className="hero-inner"
       >
+
         {/* ── Left: Text (staggered children) ──────────────────── */}
         <motion.div
-          className="min-w-0 flex-1"
+          className="hero-text-col min-w-0 flex-1"
           variants={staggerContainer}
           initial="hidden"
           animate={mounted ? 'visible' : 'hidden'}
@@ -191,72 +207,60 @@ export default function HeroSection() {
           </motion.p>
 
           {/* Headline */}
-          <div style={{ overflow: 'hidden', marginBottom: '2rem' }}>
+          <div style={{ overflow: 'hidden', marginBottom: '1.2rem' }}>
             <motion.h1
               variants={textLine}
+              className="hero-headline"
               style={{
                 fontFamily: FONT,
-                fontSize: 'clamp(2.4rem, 4.5vw, 4.2rem)',
                 fontWeight: 600,
-                lineHeight: 1.1,
+                lineHeight: 1.3,
                 color: '#fff',
                 margin: 0,
                 letterSpacing: '0.01em',
               }}
             >
-             Carry style, <br /> carry confidence.
+              Carry style,
+              <br />
+              carry confidence.
             </motion.h1>
           </div>
 
-          {/* CTA button */}
-          <motion.div variants={textLine}>
-            <Link
-              href="/shop"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 9,
-                background: C,
-                color: '#fff',
-                fontFamily: FONT,
-                fontSize: '0.76rem',
-                fontWeight: 600,
-                letterSpacing: '0.10em',
-                textTransform: 'uppercase',
-                textDecoration: 'none',
-                padding: '0.85rem 2rem',
-                borderRadius: 0,
-                transition: 'background 150ms',
-              }}
-              onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLElement).style.background = CD
-              }}
-              onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLElement).style.background = C
-              }}
-            >
-              Explore Collection
-              <ArrowRight size={14} strokeWidth={2.5} />
-            </Link>
+          {/* CTA button — DESKTOP ONLY */}
+          <motion.div variants={textLine} className="hero-btn-desktop">
+            {ctaButton()}
           </motion.div>
         </motion.div>
 
-        {/* ── Right: Card ──────────────────────────────────────── */}
+        {/* ── Right: Card + mobile button + scroll indicator ───── */}
         <motion.div
-          style={{ flex: '0 0 auto', width: 'min(360px, 44%)' }}
           className="hero-card-wrap"
+          style={{ flex: '0 0 auto', width: 'min(420px, 48%)' }}
           variants={cardWrapper}
           initial="hidden"
           animate={mounted ? 'visible' : 'hidden'}
         >
-          <div style={{ position: 'relative', overflow: 'visible' }}>
+          {/* ── CTA button — MOBILE ONLY (above card image) ── */}
+          <div className="hero-btn-mobile" style={{ marginBottom: '1rem' }}>
+            {ctaButton({ width: '100%', justifyContent: 'center' })}
+          </div>
+
+          {/* ── Outer gray box frame ── */}
+          <div style={{
+            position: 'relative',
+            border: '1px solid rgba(160,160,170,0.35)',
+            borderRadius: 0,
+            padding: '0.8rem',
+            background: 'transparent',
+          }}>
+
             {/* Clip-path curtain */}
             <motion.div
               variants={imageReveal}
               initial="hidden"
               animate={mounted ? 'visible' : 'hidden'}
               style={{
-                borderRadius: 4,
+                borderRadius: 0,
                 overflow: 'hidden',
                 boxShadow: '0 28px 70px rgba(0,0,0,0.5)',
               }}
@@ -297,10 +301,8 @@ export default function HeroSection() {
               )}
 
               <button
-                aria-label={
-                  popupOpen ? 'Close quick view' : 'Quick view product'
-                }
-                onClick={() => setPopupOpen((v) => !v)}
+                aria-label={popupOpen ? 'Close quick view' : 'Quick view product'}
+                onClick={() => setPopupOpen(v => !v)}
                 style={{
                   position: 'relative',
                   zIndex: 2,
@@ -316,12 +318,12 @@ export default function HeroSection() {
                   boxShadow: '0 2px 14px rgba(0,0,0,0.2)',
                   transition: 'background 150ms, transform 200ms',
                 }}
-                onMouseEnter={(e) => {
+                onMouseEnter={e => {
                   const el = e.currentTarget as HTMLElement
                   el.style.background = '#fff'
                   el.style.transform = 'scale(1.1)'
                 }}
-                onMouseLeave={(e) => {
+                onMouseLeave={e => {
                   const el = e.currentTarget as HTMLElement
                   el.style.background = 'rgba(255,255,255,0.93)'
                   el.style.transform = 'scale(1)'
@@ -335,11 +337,7 @@ export default function HeroSection() {
                       animate={{ rotate: 0, opacity: 1 }}
                       exit={{ rotate: 90, opacity: 0 }}
                       transition={{ duration: 0.18 }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       <X size={16} strokeWidth={2.5} color="#333" />
                     </motion.span>
@@ -350,21 +348,9 @@ export default function HeroSection() {
                       animate={{ rotate: 0, opacity: 1 }}
                       exit={{ rotate: -90, opacity: 0 }}
                       transition={{ duration: 0.18 }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#333"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                      >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5" strokeLinecap="round">
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                       </svg>
@@ -402,43 +388,31 @@ export default function HeroSection() {
                         boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
                       }}
                     >
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: -9,
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          width: 0,
-                          height: 0,
-                          borderLeft: '9px solid transparent',
-                          borderRight: '9px solid transparent',
-                          borderBottom: '9px solid #fff',
-                          filter: 'drop-shadow(0 -2px 2px rgba(0,0,0,0.06))',
-                        }}
-                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: -9,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 0,
+                        height: 0,
+                        borderLeft: '9px solid transparent',
+                        borderRight: '9px solid transparent',
+                        borderBottom: '9px solid #fff',
+                        filter: 'drop-shadow(0 -2px 2px rgba(0,0,0,0.06))',
+                      }} />
 
-                      <Link
-                        href="/products/backpack-bag"
-                        style={{ flexShrink: 0, display: 'block' }}
-                      >
-                        <div
-                          style={{
-                            width: 54,
-                            height: 54,
-                            borderRadius: 10,
-                            overflow: 'hidden',
-                            background: '#fdf0e8',
-                          }}
-                        >
+                      <Link href="/products/backpack-bag" style={{ flexShrink: 0, display: 'block' }}>
+                        <div style={{
+                          width: 54,
+                          height: 54,
+                          borderRadius: 10,
+                          overflow: 'hidden',
+                          background: '#fdf0e8',
+                        }}>
                           <img
                             src="https://isabel-demo.myshopify.com/cdn/shop/files/p-6-_2.jpg?crop=center&height=620&v=1735018282&width=645"
                             alt="Backpack bag"
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              objectPosition: 'center top',
-                            }}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
                           />
                         </div>
                       </Link>
@@ -461,31 +435,11 @@ export default function HeroSection() {
                         >
                           Backpack bag
                         </Link>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 7,
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontFamily: FONT,
-                              fontSize: '0.88rem',
-                              fontWeight: 700,
-                              color: C,
-                            }}
-                          >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <span style={{ fontFamily: FONT, fontSize: '0.88rem', fontWeight: 700, color: C }}>
                             ৳2,690
                           </span>
-                          <span
-                            style={{
-                              fontFamily: FONT,
-                              fontSize: '0.78rem',
-                              color: '#bbb',
-                              textDecoration: 'line-through',
-                            }}
-                          >
+                          <span style={{ fontFamily: FONT, fontSize: '0.78rem', color: '#bbb', textDecoration: 'line-through' }}>
                             ৳5,990
                           </span>
                         </div>
@@ -506,13 +460,8 @@ export default function HeroSection() {
                           textDecoration: 'none',
                           transition: 'background 150ms',
                         }}
-                        onMouseEnter={(e) => {
-                          ;(e.currentTarget as HTMLElement).style.background =
-                            CD
-                        }}
-                        onMouseLeave={(e) => {
-                          ;(e.currentTarget as HTMLElement).style.background = C
-                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
                       >
                         <ArrowRight size={14} color="#fff" strokeWidth={2.5} />
                       </Link>
@@ -522,12 +471,59 @@ export default function HeroSection() {
               </AnimatePresence>
             </div>
             {/* ── End Hotspot ── */}
+
           </div>
+
+          {/* ── Scroll indicator — MOBILE ONLY (below card image) ── */}
+          <motion.div
+            className="scroll-indicator-mobile"
+            style={{
+              display: 'none', // shown via CSS on mobile
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 6,
+              marginTop: '1.5rem',
+            }}
+            variants={scrollIndicator}
+            initial="hidden"
+            animate={mounted ? 'visible' : 'hidden'}
+          >
+            <div style={{
+              width: 22,
+              height: 34,
+              border: '1.5px solid rgba(255,255,255,0.4)',
+              borderRadius: 99,
+              display: 'flex',
+              justifyContent: 'center',
+              paddingTop: 6,
+            }}>
+              <div style={{
+                width: 3,
+                height: 6,
+                background: 'rgba(255,255,255,0.6)',
+                borderRadius: 99,
+                animation: 'heroScrollWheel 1.6s ease infinite',
+              }} />
+            </div>
+            <span style={{
+              fontFamily: FONT,
+              fontSize: '0.6rem',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.4)',
+            }}>
+              Scroll
+            </span>
+          </motion.div>
+
         </motion.div>
+        {/* ── End Right Card column ── */}
+
       </div>
 
-      {/* ── Scroll indicator ─────────────────────────────────────── */}
+      {/* ── Scroll indicator — DESKTOP ONLY (absolute centered bottom) ── */}
       <motion.div
+        className="scroll-indicator-desktop"
         style={{
           position: 'absolute',
           bottom: '2rem',
@@ -543,42 +539,41 @@ export default function HeroSection() {
         initial="hidden"
         animate={mounted ? 'visible' : 'hidden'}
       >
-        <div
-          style={{
-            width: 22,
-            height: 34,
-            border: '1.5px solid rgba(255,255,255,0.4)',
+        <div style={{
+          width: 22,
+          height: 34,
+          border: '1.5px solid rgba(255,255,255,0.4)',
+          borderRadius: 99,
+          display: 'flex',
+          justifyContent: 'center',
+          paddingTop: 6,
+        }}>
+          <div style={{
+            width: 3,
+            height: 6,
+            background: 'rgba(255,255,255,0.6)',
             borderRadius: 99,
-            display: 'flex',
-            justifyContent: 'center',
-            paddingTop: 6,
-          }}
-        >
-          <div
-            style={{
-              width: 3,
-              height: 6,
-              background: 'rgba(255,255,255,0.6)',
-              borderRadius: 99,
-              animation: 'heroScrollWheel 1.6s ease infinite',
-            }}
-          />
+            animation: 'heroScrollWheel 1.6s ease infinite',
+          }} />
         </div>
-        <span
-          style={{
-            fontFamily: FONT,
-            fontSize: '0.6rem',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.4)',
-          }}
-        >
+        <span style={{
+          fontFamily: FONT,
+          fontSize: '0.6rem',
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.4)',
+        }}>
           Scroll
         </span>
       </motion.div>
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+        /* ── Headline responsive font size ── */
+        .hero-headline {
+          font-size: clamp(2.4rem, 4.5vw, 4.2rem);
+        }
 
         .hotspot-ring {
           position: absolute;
@@ -604,21 +599,63 @@ export default function HeroSection() {
           100% { opacity: 0;  transform: translateY(0);   }
         }
 
-        /* ── MOBILE: match navbar's 1rem mobile padding ── */
+        /* ── DESKTOP: hide mobile-only elements ── */
+        .hero-btn-mobile {
+          display: none;
+        }
+        .scroll-indicator-mobile {
+          display: none !important;
+        }
+        .scroll-indicator-desktop {
+          display: flex !important;
+        }
+
+        /* ── MOBILE ── */
         @media (max-width: 1023px) {
           .hero-inner {
-            flex-direction: column-reverse !important;
-            padding: 3rem 1rem !important;
+            flex-direction: column !important;
+            padding: 4rem 1.25rem 3rem !important;
             text-align: center;
+            align-items: center !important;
+            gap: 1rem !important;
           }
+
+          /* FIX 1: Smaller headline on mobile */
+          .hero-headline {
+            font-size: clamp(1.6rem, 7vw, 2.4rem) !important;
+          }
+
           .hero-card-wrap {
-            width: min(300px, 80%) !important;
+            width: min(320px, 88%) !important;
+          }
+
+          /* FIX 2: Hide desktop CTA button (inside text col) */
+          .hero-btn-desktop {
+            display: none !important;
+          }
+
+          /* FIX 2: Show mobile CTA button (above card image, inside card col) */
+          .hero-btn-mobile {
+            display: block !important;
+          }
+
+          /* FIX 3: Show scroll indicator below card, hide absolute one */
+          .scroll-indicator-mobile {
+            display: flex !important;
+          }
+          .scroll-indicator-desktop {
+            display: none !important;
           }
         }
 
         @media (max-width: 480px) {
           .hero-inner {
-            padding: 2.5rem 1rem !important;
+            padding: 3.5rem 1rem 2.5rem !important;
+          }
+
+          /* Even smaller on very small screens */
+          .hero-headline {
+            font-size: clamp(1.45rem, 8vw, 1.9rem) !important;
           }
         }
       `}</style>
