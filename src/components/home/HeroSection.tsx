@@ -107,8 +107,8 @@ export default function HeroSection() {
     return () => clearTimeout(t)
   }, [])
 
-  const C    = '#CA865D'
-  const CD   = '#b5724a'
+  const C = '#CA865D'
+  const CD = '#b5724a'
   const FONT = "'Poppins', system-ui, sans-serif"
 
   return (
@@ -163,14 +163,13 @@ export default function HeroSection() {
           gap: '2rem',
           boxSizing: 'border-box',
           /* ↓ THE KEY FIX — matches .nav-grid padding exactly */
-          padding: '5rem clamp(1.5rem, 5vw, 7rem)',
+          padding: '7rem clamp(1.5rem, 5vw, 7rem)',
         }}
         className="hero-inner"
       >
-
         {/* ── Left: Text (staggered children) ──────────────────── */}
         <motion.div
-          style={{ flex: '1 1 0', minWidth: 0 }}
+          className="min-w-0 flex-1"
           variants={staggerContainer}
           initial="hidden"
           animate={mounted ? 'visible' : 'hidden'}
@@ -180,15 +179,15 @@ export default function HeroSection() {
             variants={textLine}
             style={{
               fontFamily: FONT,
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              letterSpacing: '0.16em',
+              fontSize: '0.80rem',
+              fontWeight: 400,
+              letterSpacing: '0.10em',
               textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.58)',
+              color: 'rgba(255,255,255,0.90)',
               margin: '0 0 1rem',
             }}
           >
-            The best kind of surprise party!
+            Discover your perfect everyday bag!
           </motion.p>
 
           {/* Headline */}
@@ -197,17 +196,15 @@ export default function HeroSection() {
               variants={textLine}
               style={{
                 fontFamily: FONT,
-                fontSize: 'clamp(2.4rem, 4.5vw, 3.8rem)',
+                fontSize: 'clamp(2.4rem, 4.5vw, 4.2rem)',
                 fontWeight: 600,
                 lineHeight: 1.1,
                 color: '#fff',
                 margin: 0,
-                letterSpacing: '-0.01em',
+                letterSpacing: '0.01em',
               }}
             >
-              Sophistication
-              <br />
-              in every stitch.
+             Carry style, <br /> carry confidence.
             </motion.h1>
           </div>
 
@@ -222,19 +219,23 @@ export default function HeroSection() {
                 background: C,
                 color: '#fff',
                 fontFamily: FONT,
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                letterSpacing: '0.12em',
+                fontSize: '0.76rem',
+                fontWeight: 600,
+                letterSpacing: '0.10em',
                 textTransform: 'uppercase',
                 textDecoration: 'none',
                 padding: '0.85rem 2rem',
-                borderRadius: 2,
+                borderRadius: 0,
                 transition: 'background 150ms',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLElement).style.background = CD
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLElement).style.background = C
+              }}
             >
-              Shop Now
+              Explore Collection
               <ArrowRight size={14} strokeWidth={2.5} />
             </Link>
           </motion.div>
@@ -249,7 +250,6 @@ export default function HeroSection() {
           animate={mounted ? 'visible' : 'hidden'}
         >
           <div style={{ position: 'relative', overflow: 'visible' }}>
-
             {/* Clip-path curtain */}
             <motion.div
               variants={imageReveal}
@@ -297,8 +297,10 @@ export default function HeroSection() {
               )}
 
               <button
-                aria-label={popupOpen ? 'Close quick view' : 'Quick view product'}
-                onClick={() => setPopupOpen(v => !v)}
+                aria-label={
+                  popupOpen ? 'Close quick view' : 'Quick view product'
+                }
+                onClick={() => setPopupOpen((v) => !v)}
                 style={{
                   position: 'relative',
                   zIndex: 2,
@@ -314,12 +316,12 @@ export default function HeroSection() {
                   boxShadow: '0 2px 14px rgba(0,0,0,0.2)',
                   transition: 'background 150ms, transform 200ms',
                 }}
-                onMouseEnter={e => {
+                onMouseEnter={(e) => {
                   const el = e.currentTarget as HTMLElement
                   el.style.background = '#fff'
                   el.style.transform = 'scale(1.1)'
                 }}
-                onMouseLeave={e => {
+                onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLElement
                   el.style.background = 'rgba(255,255,255,0.93)'
                   el.style.transform = 'scale(1)'
@@ -333,7 +335,11 @@ export default function HeroSection() {
                       animate={{ rotate: 0, opacity: 1 }}
                       exit={{ rotate: 90, opacity: 0 }}
                       transition={{ duration: 0.18 }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
                     >
                       <X size={16} strokeWidth={2.5} color="#333" />
                     </motion.span>
@@ -344,9 +350,21 @@ export default function HeroSection() {
                       animate={{ rotate: 0, opacity: 1 }}
                       exit={{ rotate: -90, opacity: 0 }}
                       transition={{ duration: 0.18 }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5" strokeLinecap="round">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#333"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      >
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                       </svg>
@@ -384,31 +402,43 @@ export default function HeroSection() {
                         boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
                       }}
                     >
-                      <div style={{
-                        position: 'absolute',
-                        top: -9,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: 0,
-                        height: 0,
-                        borderLeft: '9px solid transparent',
-                        borderRight: '9px solid transparent',
-                        borderBottom: '9px solid #fff',
-                        filter: 'drop-shadow(0 -2px 2px rgba(0,0,0,0.06))',
-                      }} />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: -9,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: 0,
+                          height: 0,
+                          borderLeft: '9px solid transparent',
+                          borderRight: '9px solid transparent',
+                          borderBottom: '9px solid #fff',
+                          filter: 'drop-shadow(0 -2px 2px rgba(0,0,0,0.06))',
+                        }}
+                      />
 
-                      <Link href="/products/backpack-bag" style={{ flexShrink: 0, display: 'block' }}>
-                        <div style={{
-                          width: 54,
-                          height: 54,
-                          borderRadius: 10,
-                          overflow: 'hidden',
-                          background: '#fdf0e8',
-                        }}>
+                      <Link
+                        href="/products/backpack-bag"
+                        style={{ flexShrink: 0, display: 'block' }}
+                      >
+                        <div
+                          style={{
+                            width: 54,
+                            height: 54,
+                            borderRadius: 10,
+                            overflow: 'hidden',
+                            background: '#fdf0e8',
+                          }}
+                        >
                           <img
                             src="https://isabel-demo.myshopify.com/cdn/shop/files/p-6-_2.jpg?crop=center&height=620&v=1735018282&width=645"
                             alt="Backpack bag"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              objectPosition: 'center top',
+                            }}
                           />
                         </div>
                       </Link>
@@ -431,11 +461,31 @@ export default function HeroSection() {
                         >
                           Backpack bag
                         </Link>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <span style={{ fontFamily: FONT, fontSize: '0.88rem', fontWeight: 700, color: C }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 7,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: FONT,
+                              fontSize: '0.88rem',
+                              fontWeight: 700,
+                              color: C,
+                            }}
+                          >
                             ৳2,690
                           </span>
-                          <span style={{ fontFamily: FONT, fontSize: '0.78rem', color: '#bbb', textDecoration: 'line-through' }}>
+                          <span
+                            style={{
+                              fontFamily: FONT,
+                              fontSize: '0.78rem',
+                              color: '#bbb',
+                              textDecoration: 'line-through',
+                            }}
+                          >
                             ৳5,990
                           </span>
                         </div>
@@ -456,8 +506,13 @@ export default function HeroSection() {
                           textDecoration: 'none',
                           transition: 'background 150ms',
                         }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
+                        onMouseEnter={(e) => {
+                          ;(e.currentTarget as HTMLElement).style.background =
+                            CD
+                        }}
+                        onMouseLeave={(e) => {
+                          ;(e.currentTarget as HTMLElement).style.background = C
+                        }}
                       >
                         <ArrowRight size={14} color="#fff" strokeWidth={2.5} />
                       </Link>
@@ -467,7 +522,6 @@ export default function HeroSection() {
               </AnimatePresence>
             </div>
             {/* ── End Hotspot ── */}
-
           </div>
         </motion.div>
       </div>
@@ -489,30 +543,36 @@ export default function HeroSection() {
         initial="hidden"
         animate={mounted ? 'visible' : 'hidden'}
       >
-        <div style={{
-          width: 22,
-          height: 34,
-          border: '1.5px solid rgba(255,255,255,0.4)',
-          borderRadius: 99,
-          display: 'flex',
-          justifyContent: 'center',
-          paddingTop: 6,
-        }}>
-          <div style={{
-            width: 3,
-            height: 6,
-            background: 'rgba(255,255,255,0.6)',
+        <div
+          style={{
+            width: 22,
+            height: 34,
+            border: '1.5px solid rgba(255,255,255,0.4)',
             borderRadius: 99,
-            animation: 'heroScrollWheel 1.6s ease infinite',
-          }} />
+            display: 'flex',
+            justifyContent: 'center',
+            paddingTop: 6,
+          }}
+        >
+          <div
+            style={{
+              width: 3,
+              height: 6,
+              background: 'rgba(255,255,255,0.6)',
+              borderRadius: 99,
+              animation: 'heroScrollWheel 1.6s ease infinite',
+            }}
+          />
         </div>
-        <span style={{
-          fontFamily: FONT,
-          fontSize: '0.6rem',
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.4)',
-        }}>
+        <span
+          style={{
+            fontFamily: FONT,
+            fontSize: '0.6rem',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.4)',
+          }}
+        >
           Scroll
         </span>
       </motion.div>

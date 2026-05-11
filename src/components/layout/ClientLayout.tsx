@@ -21,17 +21,15 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <>
-      <GoogleOneTap />
-      <div className="sticky top-0 z-[100]">
-        <Topbar />
-        <Navbar />
-      </div>
-      {children}
-      <Footer />
-      <CartDrawer />
-      <ChatLauncher />
-      <VisitorTracker />
-    </>
-  )
+  <>
+    <GoogleOneTap />
+    <Topbar />   {/* scrolls away naturally */}
+    <Navbar />   {/* sticky via motion.div inside */}
+    {children}
+    <Footer />
+    <CartDrawer />
+    <ChatLauncher />
+    <VisitorTracker />
+  </>
+)
 }

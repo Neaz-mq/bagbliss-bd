@@ -165,10 +165,9 @@ p {
    ============================================ */
 
 ::selection {
-  background: var(--color-accent);
+  background: #CA865D;   /* ← your brand color */
   color: white;
 }
-
 /* ============================================
    REUSABLE COMPONENT CLASSES
    ============================================ */
