@@ -26,6 +26,8 @@ const UNSPLASH: Record<string, string> = {
     'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=1200&q=80',
   wristlet:
     'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=1200&q=80',
+    party:
+    'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=1200&q=80',
   clutch:
     'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=1200&q=80',
   leather:
@@ -34,8 +36,6 @@ const UNSPLASH: Record<string, string> = {
     'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=1200&q=80',
   canvas:
     'https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?w=1200&q=80',
-  party:
-    'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=1200&q=80',
   default:
     'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=1200&q=80',
 }
@@ -368,7 +368,7 @@ export default function CategoryStrip() {
           position: relative;
           flex-shrink: 0;
           aspect-ratio: 1.06 / 1;
-          border-radius: 34px;
+          border-radius: 0;
           overflow: hidden;
           background: #f7f7f7;
           transform: translateZ(0);
