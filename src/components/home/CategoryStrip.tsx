@@ -286,7 +286,7 @@ export default function CategoryStrip() {
           width: 100%;
           max-width: 1600px;
           margin: 0 auto;
-          padding: 0 clamp(1rem, 4vw, 4rem);
+          padding: 0 clamp(4.6rem, 4vw, 4rem);
           box-sizing: border-box;
         }
 
