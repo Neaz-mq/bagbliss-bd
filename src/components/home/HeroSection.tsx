@@ -380,7 +380,7 @@ export default function HeroSection() {
                       style={{
                         width: 270,
                         background: '#fff',
-                        borderRadius: 12,
+                        borderRadius: 0,
                         padding: '12px 14px',
                         display: 'flex',
                         alignItems: 'center',

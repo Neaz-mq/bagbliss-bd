@@ -601,7 +601,7 @@ function NavbarInner() {
               <div style={{ padding: '0.75rem 1rem 0' }}>
                 <form
                   onSubmit={handleSearch}
-                  className="flex items-center gap-2 rounded-full bg-white"
+                  className="flex items-center gap-2  bg-white"
                   style={{
                     border: '1.5px solid rgba(26,26,46,0.1)',
                     padding: '0.4rem 0.5rem 0.4rem 1rem',
@@ -620,7 +620,7 @@ function NavbarInner() {
                   <button
                     type="submit"
                     suppressHydrationWarning
-                    className="cursor-pointer rounded-full border-none text-[0.75rem] font-bold text-white"
+                    className="cursor-pointer  border-none text-[0.75rem] font-bold text-white"
                     style={{
                       background: C,
                       fontFamily: FONT,
@@ -660,7 +660,7 @@ function NavbarInner() {
                 >
                   <Link
                     href="/login"
-                    className="flex flex-1 items-center justify-center rounded-full text-[0.8rem] font-medium tracking-[0.05em] text-white uppercase no-underline"
+                    className="flex flex-1 items-center justify-center text-[0.8rem] font-medium tracking-[0.05em] text-white uppercase no-underline"
                     style={{
                       background: C,
                       fontFamily: FONT,
@@ -671,7 +671,7 @@ function NavbarInner() {
                   </Link>
                   <Link
                     href="/register"
-                    className="flex flex-1 items-center justify-center rounded-full bg-transparent text-[0.8rem] font-medium tracking-[0.05em] uppercase no-underline"
+                    className="flex flex-1 items-center justify-center  bg-transparent text-[0.8rem] font-medium tracking-[0.05em] uppercase no-underline"
                     style={{
                       color: DARK,
                       fontFamily: FONT,
