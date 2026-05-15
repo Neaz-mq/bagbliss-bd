@@ -30,40 +30,43 @@ const textLine = {
 }
 
 const cardWrapper = {
-  hidden: { opacity: 0, y: 96 },
+  hidden: { opacity: 0, y: 80, scale: 0.96 },
   visible: {
     opacity: 1,
     y: 0,
+    scale: 1,
     transition: {
       type: 'spring',
-      stiffness: 46,
+      stiffness: 42,
       damping: 20,
-      mass: 1.15,
-      delay: 0.22,
+      mass: 1,
+      delay: 0.2,
     },
   },
 }
 
 const imageReveal = {
-  hidden: { clipPath: 'inset(100% 0 0 0 round 0px)' },
+  hidden: {
+    clipPath: 'inset(100% 0 0 0)',
+  },
   visible: {
-    clipPath: 'inset(0% 0 0 0 round 0px)',
+    clipPath: 'inset(0% 0 0 0)',
     transition: {
-      duration: 1.25,
+      duration: 1.15,
       ease: [0.22, 1, 0.36, 1],
-      delay: 0.34,
+      delay: 0.3,
     },
   },
 }
 
 const imageKenBurns = {
-  hidden: { scale: 1.06 },
+  hidden: { scale: 1.08 },
   visible: {
     scale: 1,
     transition: {
-      duration: 1.6,
+      duration: 1.8,
       ease: [0.22, 1, 0.36, 1],
-      delay: 0.34,
+      delay: 0.3,
     },
   },
 }
@@ -74,21 +77,20 @@ const popupVariant = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: 'spring', stiffness: 300, damping: 28 },
+    transition: {
+      type: 'spring',
+      stiffness: 280,
+      damping: 26,
+    },
   },
   exit: {
     opacity: 0,
     y: 6,
     scale: 0.97,
-    transition: { duration: 0.18, ease: 'easeIn' },
-  },
-}
-
-const scrollIndicator = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 0.45,
-    transition: { duration: 1.2, delay: 1.3, ease: 'easeOut' },
+    transition: {
+      duration: 0.18,
+      ease: 'easeIn',
+    },
   },
 }
 
@@ -101,198 +103,117 @@ export default function HeroSection() {
     return () => clearTimeout(t)
   }, [])
 
-  const C    = '#CA865D'
-  const CD   = '#b5724a'
+  const C = '#CA865D'
+  const CD = '#b5724a'
   const FONT = "'Poppins', system-ui, sans-serif"
 
-  const ctaButton = (extraStyle: React.CSSProperties = {}) => (
+  const ctaButton = (
+    extraStyle: React.CSSProperties = {}
+  ) => (
     <Link
       href="/shop"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 9,
+        justifyContent: 'center',
+        gap: 10,
         background: C,
         color: '#fff',
         fontFamily: FONT,
-        fontSize: '0.76rem',
+        fontSize: '0.78rem',
         fontWeight: 600,
-        letterSpacing: '0.10em',
+        letterSpacing: '0.11em',
         textTransform: 'uppercase',
         textDecoration: 'none',
-        padding: '0.75rem 1.6rem',
-        borderRadius: 0,
-        transition: 'background 150ms',
+        padding: '0.95rem 1.9rem',
+        transition: 'all 220ms ease',
+        whiteSpace: 'nowrap',
         ...extraStyle,
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.background = CD
+        el.style.transform = 'translateY(-2px)'
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.background = C
+        el.style.transform = 'translateY(0px)'
+      }}
     >
       Explore Collection
-      <ArrowRight size={14} strokeWidth={2.5} />
+      <ArrowRight size={15} strokeWidth={2.4} />
     </Link>
   )
 
   return (
-    <section
-      style={{
-        position: 'relative',
-        width: '100%',
-        minHeight: 'min(90vh, 680px)',
-        display: 'flex',
-        alignItems: 'center',
-        overflow: 'hidden',
-        background: '#1a120b',
-      }}
-    >
-      {/* ── Background image ─────────────────────────────────────── */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url('https://res.cloudinary.com/dzi3u164c/image/upload/v1778296243/slider_dnwgz0.webp')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
-          opacity: 0.55,
-        }}
-      />
+    <section className="hero-section">
+      <div className="hero-bg" />
+      <div className="hero-overlay" />
+      <div className="hero-glow" />
 
-      {/* ── Gradient overlay ─────────────────────────────────────── */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background:
-            'linear-gradient(to right, rgba(20,14,8,0.88) 0%, rgba(20,14,8,0.65) 45%, rgba(20,14,8,0.15) 100%)',
-        }}
-      />
-
-      {/* ── Main content row ─────────────────────────────────────── */}
-      <div
-        style={{
-          position: 'relative',
-          zIndex: 2,
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '2rem',
-          boxSizing: 'border-box',
-          padding: '7rem clamp(1.5rem, 5vw, 7rem)',
-        }}
-        className="hero-inner"
-      >
-
-        {/* ── Left: Text (staggered children) ──────────────────── */}
+      <div className="hero-container">
+        {/* LEFT */}
         <motion.div
-          className="hero-text-col min-w-0 flex-1"
+          className="hero-left"
           variants={staggerContainer}
           initial="hidden"
           animate={mounted ? 'visible' : 'hidden'}
         >
-          {/* Eyebrow */}
-          <motion.p
-            variants={textLine}
-            style={{
-              fontFamily: FONT,
-              fontSize: '0.80rem',
-              fontWeight: 400,
-              letterSpacing: '0.10em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.90)',
-              margin: '0 0 1rem',
-            }}
-          >
+          <motion.p variants={textLine} className="hero-eyebrow">
             Discover your perfect everyday bag!
           </motion.p>
 
-          {/* Headline */}
-          <div style={{ overflow: 'hidden', marginBottom: '1.2rem' }}>
-            <motion.h1
-              variants={textLine}
-              className="hero-headline"
-              style={{
-                fontFamily: FONT,
-                fontWeight: 600,
-                lineHeight: 1.3,
-                color: '#fff',
-                margin: 0,
-                letterSpacing: '0.01em',
-              }}
-            >
-              Carry style,
-              <br />
-              carry confidence.
+          <div className="hero-title-wrap">
+            <motion.h1 variants={textLine} className="hero-title">
+              <span>Carry style,</span>
+              <span>carry grace.</span>
             </motion.h1>
           </div>
 
-          {/* CTA button — DESKTOP ONLY */}
+          <motion.p variants={textLine} className="hero-description">
+            Timeless everyday essentials crafted to elevate your look with
+            effortless sophistication and comfort.
+          </motion.p>
+
           <motion.div variants={textLine} className="hero-btn-desktop">
             {ctaButton()}
           </motion.div>
         </motion.div>
 
-        {/* ── Right: Card + mobile button + scroll indicator ───── */}
+        {/* RIGHT */}
         <motion.div
-          className="hero-card-wrap"
-          style={{ flex: '0 0 auto', width: 'min(420px, 48%)' }}
+          className="hero-right"
           variants={cardWrapper}
           initial="hidden"
           animate={mounted ? 'visible' : 'hidden'}
         >
-          {/* ── CTA button — MOBILE ONLY (above card image) ── */}
-          <div className="hero-btn-mobile" style={{ marginBottom: '1rem' }}>
-            {ctaButton({ width: '100%', justifyContent: 'center' })}
+          <div className="hero-btn-mobile">
+            {ctaButton({ width: '100%' })}
           </div>
 
-          {/* ── Outer gray box frame ── */}
-          <div style={{
-            position: 'relative',
-            border: '1px solid rgba(160,160,170,0.35)',
-            borderRadius: 0,
-            padding: '0.8rem',
-            background: 'transparent',
-          }}>
-
-            {/* Clip-path curtain */}
+          <div className="hero-card-frame">
             <motion.div
               variants={imageReveal}
               initial="hidden"
               animate={mounted ? 'visible' : 'hidden'}
-              style={{
-                borderRadius: 0,
-                overflow: 'hidden',
-                boxShadow: '0 28px 70px rgba(0,0,0,0.5)',
-              }}
+              className="hero-card-image-wrap"
             >
               <motion.img
                 src="https://res.cloudinary.com/dzi3u164c/image/upload/v1778296301/slider_mini_f14602db-1260-4fbd-89a9-3e395ba94f45_bnuhhj.webp"
-                alt="Model holding a pink tote bag with blue straps"
+                alt="Fashion bag"
                 variants={imageKenBurns}
                 initial="hidden"
                 animate={mounted ? 'visible' : 'hidden'}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  height: 'auto',
-                  objectFit: 'cover',
-                  transformOrigin: 'center bottom',
-                }}
+                className="hero-card-image"
               />
             </motion.div>
 
-            {/* ── Hotspot ── */}
-            <div
-              style={{
-                position: 'absolute',
-                left: '35%',
-                top: '55%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 20,
-                width: 42,
-                height: 42,
-              }}
-            >
+            <div className="floating-accent-card">
+              <span>Premium Collection</span>
+            </div>
+
+            <div className="hotspot-wrap">
               {!popupOpen && (
                 <>
                   <span className="hotspot-ring hotspot-ring-1" />
@@ -301,33 +222,9 @@ export default function HeroSection() {
               )}
 
               <button
-                aria-label={popupOpen ? 'Close quick view' : 'Quick view product'}
+                aria-label="Quick product view"
                 onClick={() => setPopupOpen(v => !v)}
-                style={{
-                  position: 'relative',
-                  zIndex: 2,
-                  width: 42,
-                  height: 42,
-                  borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.93)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 14px rgba(0,0,0,0.2)',
-                  transition: 'background 150ms, transform 200ms',
-                }}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.background = '#fff'
-                  el.style.transform = 'scale(1.1)'
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.background = 'rgba(255,255,255,0.93)'
-                  el.style.transform = 'scale(1)'
-                }}
+                className="hotspot-btn"
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {popupOpen ? (
@@ -336,8 +233,6 @@ export default function HeroSection() {
                       initial={{ rotate: -90, opacity: 0 }}
                       animate={{ rotate: 0, opacity: 1 }}
                       exit={{ rotate: 90, opacity: 0 }}
-                      transition={{ duration: 0.18 }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       <X size={16} strokeWidth={2.5} color="#333" />
                     </motion.span>
@@ -347,10 +242,16 @@ export default function HeroSection() {
                       initial={{ rotate: 90, opacity: 0 }}
                       animate={{ rotate: 0, opacity: 1 }}
                       exit={{ rotate: -90, opacity: 0 }}
-                      transition={{ duration: 0.18 }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5" strokeLinecap="round">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#333"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      >
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                       </svg>
@@ -361,108 +262,35 @@ export default function HeroSection() {
 
               <AnimatePresence>
                 {popupOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 8px)',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      zIndex: 30,
-                      pointerEvents: 'auto',
-                    }}
-                  >
+                  <div className="quick-popup-wrap">
                     <motion.div
-                      key="popup"
                       variants={popupVariant}
                       initial="hidden"
                       animate="visible"
                       exit="exit"
-                      style={{
-                        width: 270,
-                        background: '#fff',
-                        borderRadius: 0,
-                        padding: '12px 14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
-                      }}
+                      className="quick-popup"
                     >
-                      <div style={{
-                        position: 'absolute',
-                        top: -9,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: 0,
-                        height: 0,
-                        borderLeft: '9px solid transparent',
-                        borderRight: '9px solid transparent',
-                        borderBottom: '9px solid #fff',
-                        filter: 'drop-shadow(0 -2px 2px rgba(0,0,0,0.06))',
-                      }} />
+                      <div className="popup-arrow" />
 
-                      <Link href="/products/backpack-bag" style={{ flexShrink: 0, display: 'block' }}>
-                        <div style={{
-                          width: 54,
-                          height: 54,
-                          borderRadius: 10,
-                          overflow: 'hidden',
-                          background: '#fdf0e8',
-                        }}>
-                          <img
-                            src="https://isabel-demo.myshopify.com/cdn/shop/files/p-6-_2.jpg?crop=center&height=620&v=1735018282&width=645"
-                            alt="Backpack bag"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
-                          />
-                        </div>
+                      <Link href="/products/backpack-bag" className="popup-thumb">
+                        <img
+                          src="https://isabel-demo.myshopify.com/cdn/shop/files/p-6-_2.jpg?crop=center&height=620&v=1735018282&width=645"
+                          alt="Backpack"
+                        />
                       </Link>
 
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <Link
-                          href="/products/backpack-bag"
-                          style={{
-                            display: 'block',
-                            fontFamily: FONT,
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            color: '#1a1a1a',
-                            textDecoration: 'none',
-                            marginBottom: 5,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
+                      <div className="popup-content">
+                        <Link href="/products/backpack-bag" className="popup-title">
                           Backpack bag
                         </Link>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <span style={{ fontFamily: FONT, fontSize: '0.88rem', fontWeight: 700, color: C }}>
-                            ৳2,690
-                          </span>
-                          <span style={{ fontFamily: FONT, fontSize: '0.78rem', color: '#bbb', textDecoration: 'line-through' }}>
-                            ৳5,990
-                          </span>
+
+                        <div className="popup-price-row">
+                          <span className="popup-price">৳2,690</span>
+                          <span className="popup-old-price">৳5,990</span>
                         </div>
                       </div>
 
-                      <Link
-                        href="/shop"
-                        aria-label="Go to shop"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: 36,
-                          height: 36,
-                          borderRadius: '50%',
-                          background: C,
-                          flexShrink: 0,
-                          textDecoration: 'none',
-                          transition: 'background 150ms',
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = CD }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C }}
-                      >
+                      <Link href="/shop" className="popup-arrow-btn">
                         <ArrowRight size={14} color="#fff" strokeWidth={2.5} />
                       </Link>
                     </motion.div>
@@ -470,195 +298,563 @@ export default function HeroSection() {
                 )}
               </AnimatePresence>
             </div>
-            {/* ── End Hotspot ── */}
-
           </div>
-
-          {/* ── Scroll indicator — MOBILE ONLY (below card image) ── */}
-          <motion.div
-            className="scroll-indicator-mobile"
-            style={{
-              display: 'none', // shown via CSS on mobile
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 6,
-              marginTop: '1.5rem',
-            }}
-            variants={scrollIndicator}
-            initial="hidden"
-            animate={mounted ? 'visible' : 'hidden'}
-          >
-            <div style={{
-              width: 22,
-              height: 34,
-              border: '1.5px solid rgba(255,255,255,0.4)',
-              borderRadius: 99,
-              display: 'flex',
-              justifyContent: 'center',
-              paddingTop: 6,
-            }}>
-              <div style={{
-                width: 3,
-                height: 6,
-                background: 'rgba(255,255,255,0.6)',
-                borderRadius: 99,
-                animation: 'heroScrollWheel 1.6s ease infinite',
-              }} />
-            </div>
-            <span style={{
-              fontFamily: FONT,
-              fontSize: '0.6rem',
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.4)',
-            }}>
-              Scroll
-            </span>
-          </motion.div>
-
         </motion.div>
-        {/* ── End Right Card column ── */}
-
       </div>
 
-      {/* ── Scroll indicator — DESKTOP ONLY (absolute centered bottom) ── */}
-      <motion.div
-        className="scroll-indicator-desktop"
-        style={{
-          position: 'absolute',
-          bottom: '2rem',
-          left: '50%',
-          x: '-50%',
-          zIndex: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 6,
-        }}
-        variants={scrollIndicator}
-        initial="hidden"
-        animate={mounted ? 'visible' : 'hidden'}
-      >
-        <div style={{
-          width: 22,
-          height: 34,
-          border: '1.5px solid rgba(255,255,255,0.4)',
-          borderRadius: 99,
-          display: 'flex',
-          justifyContent: 'center',
-          paddingTop: 6,
-        }}>
-          <div style={{
-            width: 3,
-            height: 6,
-            background: 'rgba(255,255,255,0.6)',
-            borderRadius: 99,
-            animation: 'heroScrollWheel 1.6s ease infinite',
-          }} />
-        </div>
-        <span style={{
-          fontFamily: FONT,
-          fontSize: '0.6rem',
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.4)',
-        }}>
-          Scroll
-        </span>
-      </motion.div>
-
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
-        /* ── Headline responsive font size ── */
-        .hero-headline {
-          font-size: clamp(2.4rem, 4.5vw, 4.2rem);
-        }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; overflow-x: hidden; }
 
-        .hotspot-ring {
-          position: absolute;
-          inset: 0;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.42);
-          animation: smoothPing 2.4s cubic-bezier(0.2, 0.5, 0.4, 1) infinite;
-        }
-        .hotspot-ring-2 {
-          background: rgba(255,255,255,0.22);
-          animation-delay: 0.8s;
-        }
+  .hero-section {
+    position: relative;
+    width: 100%;
+    min-height: calc(100vh - 90px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #1a120b;
+  }
 
-        @keyframes smoothPing {
-          0%   { transform: scale(1);   opacity: 0.7; }
-          75%  { transform: scale(2.3); opacity: 0;   }
-          100% { transform: scale(2.3); opacity: 0;   }
-        }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('https://res.cloudinary.com/dzi3u164c/image/upload/v1778296243/slider_dnwgz0.webp');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.55;
+    transform: scale(1.03);
+  }
 
-        @keyframes heroScrollWheel {
-          0%   { opacity: 1;  transform: translateY(0);   }
-          80%  { opacity: 0;  transform: translateY(8px); }
-          100% { opacity: 0;  transform: translateY(0);   }
-        }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(20,14,8,0.94) 0%,
+      rgba(20,14,8,0.82) 34%,
+      rgba(20,14,8,0.45) 65%,
+      rgba(20,14,8,0.18) 100%
+    );
+  }
 
-        /* ── DESKTOP: hide mobile-only elements ── */
-        .hero-btn-mobile {
-          display: none;
-        }
-        .scroll-indicator-mobile {
-          display: none !important;
-        }
-        .scroll-indicator-desktop {
-          display: flex !important;
-        }
+  .hero-glow {
+    position: absolute;
+    right: -10%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 720px;
+    height: 720px;
+    background: radial-gradient(
+      circle,
+      rgba(202,134,93,0.16) 0%,
+      rgba(202,134,93,0) 70%
+    );
+    pointer-events: none;
+  }
 
-        /* ── MOBILE ── */
-        @media (max-width: 1023px) {
-          .hero-inner {
-            flex-direction: column !important;
-            padding: 4rem 1.25rem 3rem !important;
-            text-align: center;
-            align-items: center !important;
-            gap: 1rem !important;
-          }
+  /* MAIN CONTAINER */
+  .hero-container {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(420px, 560px);
+    align-items: center;
+    gap: clamp(3rem, 5vw, 7rem);
+    padding: clamp(4rem, 6vw, 6rem) clamp(2rem, 5vw, 5rem);
+    overflow: visible;
+  }
 
-          /* FIX 1: Smaller headline on mobile */
-          .hero-headline {
-            font-size: clamp(1.6rem, 7vw, 2.4rem) !important;
-          }
+  /* LEFT SIDE */
+  .hero-left {
+    width: 100%;
+    max-width: 760px;
+    min-width: 0;
+  }
 
-          .hero-card-wrap {
-            width: min(320px, 88%) !important;
-          }
+  .hero-eyebrow {
+    margin: 0 0 1.2rem;
+    font-family: ${FONT};
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.92);
+  }
 
-          /* FIX 2: Hide desktop CTA button (inside text col) */
-          .hero-btn-desktop {
-            display: none !important;
-          }
+  .hero-title-wrap {
+    width: 100%;
+    margin-bottom: 1.6rem;
+  }
 
-          /* FIX 2: Show mobile CTA button (above card image, inside card col) */
-          .hero-btn-mobile {
-            display: block !important;
-          }
+  .hero-title {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    font-family: ${FONT};
+    font-size: clamp(3.4rem, 6vw, 6.4rem);
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: -0.045em;
+    color: #fff;
+  }
 
-          /* FIX 3: Show scroll indicator below card, hide absolute one */
-          .scroll-indicator-mobile {
-            display: flex !important;
-          }
-          .scroll-indicator-desktop {
-            display: none !important;
-          }
-        }
+  .hero-title span {
+    display: block;
+    width: 100%;
+  }
 
-        @media (max-width: 480px) {
-          .hero-inner {
-            padding: 3.5rem 1rem 2.5rem !important;
-          }
+  .hero-description {
+    max-width: 620px;
+    margin: 0 0 2.4rem;
+    font-family: ${FONT};
+    font-size: clamp(1rem, 1vw, 1.08rem);
+    line-height: 1.9;
+    font-weight: 400;
+    color: rgba(255,255,255,0.75);
+  }
 
-          /* Even smaller on very small screens */
-          .hero-headline {
-            font-size: clamp(1.45rem, 8vw, 1.9rem) !important;
-          }
-        }
-      `}</style>
+  /* RIGHT SIDE */
+  .hero-right {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+    min-width: 0;
+  }
+
+  .hero-card-frame {
+    position: relative;
+    width: 100%;
+    padding: 1.1rem;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(5px);
+  }
+
+  /* ── desktop image: narrow + tall portrait ── */
+  .hero-card-image-wrap {
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 5 / 6;
+    box-shadow:
+      0 30px 80px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(255,255,255,0.04);
+  }
+
+  .hero-card-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    transform-origin: center bottom;
+  }
+
+  .floating-accent-card {
+    position: absolute;
+    left: -0.8rem;
+    bottom: 2rem;
+    padding: 1rem 1.25rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+
+  .floating-accent-card span {
+    font-family: ${FONT};
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.92);
+  }
+
+  /* HOTSPOT */
+  .hotspot-wrap {
+    position: absolute;
+    left: 34%;
+    top: 56%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    width: 44px;
+    height: 44px;
+  }
+
+  .hotspot-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    animation: smoothPing 2.4s cubic-bezier(0.2,0.5,0.4,1) infinite;
+  }
+
+  .hotspot-ring-1 { background: rgba(255,255,255,0.4); }
+  .hotspot-ring-2 { background: rgba(255,255,255,0.22); animation-delay: 0.8s; }
+
+  .hotspot-btn {
+    position: relative;
+    z-index: 5;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+    transition: all 220ms ease;
+  }
+
+  .hotspot-btn:hover {
+    transform: scale(1.08);
+    background: #fff;
+  }
+
+  /* ── POPUP — shared base (desktop & mobile) ── */
+  .quick-popup-wrap {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 18px);
+    transform: translateX(-50%);
+    z-index: 40;
+  }
+
+  .quick-popup {
+    position: relative;
+    width: 240px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.18);
+  }
+
+  .popup-arrow {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 16px;
+    height: 16px;
+    background: #fff;
+  }
+
+  /* ── thumb: same on all sizes ── */
+  .popup-thumb {
+    width: 56px;
+    height: 56px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .popup-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .popup-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .popup-title {
+    display: block;
+    margin-bottom: 6px;
+    text-decoration: none;
+    font-family: ${FONT};
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .popup-price-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .popup-price {
+    font-family: ${FONT};
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: ${C};
+  }
+
+  .popup-old-price {
+    font-family: ${FONT};
+    font-size: 0.78rem;
+    text-decoration: line-through;
+    color: #bcbcbc;
+  }
+
+  .popup-arrow-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: ${C};
+    text-decoration: none;
+    transition: background 200ms ease;
+  }
+
+  .popup-arrow-btn:hover { background: ${CD}; }
+
+  @keyframes smoothPing {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    75%  { transform: scale(2.3); opacity: 0;   }
+    100% { transform: scale(2.3); opacity: 0;   }
+  }
+
+  .hero-btn-mobile { display: none; }
+
+  /* LARGE SCREEN */
+  @media (max-width: 1440px) {
+    .hero-container {
+      max-width: 1450px;
+      grid-template-columns: minmax(0, 1.1fr) minmax(400px, 540px);
+    }
+  }
+
+  /* LAPTOP */
+  @media (max-width: 1200px) {
+    .hero-container {
+      gap: 3rem;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, 480px);
+    }
+    .hero-title { font-size: 5rem; }
+  }
+
+  /* TABLET */
+  @media (max-width: 1024px) {
+    .hero-section { min-height: auto; padding-top: 1rem; }
+
+    .hero-container {
+      grid-template-columns: 1fr;
+      text-align: center;
+      gap: 2.5rem;
+      padding: 3rem 1.5rem 3rem;
+    }
+
+    .hero-left { max-width: 100%; }
+
+    .hero-title {
+      align-items: center;
+      font-size: clamp(2.8rem, 8vw, 4.6rem);
+      line-height: 0.98;
+    }
+
+    .hero-description { margin-left: auto; margin-right: auto; }
+
+    .hero-right {
+      width: min(100%, 580px);
+      margin: 0 auto;
+    }
+
+    .hero-btn-desktop { display: none; }
+    .hero-btn-mobile  { display: block; margin-bottom: 1rem; }
+
+    .floating-accent-card { display: none; }
+
+    /* image on tablet: keep portrait ratio */
+    .hero-card-image-wrap {
+      aspect-ratio: 5 / 6;
+      max-height: none;
+    }
+  }
+
+  /* ═══════════════════════════════════════════
+     MOBILE  ≤ 640px
+     • margin-top via padding-top
+     • Image: category-card style — full container width, side gaps, rounded corners
+  ═══════════════════════════════════════════ */
+  @media (max-width: 640px) {
+    .hero-section {
+      align-items: flex-start;
+    }
+
+    .hero-container {
+      padding: 3rem 1rem 2.2rem;
+      gap: 1.8rem;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.72rem;
+      line-height: 1.7;
+      margin-bottom: 0.9rem;
+    }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 11vw, 3.3rem);
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-title span { white-space: normal; }
+
+    .hero-description {
+      font-size: 0.95rem;
+      line-height: 1.75;
+      margin-bottom: 1.8rem;
+    }
+
+    /* ── RIGHT: full container width, stays within padding ── */
+    .hero-right {
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+      max-width: none;
+    }
+
+    /* ── CTA button ── */
+    .hero-btn-mobile {
+      display: block;
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── Card frame: like category card — slight padding, rounded corners ── */
+    .hero-card-frame {
+      padding: 0;
+      border: none;
+      background: transparent;
+      backdrop-filter: none;
+      border-radius: 0;
+      overflow: hidden;
+    }
+
+    /* ── Image: category-card style — full width of frame, portrait ratio ── */
+    .hero-card-image-wrap {
+      aspect-ratio: 4 / 5;
+      width: 100%;
+      max-height: none;
+      height: auto;
+      overflow: hidden;
+      border-radius: 0;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.38);
+    }
+
+    .hero-card-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+
+    /* HOTSPOT POSITION */
+    .hotspot-wrap {
+      left: 50%;
+      top: 56%;
+      transform: translate(-50%, -50%);
+      width: auto;
+      height: auto;
+    }
+
+    .hotspot-btn {
+      width: 50px;
+      height: 50px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+      position: relative;
+      z-index: 30;
+    }
+
+    /* POPUP: open below hotspot */
+    .quick-popup-wrap {
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 12px);
+      bottom: auto;
+      transform: translateX(-50%);
+      z-index: 40;
+    }
+
+    .popup-arrow {
+      top: -8px;
+      bottom: auto;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+    }
+
+    .quick-popup {
+      width: 240px;
+      max-width: calc(100vw - 32px);
+      padding: 12px;
+      gap: 10px;
+    }
+
+    .popup-thumb {
+      width: 56px;
+      height: 56px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: unset;
+    }
+
+    .popup-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .popup-title    { font-size: 0.84rem; }
+    .popup-price    { font-size: 0.9rem;  }
+    .popup-old-price{ font-size: 0.78rem; }
+
+    .popup-arrow-btn {
+      width: 38px;
+      height: 38px;
+    }
+  }
+
+  /* SMALL MOBILE ≤ 420px */
+  @media (max-width: 420px) {
+    .hero-container {
+      padding: 2.5rem 0.85rem 2rem;
+    }
+
+    .hero-right {
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    .hero-title { font-size: 1.95rem; }
+    .hero-description { font-size: 0.92rem; }
+
+    .hotspot-wrap { top: 55%; }
+
+    .hotspot-btn {
+      width: 48px;
+      height: 48px;
+    }
+
+    .quick-popup {
+      width: 230px;
+      max-width: calc(100vw - 24px);
+      padding: 10px 12px;
+      gap: 8px;
+    }
+  }
+`}</style>
     </section>
   )
 }
