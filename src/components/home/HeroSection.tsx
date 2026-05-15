@@ -120,7 +120,7 @@ export default function HeroSection() {
         letterSpacing: '0.10em',
         textTransform: 'uppercase',
         textDecoration: 'none',
-        padding: '0.6rem 1.6rem',
+        padding: '0.75rem 1.6rem',
         borderRadius: 0,
         transition: 'background 150ms',
         ...extraStyle,

@@ -139,152 +139,130 @@ function NavbarInner() {
 
   // ── Desktop auth widget ───────────────────────────────────────────────
   const renderDesktopAuth = () => {
-    if (!isMounted || status === 'loading')
-      return (
-        <span
-          className="pointer-events-none flex items-center gap-[0.35rem] text-[0.775rem] font-bold tracking-[0.07em] uppercase opacity-0"
-          style={{ color: MENU_COLOR, fontFamily: FONT }}
+  // ✅ Show avatar dropdown only after we're mounted AND confirmed authenticated
+  if (isMounted && status === 'authenticated' && session) {
+    return (
+      <div ref={userMenuRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setIsUserMenuOpen((v) => !v)}
+          className="flex cursor-pointer items-center gap-[6px] border-none bg-transparent p-0"
         >
-          <User size={15} /> Sign In
-        </span>
-      )
-
-    if (session)
-      return (
-        <div ref={userMenuRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setIsUserMenuOpen((v) => !v)}
-            className="flex cursor-pointer items-center gap-[6px] border-none bg-transparent p-0"
-          >
-            {session.user?.image ? (
-              <img
-                src={session.user.image}
-                alt=""
-                className="h-[30px] w-[30px] rounded-full object-cover"
-                style={{ border: `1.5px solid rgba(202,134,93,.35)` }}
-              />
-            ) : (
-              <div
-                className="flex h-[30px] w-[30px] items-center justify-center rounded-full text-[0.75rem] font-bold"
-                style={{
-                  background: 'rgba(202,134,93,.12)',
-                  color: C,
-                  border: `1.5px solid rgba(202,134,93,.25)`,
-                  fontFamily: FONT,
-                }}
-              >
-                {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
-              </div>
-            )}
-            <ChevronDown
-              size={12}
-              style={{
-                color: '#aaa',
-                transition: 'transform 150ms',
-                transform: isUserMenuOpen ? 'rotate(180deg)' : 'none',
-              }}
+          {session.user?.image ? (
+            <img
+              src={session.user.image}
+              alt=""
+              className="h-[30px] w-[30px] rounded-full object-cover"
+              style={{ border: `1.5px solid rgba(202,134,93,.35)` }}
             />
-          </button>
-
-          {isUserMenuOpen && (
-            <div className="absolute top-[calc(100%+12px)] right-0 z-[200] min-w-[215px] overflow-hidden rounded-[1.25rem] border border-[rgba(26,26,46,0.08)] bg-white shadow-[0_8px_32px_rgba(26,26,46,0.12)]">
-              <div className="px-4 py-[0.875rem]" style={{ background: BG }}>
-                <p
-                  className="m-0 text-[0.9rem] font-bold"
-                  style={{ color: DARK, fontFamily: FONT }}
-                >
-                  {session.user?.name ?? ''}
-                </p>
-                <p
-                  className="m-0 mt-[2px] overflow-hidden text-[0.75rem] text-ellipsis whitespace-nowrap text-[#9ca3af]"
-                  style={{ fontFamily: FONT }}
-                >
-                  {session.user?.email ?? ''}
-                </p>
-              </div>
-              <div className="h-px bg-[rgba(26,26,46,0.06)]" />
-              {[
-                {
-                  href: '/account',
-                  icon: <User size={15} />,
-                  label: 'My Account',
-                },
-                {
-                  href: '/account/orders',
-                  icon: <Package size={15} />,
-                  label: 'My Orders',
-                },
-                ...(session.user?.role === 'admin'
-                  ? [
-                      {
-                        href: '/admin',
-                        icon: <Settings size={15} />,
-                        label: 'Admin Panel',
-                      },
-                    ]
-                  : []),
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsUserMenuOpen(false)}
-                  className="flex items-center gap-[10px] px-4 py-[0.7rem] text-[0.875rem] font-medium no-underline transition-[background,color] duration-150"
-                  style={{ color: '#6b7280', fontFamily: FONT }}
-                  onMouseEnter={(e) =>
-                    Object.assign((e.currentTarget as HTMLElement).style, {
-                      background: 'rgba(202,134,93,.06)',
-                      color: C,
-                    })
-                  }
-                  onMouseLeave={(e) =>
-                    Object.assign((e.currentTarget as HTMLElement).style, {
-                      background: '',
-                      color: '#6b7280',
-                    })
-                  }
-                >
-                  {item.icon} {item.label}
-                </Link>
-              ))}
-              <div className="h-px bg-[rgba(26,26,46,0.06)]" />
-              <button
-                type="button"
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="flex w-full cursor-pointer items-center gap-[10px] border-none bg-transparent px-4 py-[0.7rem] text-left text-[0.875rem] font-medium text-[#ef4444] transition-[background] duration-150"
-                style={{ fontFamily: FONT }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background =
-                    'rgba(239,68,68,.06)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = ''
-                }}
-              >
-                <LogOut size={15} /> Sign Out
-              </button>
+          ) : (
+            <div
+              className="flex h-[30px] w-[30px] items-center justify-center rounded-full text-[0.75rem] font-bold"
+              style={{
+                background: 'rgba(202,134,93,.12)',
+                color: C,
+                border: `1.5px solid rgba(202,134,93,.25)`,
+                fontFamily: FONT,
+              }}
+            >
+              {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
             </div>
           )}
-        </div>
-      )
+          <ChevronDown
+            size={12}
+            style={{
+              color: '#aaa',
+              transition: 'transform 150ms',
+              transform: isUserMenuOpen ? 'rotate(180deg)' : 'none',
+            }}
+          />
+        </button>
 
-    return (
-      <Link
-        href="/login"
-        className="flex items-center gap-[0.35rem] text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline transition-colors duration-150"
-        style={{
-          color: hovered === 'signin' ? C : MENU_COLOR,
-          fontFamily: FONT,
-        }}
-        onMouseEnter={() => setHovered('signin')}
-        onMouseLeave={() => setHovered(null)}
-      >
-        <User size={15} />
-        Sign In
-      </Link>
+        {isUserMenuOpen && (
+          <div className="absolute top-[calc(100%+12px)] right-0 z-[200] min-w-[215px] overflow-hidden rounded-[1.25rem] border border-[rgba(26,26,46,0.08)] bg-white shadow-[0_8px_32px_rgba(26,26,46,0.12)]">
+            <div className="px-4 py-[0.875rem]" style={{ background: BG }}>
+              <p
+                className="m-0 text-[0.9rem] font-bold"
+                style={{ color: DARK, fontFamily: FONT }}
+              >
+                {session.user?.name ?? ''}
+              </p>
+              <p
+                className="m-0 mt-[2px] overflow-hidden text-[0.75rem] text-ellipsis whitespace-nowrap text-[#9ca3af]"
+                style={{ fontFamily: FONT }}
+              >
+                {session.user?.email ?? ''}
+              </p>
+            </div>
+            <div className="h-px bg-[rgba(26,26,46,0.06)]" />
+            {[
+              { href: '/account', icon: <User size={15} />, label: 'My Account' },
+              { href: '/account/orders', icon: <Package size={15} />, label: 'My Orders' },
+              ...(session.user?.role === 'admin'
+                ? [{ href: '/admin', icon: <Settings size={15} />, label: 'Admin Panel' }]
+                : []),
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsUserMenuOpen(false)}
+                className="flex items-center gap-[10px] px-4 py-[0.7rem] text-[0.875rem] font-medium no-underline transition-[background,color] duration-150"
+                style={{ color: '#6b7280', fontFamily: FONT }}
+                onMouseEnter={(e) =>
+                  Object.assign((e.currentTarget as HTMLElement).style, {
+                    background: 'rgba(202,134,93,.06)',
+                    color: C,
+                  })
+                }
+                onMouseLeave={(e) =>
+                  Object.assign((e.currentTarget as HTMLElement).style, {
+                    background: '',
+                    color: '#6b7280',
+                  })
+                }
+              >
+                {item.icon} {item.label}
+              </Link>
+            ))}
+            <div className="h-px bg-[rgba(26,26,46,0.06)]" />
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="flex w-full cursor-pointer items-center gap-[10px] border-none bg-transparent px-4 py-[0.7rem] text-left text-[0.875rem] font-medium text-[#ef4444] transition-[background] duration-150"
+              style={{ fontFamily: FONT }}
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.06)'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLElement).style.background = ''
+              }}
+            >
+              <LogOut size={15} /> Sign Out
+            </button>
+          </div>
+        )}
+      </div>
     )
   }
 
+  // ✅ Default: Sign In renders immediately — no isMounted gate, no loading check
+  // Works on SSR too, so it appears at the same time as all other nav links
+  return (
+    <Link
+      href="/login"
+      className="flex items-center gap-[0.35rem] text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline transition-colors duration-150"
+      style={{
+        color: hovered === 'signin' ? C : MENU_COLOR,
+        fontFamily: FONT,
+      }}
+      onMouseEnter={() => setHovered('signin')}
+      onMouseLeave={() => setHovered(null)}
+    >
+      <User size={15} />
+      Sign In
+    </Link>
+  )
+}
   return (
     <>
       <style>{`
