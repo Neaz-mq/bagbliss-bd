@@ -305,7 +305,7 @@ export default function CategoryStrip() {
           font-family: 'Poppins', sans-serif;
           font-size: clamp(2.2rem, 4vw, 4.6rem);
           line-height: 0.95;
-          font-weight: 700;
+          font-weight: 500;
           color: #17172f;
           letter-spacing: -0.055em;
         }
@@ -636,7 +636,7 @@ export default function CategoryStrip() {
           <div className="cs-header">
             <div>
               <h2 className="cs-title">Collection list</h2>
-              <p className="cs-subtitle">Discover timeless bags for every journey</p>
+              <p className="cs-subtitle">Elevate your everyday aesthetic on the move</p>
             </div>
 
             <div className="cs-nav">

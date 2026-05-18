@@ -401,7 +401,7 @@ export default function HeroSection() {
     width: 100%;
     font-family: ${FONT};
     font-size: clamp(3.4rem, 6vw, 6.4rem);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 0.92;
     letter-spacing: -0.045em;
     color: #fff;

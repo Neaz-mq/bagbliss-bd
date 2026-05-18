@@ -598,7 +598,7 @@ function NavbarInner() {
                   <button
                     type="submit"
                     suppressHydrationWarning
-                    className="cursor-pointer  border-none text-[0.75rem] font-bold text-white"
+                    className="cursor-pointer rounded-2xl  border-none text-[0.75rem] font-bold text-white"
                     style={{
                       background: C,
                       fontFamily: FONT,
