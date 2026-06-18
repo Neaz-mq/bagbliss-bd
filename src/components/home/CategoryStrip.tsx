@@ -58,7 +58,6 @@ function useVisibleCount() {
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth
-      // On mobile (≤640) always show 1 full card
       if (w <= 640) setCount(1)
       else if (w < 900) setCount(2)
       else setCount(3)
@@ -71,7 +70,6 @@ function useVisibleCount() {
   return count
 }
 
-// On mobile the GAP between cards should be 0 so each card is exactly 100% wide
 function useGap() {
   const [gap, setGap] = useState(24)
   useEffect(() => {
@@ -192,7 +190,6 @@ export default function CategoryStrip() {
       ? (containerWidth - GAP * (visibleCount - 1)) / visibleCount
       : 0
 
-  // Each slide step = one card width + gap
   const moveSize = cardWidth + GAP
 
   const [enableTransition, setEnableTransition] = useState(true)
@@ -312,12 +309,17 @@ export default function CategoryStrip() {
           line-height: 1.7;
         }
 
-        /* ─── NAV BUTTONS ─── */
+        /* ─── NAV BUTTONS (desktop — shown inside header) ─── */
         .cs-nav {
           display: flex;
           align-items: center;
           gap: 14px;
           flex-shrink: 0;
+        }
+
+        /* Bottom nav — hidden on desktop, shown on mobile */
+        .cs-nav-bottom {
+          display: none;
         }
 
         .cs-btn {
@@ -397,13 +399,14 @@ export default function CategoryStrip() {
         /* ─── CONTENT (default visible) ─── */
         .cs-content {
           position: absolute;
-          left: 0; /* was 34px */
-          right: 0; /* was 34px */
+          left: 0;
+          right: 0;
           bottom: 38px;
           z-index: 2;
           transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-          text-align: center; /* ← ADD */
+          text-align: center;
         }
+
         .cs-content h3 {
           margin: 0;
           font-family: 'Poppins', sans-serif;
@@ -438,8 +441,8 @@ export default function CategoryStrip() {
           opacity: 0;
           transform: translateY(36px);
           transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-          display: flex; /* ← ADD */
-          justify-content: center; /* ← ADD */
+          display: flex;
+          justify-content: center;
         }
 
         .cs-card:hover .cs-hover {
@@ -520,19 +523,17 @@ export default function CategoryStrip() {
 
         /* ══════════════════════════════
            MOBILE  (max 640px)
-           — 1 full card per slide, no cut-off
-           — shorter card height
         ══════════════════════════════ */
         @media (max-width: 640px) {
           .cs-section {
             padding: 56px 0 60px;
           }
 
-          /* Side padding gives the card gap from screen edges */
           .cs-container {
             padding: 0 1rem;
           }
 
+          /* Header: hide the nav buttons that are inside the header */
           .cs-header {
             flex-direction: column;
             align-items: center;
@@ -541,6 +542,20 @@ export default function CategoryStrip() {
             gap: 20px;
             margin-bottom: 28px;
             padding: 0;
+          }
+
+          /* Hide top nav on mobile */
+          .cs-nav {
+            display: none;
+          }
+
+          /* Show bottom nav on mobile, centered below the slider */
+          .cs-nav-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-top: 24px;
           }
 
           .cs-title {
@@ -554,39 +569,32 @@ export default function CategoryStrip() {
             line-height: 1.5;
           }
 
-          .cs-nav {
-            gap: 10px;
-            justify-content: center;
-          }
-
           .cs-btn {
             width: 42px;
             height: 42px;
           }
 
-          /* Slider full viewport width */
           .cs-slider {
             width: 100%;
             overflow: hidden;
           }
 
-          /* Gap = 0 so each card snaps fully into view */
           .cs-track {
             gap: 0;
           }
 
-          /* Card: sharp corners, shorter 4:3 ratio */
           .cs-card {
             border-radius: 0;
             aspect-ratio: 4 / 3;
           }
 
           .cs-content {
-            left: 0; /* was 20px */
-            right: 0; /* was 20px */
+            left: 0;
+            right: 0;
             bottom: 22px;
             text-align: center;
           }
+
           .cs-content h3 {
             font-size: clamp(1.35rem, 5.5vw, 1.7rem);
             letter-spacing: -0.03em;
@@ -672,11 +680,17 @@ export default function CategoryStrip() {
             height: 50px;
             padding: 0 18px;
           }
+
+          .cs-nav-bottom {
+            margin-top: 20px;
+            gap: 10px;
+          }
         }
       `}</style>
 
       <section className="cs-section">
         <div className="cs-container">
+          {/* Header — top nav visible only on tablet/desktop */}
           <div className="cs-header">
             <div>
               <h2 className="cs-title">Collection list</h2>
@@ -685,6 +699,7 @@ export default function CategoryStrip() {
               </p>
             </div>
 
+            {/* Top nav: hidden on mobile via CSS */}
             <div className="cs-nav">
               <button className="cs-btn" onClick={goPrev}>
                 <ChevronLeft size={22} />
@@ -695,6 +710,7 @@ export default function CategoryStrip() {
             </div>
           </div>
 
+          {/* Slider */}
           <div
             className="cs-slider"
             ref={containerRef}
@@ -730,6 +746,16 @@ export default function CategoryStrip() {
                 />
               ))}
             </div>
+          </div>
+
+          {/* Bottom nav: visible only on mobile via CSS */}
+          <div className="cs-nav-bottom">
+            <button className="cs-btn" onClick={goPrev}>
+              <ChevronLeft size={22} />
+            </button>
+            <button className="cs-btn" onClick={goNext}>
+              <ChevronRight size={22} />
+            </button>
           </div>
         </div>
       </section>
