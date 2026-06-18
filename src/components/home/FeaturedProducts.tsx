@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Heart, Eye, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { Heart, Eye, ChevronLeft, ChevronRight, ArrowRight, ShoppingBag } from 'lucide-react'
 import { IProduct } from '@/types'
+import { useCartStore } from '@/store/cartStore'
+import { useWishlistStore } from '@/store/wishlistStore'
+import toast from 'react-hot-toast'
 
 // ── Normalize raw DB product → IProduct shape ────────────────────────────
 function normalizeProduct(raw: Record<string, unknown>): IProduct {
@@ -67,13 +70,53 @@ function FpCard({
   product: IProduct
   router: ReturnType<typeof useRouter>
 }) {
-  const [wished, setWished] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
+
+  // ✅ Wired to global cart store (same pattern as ShopProductCard)
+  const addItem = useCartStore((s) => s.addItem)
+  const openCart = useCartStore((s) => s.openCart)
+
+  // ✅ Wired to global wishlist store instead of local-only useState
+  const toggleWish = useWishlistStore((s) => s.toggleItem)
+  const inWishlist = useWishlistStore((s) => s.items.includes(product._id))
 
   const displayPrice = product.discountPrice ?? product.price
   const originalPrice = product.discountPrice ? product.price : null
   const discountPct = originalPrice
     ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100)
     : null
+
+  const isOutOfStock = product.stock === 0
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isAdding || isOutOfStock) return
+
+    setIsAdding(true)
+
+    addItem({
+      product,
+      quantity: 1,
+      selectedColor: product.colors?.[0]?.name ?? 'Default',
+      price: displayPrice,
+    })
+
+    toast.success(`🛍️ ${product.name} added to cart!`)
+
+    // Brief delay so the user sees the "Adding…" state, then open the cart drawer
+    setTimeout(() => {
+      setIsAdding(false)
+      openCart()
+    }, 500)
+  }
+
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleWish(product._id)
+    toast.success(inWishlist ? 'Removed from wishlist' : '❤️ Added to wishlist!')
+  }
 
   return (
     <div className="fp-card">
@@ -92,11 +135,11 @@ function FpCard({
 
         <div className="fp-actions">
           <button
-            className={`fp-icon-btn${wished ? ' fp-icon-btn--wished' : ''}`}
-            onClick={() => setWished((w) => !w)}
+            className={`fp-icon-btn${inWishlist ? ' fp-icon-btn--wished' : ''}`}
+            onClick={handleWishlist}
             aria-label="Wishlist"
           >
-            <Heart size={15} fill={wished ? '#ffffff' : 'none'} strokeWidth={2} />
+            <Heart size={15} fill={inWishlist ? '#ffffff' : 'none'} strokeWidth={2} />
           </button>
           <button
             className="fp-icon-btn"
@@ -120,6 +163,29 @@ function FpCard({
         ) : (
           <div className="fp-img-placeholder" />
         )}
+      </div>
+
+      {/* ADD TO CART hover button — slides up from bottom */}
+      <div className="fp-cart-hover">
+        <button
+          className="fp-add-to-cart-btn"
+          onClick={handleAddToCart}
+          disabled={isAdding || isOutOfStock}
+        >
+          {isAdding ? (
+            <>
+              <span className="fp-spinner" />
+              <span>ADDING…</span>
+            </>
+          ) : isOutOfStock ? (
+            <span>OUT OF STOCK</span>
+          ) : (
+            <>
+              <span>ADD TO CART</span>
+              <ArrowRight size={18} strokeWidth={2.2} />
+            </>
+          )}
+        </button>
       </div>
     </div>
   )
@@ -350,6 +416,7 @@ export default function FeaturedProducts() {
           position: relative;
           height: 420px;
           box-sizing: border-box;
+          overflow: hidden;
           transition: box-shadow 0.3s ease;
         }
 
@@ -454,6 +521,12 @@ export default function FeaturedProducts() {
           justify-content: center;
           overflow: hidden;
           min-height: 0;
+          /* Shift image up slightly on hover to make room for button */
+          transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .fp-card:hover .fp-img-wrap {
+          transform: translateY(-8px);
         }
 
         .fp-img {
@@ -474,6 +547,78 @@ export default function FeaturedProducts() {
           height: 100%;
           background: #e8e4df;
           border-radius: 4px;
+        }
+
+        /* ── ADD TO CART HOVER BUTTON ── */
+        .fp-cart-hover {
+          position: absolute;
+          left: 16px;
+          right: 16px;
+          bottom: 16px;
+          z-index: 4;
+          opacity: 0;
+          transform: translateY(24px);
+          transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+                      transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .fp-card:hover .fp-cart-hover {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .fp-add-to-cart-btn {
+          width: 100%;
+          height: 54px;
+          border: none;
+          border-radius: 999px;
+          background: #d08a60;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 24px;
+          cursor: pointer;
+          transition: background 0.3s ease, transform 0.3s ease,
+                      box-shadow 0.3s ease;
+        }
+
+        .fp-add-to-cart-btn:disabled {
+          opacity: 0.7;
+          cursor: default;
+        }
+
+        .fp-add-to-cart-btn span {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.88rem;
+          font-weight: 600;
+          letter-spacing: 0.07em;
+          color: #ffffff;
+        }
+
+        .fp-add-to-cart-btn svg {
+          color: #ffffff;
+          flex-shrink: 0;
+        }
+
+        .fp-add-to-cart-btn:hover:not(:disabled) {
+          background: #bf7a50;
+          transform: scale(1.015);
+          box-shadow: 0 6px 20px rgba(208, 138, 96, 0.4);
+        }
+
+        /* ── SPINNER (for "Adding…" state) ── */
+        .fp-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.4);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          display: inline-block;
+          animation: fp-spin 0.7s linear infinite;
+        }
+
+        @keyframes fp-spin {
+          to { transform: rotate(360deg); }
         }
 
         /* ── SKELETON ── */
@@ -617,6 +762,10 @@ export default function FeaturedProducts() {
           .fp-cta-wrap {
             margin-top: 36px;
           }
+
+          .fp-add-to-cart-btn {
+            height: 50px;
+          }
         }
 
         /* ══════════════════════════════
@@ -631,7 +780,6 @@ export default function FeaturedProducts() {
             padding: 0 1rem;
           }
 
-          /* Header: centered, no inline nav */
           .fp-header {
             flex-direction: column;
             align-items: center;
@@ -649,12 +797,10 @@ export default function FeaturedProducts() {
             font-size: 0.82rem;
           }
 
-          /* Hide top nav on mobile */
           .fp-nav {
             display: none;
           }
 
-          /* Show bottom nav on mobile */
           .fp-nav-bottom {
             display: flex;
             align-items: center;
@@ -668,7 +814,6 @@ export default function FeaturedProducts() {
             height: 42px;
           }
 
-          /* Slider: no gap, full width card */
           .fp-track {
             gap: 0;
           }
@@ -677,6 +822,12 @@ export default function FeaturedProducts() {
             height: 360px;
             border-radius: 0;
             padding: 18px 18px 0;
+          }
+
+          /* On mobile show cart button on :active (touch) */
+          .fp-card:active .fp-cart-hover {
+            opacity: 1;
+            transform: translateY(0);
           }
 
           .fp-name {
@@ -690,6 +841,21 @@ export default function FeaturedProducts() {
           .fp-icon-btn {
             width: 34px;
             height: 34px;
+          }
+
+          .fp-add-to-cart-btn {
+            height: 48px;
+            padding: 0 18px;
+          }
+
+          .fp-add-to-cart-btn span {
+            font-size: 0.82rem;
+          }
+
+          .fp-cart-hover {
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
           }
 
           .fp-cta-wrap {
@@ -736,6 +902,11 @@ export default function FeaturedProducts() {
           .fp-nav-bottom {
             gap: 10px;
             margin-top: 18px;
+          }
+
+          .fp-add-to-cart-btn {
+            height: 44px;
+            padding: 0 16px;
           }
 
           .fp-cta-btn {
