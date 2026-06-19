@@ -5,13 +5,48 @@ import Link from 'next/link'
 import { ArrowRight, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 
+// ── Minimal product shape we need from the API ────────────────────────────
+interface HeroProduct {
+  _id: string
+  name: string
+  slug: string
+  price: number
+  discountPrice?: number
+  mainImage?: { url: string; alt: string }
+}
+
+// ── Normalize raw DB product → HeroProduct ────────────────────────────────
+function normalizeHeroProduct(raw: Record<string, unknown>): HeroProduct {
+  const hasDiscount =
+    raw.originalPrice &&
+    typeof raw.originalPrice === 'number' &&
+    typeof raw.price === 'number' &&
+    raw.originalPrice > (raw.price as number)
+
+  const rawImages = (raw.images as unknown[]) ?? []
+  const firstImageUrl =
+    rawImages.length > 0 && typeof rawImages[0] === 'string'
+      ? (rawImages[0] as string)
+      : ''
+
+  return {
+    _id: raw._id as string,
+    name: (raw.name as string) ?? '',
+    slug: (raw.slug as string) ?? '',
+    price: hasDiscount ? (raw.originalPrice as number) : (raw.price as number),
+    discountPrice: hasDiscount ? (raw.price as number) : undefined,
+    mainImage: {
+      url: firstImageUrl,
+      alt: (raw.name as string) ?? 'Product',
+    },
+  }
+}
+
+// ── Animation variants ────────────────────────────────────────────────────
 const staggerContainer = {
   hidden: {},
   visible: {
-    transition: {
-      staggerChildren: 0.11,
-      delayChildren: 0.05,
-    },
+    transition: { staggerChildren: 0.11, delayChildren: 0.05 },
   },
 }
 
@@ -20,12 +55,7 @@ const textLine = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 72,
-      damping: 22,
-      mass: 0.9,
-    },
+    transition: { type: 'spring', stiffness: 72, damping: 22, mass: 0.9 },
   },
 }
 
@@ -35,27 +65,15 @@ const cardWrapper = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 42,
-      damping: 20,
-      mass: 1,
-      delay: 0.2,
-    },
+    transition: { type: 'spring', stiffness: 42, damping: 20, mass: 1, delay: 0.2 },
   },
 }
 
 const imageReveal = {
-  hidden: {
-    clipPath: 'inset(100% 0 0 0)',
-  },
+  hidden: { clipPath: 'inset(100% 0 0 0)' },
   visible: {
     clipPath: 'inset(0% 0 0 0)',
-    transition: {
-      duration: 1.15,
-      ease: [0.22, 1, 0.36, 1],
-      delay: 0.3,
-    },
+    transition: { duration: 1.15, ease: [0.22, 1, 0.36, 1], delay: 0.3 },
   },
 }
 
@@ -63,11 +81,7 @@ const imageKenBurns = {
   hidden: { scale: 1.08 },
   visible: {
     scale: 1,
-    transition: {
-      duration: 1.8,
-      ease: [0.22, 1, 0.36, 1],
-      delay: 0.3,
-    },
+    transition: { duration: 1.8, ease: [0.22, 1, 0.36, 1], delay: 0.3 },
   },
 }
 
@@ -77,26 +91,43 @@ const popupVariant = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 280,
-      damping: 26,
-    },
+    transition: { type: 'spring', stiffness: 280, damping: 26 },
   },
   exit: {
     opacity: 0,
     y: 6,
     scale: 0.97,
-    transition: {
-      duration: 0.18,
-      ease: 'easeIn',
-    },
+    transition: { duration: 0.18, ease: 'easeIn' },
   },
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 export default function HeroSection() {
   const [mounted, setMounted] = useState(false)
   const [popupOpen, setPopupOpen] = useState(false)
+
+  // ── Dynamic product state ──
+  const [heroProduct, setHeroProduct] = useState<HeroProduct | null>(null)
+  const [productLoading, setProductLoading] = useState(true)
+
+  // ── Fetch one featured product on mount ──
+  useEffect(() => {
+    fetch('/api/products?featured=true&limit=1')
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then((data) => {
+        const products = data.products ?? []
+        if (products.length > 0) {
+          setHeroProduct(normalizeHeroProduct(products[0] as Record<string, unknown>))
+        }
+      })
+      .catch(() => {
+        // silently fail — popup just won't show a product
+      })
+      .finally(() => setProductLoading(false))
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 80)
@@ -107,9 +138,7 @@ export default function HeroSection() {
   const CD = '#b5724a'
   const FONT = "'Poppins', system-ui, sans-serif"
 
-  const ctaButton = (
-    extraStyle: React.CSSProperties = {}
-  ) => (
+  const ctaButton = (extraStyle: React.CSSProperties = {}) => (
     <Link
       href="/shop"
       style={{
@@ -130,12 +159,12 @@ export default function HeroSection() {
         whiteSpace: 'nowrap',
         ...extraStyle,
       }}
-      onMouseEnter={e => {
+      onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement
         el.style.background = CD
         el.style.transform = 'translateY(-2px)'
       }}
-      onMouseLeave={e => {
+      onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement
         el.style.background = C
         el.style.transform = 'translateY(0px)'
@@ -145,6 +174,10 @@ export default function HeroSection() {
       <ArrowRight size={15} strokeWidth={2.4} />
     </Link>
   )
+
+  // ── Derived display values for popup ──
+  const displayPrice = heroProduct?.discountPrice ?? heroProduct?.price
+  const originalPrice = heroProduct?.discountPrice ? heroProduct.price : null
 
   return (
     <section className="hero-section">
@@ -188,9 +221,7 @@ export default function HeroSection() {
           initial="hidden"
           animate={mounted ? 'visible' : 'hidden'}
         >
-          <div className="hero-btn-mobile">
-            {ctaButton({ width: '100%' })}
-          </div>
+          <div className="hero-btn-mobile">{ctaButton({ width: '100%' })}</div>
 
           <div className="hero-card-frame">
             <motion.div
@@ -213,91 +244,117 @@ export default function HeroSection() {
               <span>Premium Collection</span>
             </div>
 
-            <div className="hotspot-wrap">
-              {!popupOpen && (
-                <>
-                  <span className="hotspot-ring hotspot-ring-1" />
-                  <span className="hotspot-ring hotspot-ring-2" />
-                </>
-              )}
+            {/* ── HOTSPOT — only show when a product loaded ── */}
+            {!productLoading && heroProduct && (
+              <div className="hotspot-wrap">
+                {!popupOpen && (
+                  <>
+                    <span className="hotspot-ring hotspot-ring-1" />
+                    <span className="hotspot-ring hotspot-ring-2" />
+                  </>
+                )}
 
-              <button
-                aria-label="Quick product view"
-                onClick={() => setPopupOpen(v => !v)}
-                className="hotspot-btn"
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  {popupOpen ? (
-                    <motion.span
-                      key="x"
-                      initial={{ rotate: -90, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      exit={{ rotate: 90, opacity: 0 }}
-                    >
-                      <X size={16} strokeWidth={2.5} color="#333" />
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="plus"
-                      initial={{ rotate: 90, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      exit={{ rotate: -90, opacity: 0 }}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#333"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
+                <button
+                  aria-label="Quick product view"
+                  onClick={() => setPopupOpen((v) => !v)}
+                  className="hotspot-btn"
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    {popupOpen ? (
+                      <motion.span
+                        key="x"
+                        initial={{ rotate: -90, opacity: 0 }}
+                        animate={{ rotate: 0, opacity: 1 }}
+                        exit={{ rotate: 90, opacity: 0 }}
                       >
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
+                        <X size={16} strokeWidth={2.5} color="#333" />
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="plus"
+                        initial={{ rotate: 90, opacity: 0 }}
+                        animate={{ rotate: 0, opacity: 1 }}
+                        exit={{ rotate: -90, opacity: 0 }}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#333"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                        >
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </button>
 
-              <AnimatePresence>
-                {popupOpen && (
-                  <div className="quick-popup-wrap">
-                    <motion.div
-                      variants={popupVariant}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="quick-popup"
-                    >
-                      <div className="popup-arrow" />
+                <AnimatePresence>
+                  {popupOpen && (
+                    <div className="quick-popup-wrap">
+                      <motion.div
+                        variants={popupVariant}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="quick-popup"
+                      >
+                        <div className="popup-arrow" />
 
-                      <Link href="/products/backpack-bag" className="popup-thumb">
-                        <img
-                          src="https://isabel-demo.myshopify.com/cdn/shop/files/p-6-_2.jpg?crop=center&height=620&v=1735018282&width=645"
-                          alt="Backpack"
-                        />
-                      </Link>
-
-                      <div className="popup-content">
-                        <Link href="/products/backpack-bag" className="popup-title">
-                          Backpack bag
+                        {/* ── Thumbnail: real product image ── */}
+                        <Link
+                          href={`/product/${heroProduct.slug}`}
+                          className="popup-thumb"
+                        >
+                          {heroProduct.mainImage?.url ? (
+                            <img
+                              src={heroProduct.mainImage.url}
+                              alt={heroProduct.mainImage.alt}
+                            />
+                          ) : (
+                            <div className="popup-thumb-placeholder" />
+                          )}
                         </Link>
 
-                        <div className="popup-price-row">
-                          <span className="popup-price">৳2,690</span>
-                          <span className="popup-old-price">৳5,990</span>
-                        </div>
-                      </div>
+                        {/* ── Name + price ── */}
+                        <div className="popup-content">
+                          <Link
+                            href={`/product/${heroProduct.slug}`}
+                            className="popup-title"
+                          >
+                            {heroProduct.name}
+                          </Link>
 
-                      <Link href="/shop" className="popup-arrow-btn">
-                        <ArrowRight size={14} color="#fff" strokeWidth={2.5} />
-                      </Link>
-                    </motion.div>
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
+                          <div className="popup-price-row">
+                            <span className="popup-price">
+                              ৳{displayPrice?.toLocaleString()}
+                            </span>
+                            {originalPrice && (
+                              <span className="popup-old-price">
+                                ৳{originalPrice.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* ── Arrow → product detail page ── */}
+                        <Link
+                          href={`/product/${heroProduct.slug}`}
+                          className="popup-arrow-btn"
+                          aria-label={`View ${heroProduct.name}`}
+                        >
+                          <ArrowRight size={14} color="#fff" strokeWidth={2.5} />
+                        </Link>
+                      </motion.div>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -407,10 +464,7 @@ export default function HeroSection() {
     color: #fff;
   }
 
-  .hero-title span {
-    display: block;
-    width: 100%;
-  }
+  .hero-title span { display: block; width: 100%; }
 
   .hero-description {
     max-width: 620px;
@@ -439,14 +493,11 @@ export default function HeroSection() {
     backdrop-filter: blur(5px);
   }
 
-  /* ── desktop image: narrow + tall portrait ── */
   .hero-card-image-wrap {
     overflow: hidden;
     width: 100%;
     aspect-ratio: 5 / 6;
-    box-shadow:
-      0 30px 80px rgba(0,0,0,0.5),
-      0 0 0 1px rgba(255,255,255,0.04);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
   }
 
   .hero-card-image {
@@ -520,7 +571,7 @@ export default function HeroSection() {
     background: #fff;
   }
 
-  /* ── POPUP — shared base (desktop & mobile) ── */
+  /* POPUP */
   .quick-popup-wrap {
     position: absolute;
     left: 50%;
@@ -531,7 +582,7 @@ export default function HeroSection() {
 
   .quick-popup {
     position: relative;
-    width: 240px;
+    width: 260px;
     padding: 12px;
     display: flex;
     align-items: center;
@@ -550,12 +601,13 @@ export default function HeroSection() {
     background: #fff;
   }
 
-  /* ── thumb: same on all sizes ── */
   .popup-thumb {
     width: 56px;
     height: 56px;
     overflow: hidden;
     flex-shrink: 0;
+    display: block;
+    background: #f4f2ef;
   }
 
   .popup-thumb img {
@@ -563,6 +615,12 @@ export default function HeroSection() {
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  .popup-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #e8e4df;
   }
 
   .popup-content {
@@ -581,13 +639,16 @@ export default function HeroSection() {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: color 200ms ease;
   }
+
+  .popup-title:hover { color: ${C}; }
 
   .popup-price-row {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
     gap: 6px;
+    flex-wrap: wrap;
   }
 
   .popup-price {
@@ -613,10 +674,13 @@ export default function HeroSection() {
     justify-content: center;
     background: ${C};
     text-decoration: none;
-    transition: background 200ms ease;
+    transition: background 200ms ease, transform 200ms ease;
   }
 
-  .popup-arrow-btn:hover { background: ${CD}; }
+  .popup-arrow-btn:hover {
+    background: ${CD};
+    transform: scale(1.06);
+  }
 
   @keyframes smoothPing {
     0%   { transform: scale(1);   opacity: 0.7; }
@@ -671,36 +735,21 @@ export default function HeroSection() {
 
     .hero-btn-desktop { display: none; }
     .hero-btn-mobile  { display: block; margin-bottom: 1rem; }
-
     .floating-accent-card { display: none; }
 
-    /* image on tablet: keep portrait ratio */
     .hero-card-image-wrap {
       aspect-ratio: 5 / 6;
       max-height: none;
     }
   }
 
-  /* ═══════════════════════════════════════════
-     MOBILE  ≤ 640px
-     • margin-top via padding-top
-     • Image: category-card style — full container width, side gaps, rounded corners
-  ═══════════════════════════════════════════ */
+  /* MOBILE ≤ 640px */
   @media (max-width: 640px) {
-    .hero-section {
-      align-items: flex-start;
-    }
+    .hero-section { align-items: flex-start; }
 
-    .hero-container {
-      padding: 3rem 1rem 2.2rem;
-      gap: 1.8rem;
-    }
+    .hero-container { padding: 3rem 1rem 2.2rem; gap: 1.8rem; }
 
-    .hero-eyebrow {
-      font-size: 0.72rem;
-      line-height: 1.7;
-      margin-bottom: 0.9rem;
-    }
+    .hero-eyebrow { font-size: 0.72rem; line-height: 1.7; margin-bottom: 0.9rem; }
 
     .hero-title {
       font-size: clamp(2.2rem, 11vw, 3.3rem);
@@ -710,27 +759,12 @@ export default function HeroSection() {
 
     .hero-title span { white-space: normal; }
 
-    .hero-description {
-      font-size: 0.95rem;
-      line-height: 1.75;
-      margin-bottom: 1.8rem;
-    }
+    .hero-description { font-size: 0.95rem; line-height: 1.75; margin-bottom: 1.8rem; }
 
-    /* ── RIGHT: full container width, stays within padding ── */
-    .hero-right {
-      width: 100%;
-      margin-left: 0;
-      margin-right: 0;
-      max-width: none;
-    }
+    .hero-right { width: 100%; margin-left: 0; margin-right: 0; max-width: none; }
 
-    /* ── CTA button ── */
-    .hero-btn-mobile {
-      display: block;
-      margin-bottom: 0.75rem;
-    }
+    .hero-btn-mobile { display: block; margin-bottom: 0.75rem; }
 
-    /* ── Card frame: like category card — slight padding, rounded corners ── */
     .hero-card-frame {
       padding: 0;
       border: none;
@@ -740,7 +774,6 @@ export default function HeroSection() {
       overflow: hidden;
     }
 
-    /* ── Image: category-card style — full width of frame, portrait ratio ── */
     .hero-card-image-wrap {
       aspect-ratio: 4 / 5;
       width: 100%;
@@ -751,108 +784,34 @@ export default function HeroSection() {
       box-shadow: 0 16px 48px rgba(0,0,0,0.38);
     }
 
-    .hero-card-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center top;
-      display: block;
-    }
+    .hero-card-image { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
 
-    /* HOTSPOT POSITION */
-    .hotspot-wrap {
-      left: 50%;
-      top: 56%;
-      transform: translate(-50%, -50%);
-      width: auto;
-      height: auto;
-    }
+    .hotspot-wrap { left: 50%; top: 56%; transform: translate(-50%, -50%); width: auto; height: auto; }
 
-    .hotspot-btn {
-      width: 50px;
-      height: 50px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.16);
-      position: relative;
-      z-index: 30;
-    }
+    .hotspot-btn { width: 50px; height: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.16); position: relative; z-index: 30; }
 
-    /* POPUP: open below hotspot */
-    .quick-popup-wrap {
-      position: absolute;
-      left: 50%;
-      top: calc(100% + 12px);
-      bottom: auto;
-      transform: translateX(-50%);
-      z-index: 40;
-    }
+    .quick-popup-wrap { position: absolute; left: 50%; top: calc(100% + 12px); bottom: auto; transform: translateX(-50%); z-index: 40; }
 
-    .popup-arrow {
-      top: -8px;
-      bottom: auto;
-      left: 50%;
-      transform: translateX(-50%) rotate(45deg);
-    }
+    .popup-arrow { top: -8px; bottom: auto; left: 50%; transform: translateX(-50%) rotate(45deg); }
 
-    .quick-popup {
-      width: 240px;
-      max-width: calc(100vw - 32px);
-      padding: 12px;
-      gap: 10px;
-    }
+    .quick-popup { width: 240px; max-width: calc(100vw - 32px); padding: 12px; gap: 10px; }
 
-    .popup-thumb {
-      width: 56px;
-      height: 56px;
-      overflow: hidden;
-      flex-shrink: 0;
-      background: unset;
-    }
-
-    .popup-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
+    .popup-thumb { width: 56px; height: 56px; }
     .popup-title    { font-size: 0.84rem; }
     .popup-price    { font-size: 0.9rem;  }
     .popup-old-price{ font-size: 0.78rem; }
-
-    .popup-arrow-btn {
-      width: 38px;
-      height: 38px;
-    }
+    .popup-arrow-btn { width: 38px; height: 38px; }
   }
 
   /* SMALL MOBILE ≤ 420px */
   @media (max-width: 420px) {
-    .hero-container {
-      padding: 2.5rem 0.85rem 2rem;
-    }
-
-    .hero-right {
-      width: 100%;
-      margin-left: 0;
-      margin-right: 0;
-    }
-
+    .hero-container { padding: 2.5rem 0.85rem 2rem; }
+    .hero-right { width: 100%; margin-left: 0; margin-right: 0; }
     .hero-title { font-size: 1.95rem; }
     .hero-description { font-size: 0.92rem; }
-
     .hotspot-wrap { top: 55%; }
-
-    .hotspot-btn {
-      width: 48px;
-      height: 48px;
-    }
-
-    .quick-popup {
-      width: 230px;
-      max-width: calc(100vw - 24px);
-      padding: 10px 12px;
-      gap: 8px;
-    }
+    .hotspot-btn { width: 48px; height: 48px; }
+    .quick-popup { width: 230px; max-width: calc(100vw - 24px); padding: 10px 12px; gap: 8px; }
   }
 `}</style>
     </section>
