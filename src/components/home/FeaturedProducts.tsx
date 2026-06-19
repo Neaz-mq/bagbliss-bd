@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Heart, Eye, ChevronLeft, ChevronRight, ArrowRight, ShoppingBag } from 'lucide-react'
+import { Heart, Eye, ChevronLeft, ChevronRight, ArrowRight, ShoppingBag, X, Minus, Plus } from 'lucide-react'
 import { IProduct } from '@/types'
 import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
@@ -62,21 +62,673 @@ function normalizeProduct(raw: Record<string, unknown>): IProduct {
   }
 }
 
-// ── Single product card ──────────────────────────────────────────────────
-function FpCard({
-  product,
-  router,
-}: {
-  product: IProduct
-  router: ReturnType<typeof useRouter>
-}) {
-  const [isAdding, setIsAdding] = useState(false)
 
-  // ✅ Wired to global cart store (same pattern as ShopProductCard)
+// ── Quick View Modal ─────────────────────────────────────────────────────
+function QuickViewModal({
+  product,
+  onClose,
+}: {
+  product: IProduct | null
+  onClose: () => void
+}) {
   const addItem = useCartStore((s) => s.addItem)
   const openCart = useCartStore((s) => s.openCart)
+  const toggleWish = useWishlistStore((s) => s.toggleItem)
+  const inWishlist = useWishlistStore((s) =>
+    product ? s.items.includes(product._id) : false
+  )
 
-  // ✅ Wired to global wishlist store instead of local-only useState
+  const [selectedColor, setSelectedColor] = useState<string>('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [qty, setQty] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
+
+  useEffect(() => {
+    if (product) {
+      setSelectedColor(product.colors?.[0]?.name ?? 'Default')
+      setQty(1)
+    }
+  }, [product])
+
+  // Lock body scroll while open
+  useEffect(() => {
+    if (product) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [product])
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() },
+    [onClose]
+  )
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return
+    const handler = () => setDropdownOpen(false)
+    window.addEventListener('click', handler)
+    return () => window.removeEventListener('click', handler)
+  }, [dropdownOpen])
+
+  if (!product) return null
+
+  const displayPrice = product.discountPrice ?? product.price
+  const originalPrice = product.discountPrice ? product.price : null
+  const isOutOfStock = product.stock === 0
+
+  const handleAddToCart = () => {
+    if (isAdding || isOutOfStock) return
+    setIsAdding(true)
+    addItem({
+      product,
+      quantity: qty,
+      selectedColor,
+      price: displayPrice,
+    })
+    toast.success(`🛍️ ${product.name} added to cart!`)
+    setTimeout(() => {
+      setIsAdding(false)
+      onClose()
+      openCart()
+    }, 500)
+  }
+
+  const handleWishlist = () => {
+    toggleWish(product._id)
+    toast.success(inWishlist ? 'Removed from wishlist' : '❤️ Added to wishlist!')
+  }
+
+  const colorOptions = product.colors?.length
+    ? product.colors
+    : [{ name: 'Default', hex: '#d08a60', images: [], stock: 0 }]
+
+  return (
+    <>
+      <style jsx global>{`
+        /* ── MODAL BACKDROP ── */
+        .qv-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.45);
+          z-index: 9000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+          animation: qv-fade-in 0.22s ease;
+        }
+
+        @keyframes qv-fade-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        /* ── MODAL BOX ── */
+        .qv-modal {
+          position: relative;
+          background: #ffffff;
+          border-radius: 16px;
+          width: 100%;
+          max-width: 860px;
+          max-height: 90vh;
+          overflow-y: auto;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          animation: qv-slide-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes qv-slide-up {
+          from { opacity: 0; transform: translateY(28px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── CLOSE BUTTON ── */
+        .qv-close {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          width: 36px;
+          height: 36px;
+          border-radius: 999px;
+          border: none;
+          background: #f4f2ef;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #17172f;
+          z-index: 10;
+          transition: background 0.2s ease;
+        }
+
+        .qv-close:hover {
+          background: #e8e4df;
+        }
+
+        /* ── IMAGE PANEL ── */
+        .qv-img-panel {
+          background: #f4f2ef;
+          border-radius: 16px 0 0 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 380px;
+          padding: 32px;
+        }
+
+        .qv-img {
+          width: 100%;
+          max-height: 340px;
+          object-fit: contain;
+        }
+
+        .qv-img-placeholder {
+          width: 100%;
+          height: 280px;
+          background: #e8e4df;
+          border-radius: 8px;
+        }
+
+        /* ── INFO PANEL ── */
+        .qv-info {
+          padding: 40px 36px 36px;
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+        }
+
+        /* Divider */
+        .qv-divider {
+          width: 100%;
+          height: 1px;
+          background: #eee;
+          margin: 20px 0;
+        }
+
+        .qv-category {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.78rem;
+          font-weight: 500;
+          color: #aaa;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin: 0 0 6px;
+        }
+
+        .qv-name {
+          font-family: 'Poppins', sans-serif;
+          font-size: clamp(1.1rem, 2vw, 1.5rem);
+          font-weight: 600;
+          color: #17172f;
+          margin: 0 0 10px;
+          line-height: 1.25;
+          letter-spacing: -0.02em;
+        }
+
+        /* Price row */
+        .qv-price-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .qv-price {
+          font-family: 'Poppins', sans-serif;
+          font-size: 1.35rem;
+          font-weight: 700;
+          color: #d08a60;
+        }
+
+        .qv-original {
+          font-family: 'Poppins', sans-serif;
+          font-size: 1rem;
+          color: #bbb;
+          text-decoration: line-through;
+          font-weight: 400;
+        }
+
+        /* ── Custom color dropdown ── */
+        .qv-color-row {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          position: relative;
+        }
+
+        .qv-label {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.88rem;
+          font-weight: 600;
+          color: #17172f;
+          margin: 0;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        /* Trigger button */
+        .qv-dd-wrap {
+          position: relative;
+          flex: 1;
+          user-select: none;
+        }
+
+        .qv-dd-trigger {
+          width: 100%;
+          height: 46px;
+          border: 1.5px solid #e0dbd5;
+          border-radius: 999px;
+          padding: 0 44px 0 20px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.88rem;
+          color: #17172f;
+          background: #ffffff;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          transition: border-color 0.25s ease, box-shadow 0.25s ease;
+          text-align: left;
+          outline: none;
+          box-sizing: border-box;
+        }
+
+        .qv-dd-trigger:hover,
+        .qv-dd-trigger--open {
+          border-color: #d08a60;
+          box-shadow: 0 0 0 3px rgba(208, 138, 96, 0.13);
+        }
+
+        .qv-dd-arrow {
+          position: absolute;
+          right: 18px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #999;
+          pointer-events: none;
+          transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
+          display: flex;
+          align-items: center;
+        }
+
+        .qv-dd-arrow--open {
+          transform: translateY(-50%) rotate(180deg);
+        }
+
+        /* Options list */
+        .qv-dd-list {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 0;
+          right: 0;
+          background: #ffffff;
+          border: 1.5px solid #e8e3dd;
+          border-radius: 18px;
+          box-shadow: 0 12px 40px rgba(23, 23, 47, 0.13);
+          z-index: 200;
+          overflow: hidden;
+          animation: qv-dd-appear 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+          padding: 6px;
+        }
+
+        @keyframes qv-dd-appear {
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .qv-dd-option {
+          padding: 11px 18px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.88rem;
+          color: #17172f;
+          cursor: pointer;
+          border-radius: 12px;
+          transition: background 0.18s ease, color 0.18s ease;
+        }
+
+        .qv-dd-option:hover {
+          background: #f4f2ef;
+        }
+
+        .qv-dd-option--selected {
+          background: #d08a60;
+          color: #ffffff;
+          font-weight: 600;
+        }
+
+        .qv-dd-option--selected:hover {
+          background: #bf7a50;
+        }
+
+        /* Quantity row */
+        .qv-qty-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .qv-qty-label {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.88rem;
+          font-weight: 600;
+          color: #17172f;
+          white-space: nowrap;
+        }
+
+        .qv-qty-ctrl {
+          display: flex;
+          align-items: center;
+          border: 1.5px solid #e0dbd5;
+          border-radius: 999px;
+          overflow: hidden;
+        }
+
+        .qv-qty-btn {
+          width: 38px;
+          height: 38px;
+          border: none;
+          background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #17172f;
+          transition: background 0.2s ease;
+        }
+
+        .qv-qty-btn:hover:not(:disabled) {
+          background: #f4f2ef;
+        }
+
+        .qv-qty-btn:disabled {
+          color: #ccc;
+          cursor: default;
+        }
+
+        .qv-qty-num {
+          min-width: 36px;
+          text-align: center;
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 500;
+          color: #17172f;
+        }
+
+        /* CTA row */
+        .qv-cta-row {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .qv-add-btn {
+          flex: 1;
+          height: 54px;
+          border: none;
+          border-radius: 999px;
+          background: #d08a60;
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.88rem;
+          font-weight: 700;
+          letter-spacing: 0.07em;
+          color: #ffffff;
+          cursor: pointer;
+          transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .qv-add-btn:hover:not(:disabled) {
+          background: #bf7a50;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(208, 138, 96, 0.38);
+        }
+
+        .qv-add-btn:disabled {
+          opacity: 0.65;
+          cursor: default;
+        }
+
+        .qv-wish-btn {
+          width: 54px;
+          height: 54px;
+          border-radius: 999px;
+          border: 1.5px solid #e0dbd5;
+          background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #17172f;
+          flex-shrink: 0;
+          transition: all 0.25s ease;
+        }
+
+        .qv-wish-btn:hover,
+        .qv-wish-btn--active {
+          background: #17172f;
+          border-color: #17172f;
+          color: #ffffff;
+        }
+
+        /* View full page link */
+        .qv-view-link {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.82rem;
+          color: #aaa;
+          text-decoration: none;
+          text-align: center;
+          display: block;
+          margin-top: 14px;
+          transition: color 0.2s ease;
+        }
+
+        .qv-view-link:hover {
+          color: #d08a60;
+          text-decoration: underline;
+        }
+
+        /* Spinner */
+        .qv-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255,255,255,0.4);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: fp-spin 0.7s linear infinite;
+        }
+
+        /* ── MOBILE modal ── */
+        @media (max-width: 640px) {
+          .qv-modal {
+            grid-template-columns: 1fr;
+            border-radius: 16px;
+            max-height: 92vh;
+          }
+
+          .qv-img-panel {
+            border-radius: 16px 16px 0 0;
+            min-height: 220px;
+            padding: 24px;
+          }
+
+          .qv-img {
+            max-height: 200px;
+          }
+
+          .qv-info {
+            padding: 24px 22px 28px;
+          }
+
+          .qv-name {
+            font-size: 1.1rem;
+          }
+
+          .qv-price {
+            font-size: 1.15rem;
+          }
+
+          .qv-add-btn {
+            height: 48px;
+            font-size: 0.82rem;
+          }
+
+          .qv-wish-btn {
+            width: 48px;
+            height: 48px;
+          }
+        }
+      `}</style>
+
+      {/* Backdrop */}
+      <div className="qv-backdrop" onClick={onClose}>
+        <div className="qv-modal" onClick={(e) => e.stopPropagation()}>
+          {/* Close */}
+          <button className="qv-close" onClick={onClose} aria-label="Close">
+            <X size={18} strokeWidth={2} />
+          </button>
+
+          {/* Left: image */}
+          <div className="qv-img-panel">
+            {product.mainImage?.url ? (
+              <img
+                src={product.mainImage.url}
+                alt={product.mainImage.alt}
+                className="qv-img"
+                draggable={false}
+              />
+            ) : (
+              <div className="qv-img-placeholder" />
+            )}
+          </div>
+
+          {/* Right: info */}
+          <div className="qv-info">
+            {product.category && (
+              <p className="qv-category">{product.category}</p>
+            )}
+            <h3 className="qv-name">{product.name}</h3>
+
+            <div className="qv-price-row">
+              <span className="qv-price">৳{displayPrice.toLocaleString()}</span>
+              {originalPrice && (
+                <span className="qv-original">৳{originalPrice.toLocaleString()}</span>
+              )}
+            </div>
+
+            <div className="qv-divider" />
+
+            {/* Color — label + custom dropdown on same row */}
+            <div className="qv-color-row" style={{ marginBottom: '20px' }}>
+              <span className="qv-label">Color</span>
+              <div className="qv-dd-wrap">
+                {/* Trigger */}
+                <button
+                  type="button"
+                  className={`qv-dd-trigger${dropdownOpen ? ' qv-dd-trigger--open' : ''}`}
+                  onClick={() => setDropdownOpen((o) => !o)}
+                >
+                  {selectedColor || 'Select color'}
+                </button>
+                <span className={`qv-dd-arrow${dropdownOpen ? ' qv-dd-arrow--open' : ''}`}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </span>
+
+                {/* Options list */}
+                {dropdownOpen && (
+                  <div className="qv-dd-list">
+                    {colorOptions.map((c) => (
+                      <div
+                        key={c.name}
+                        className={`qv-dd-option${selectedColor === c.name ? ' qv-dd-option--selected' : ''}`}
+                        onClick={() => {
+                          setSelectedColor(c.name)
+                          setDropdownOpen(false)
+                        }}
+                      >
+                        {c.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quantity */}
+            <div className="qv-qty-row" style={{ marginBottom: '24px' }}>
+              <span className="qv-qty-label">Quantity:</span>
+              <div className="qv-qty-ctrl">
+                <button
+                  className="qv-qty-btn"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  disabled={qty <= 1}
+                  aria-label="Decrease"
+                >
+                  <Minus size={14} strokeWidth={2.5} />
+                </button>
+                <span className="qv-qty-num">{qty}</span>
+                <button
+                  className="qv-qty-btn"
+                  onClick={() => setQty((q) => q + 1)}
+                  aria-label="Increase"
+                >
+                  <Plus size={14} strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="qv-cta-row">
+              <button
+                className="qv-add-btn"
+                onClick={handleAddToCart}
+                disabled={isAdding || isOutOfStock}
+              >
+                {isAdding ? (
+                  <><span className="qv-spinner" /><span>ADDING…</span></>
+                ) : isOutOfStock ? (
+                  <span>OUT OF STOCK</span>
+                ) : (
+                  <span>ADD TO CART</span>
+                )}
+              </button>
+
+              <button
+                className={`qv-wish-btn${inWishlist ? ' qv-wish-btn--active' : ''}`}
+                onClick={handleWishlist}
+                aria-label="Wishlist"
+              >
+                <Heart size={18} fill={inWishlist ? '#ffffff' : 'none'} strokeWidth={2} />
+              </button>
+            </div>
+
+            <a href={`/product/${product.slug}`} className="qv-view-link">
+              View full details →
+            </a>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Shared card logic hook ────────────────────────────────────────────────
+function useCardLogic(product: IProduct, onQuickView: (p: IProduct) => void) {
+  const [isAdding, setIsAdding] = useState(false)
+  const addItem = useCartStore((s) => s.addItem)
+  const openCart = useCartStore((s) => s.openCart)
   const toggleWish = useWishlistStore((s) => s.toggleItem)
   const inWishlist = useWishlistStore((s) => s.items.includes(product._id))
 
@@ -85,26 +737,20 @@ function FpCard({
   const discountPct = originalPrice
     ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100)
     : null
-
   const isOutOfStock = product.stock === 0
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (isAdding || isOutOfStock) return
-
     setIsAdding(true)
-
     addItem({
       product,
       quantity: 1,
       selectedColor: product.colors?.[0]?.name ?? 'Default',
       price: displayPrice,
     })
-
     toast.success(`🛍️ ${product.name} added to cart!`)
-
-    // Brief delay so the user sees the "Adding…" state, then open the cart drawer
     setTimeout(() => {
       setIsAdding(false)
       openCart()
@@ -118,8 +764,52 @@ function FpCard({
     toast.success(inWishlist ? 'Removed from wishlist' : '❤️ Added to wishlist!')
   }
 
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onQuickView(product)
+  }
+
+  return {
+    isAdding,
+    inWishlist,
+    displayPrice,
+    originalPrice,
+    discountPct,
+    isOutOfStock,
+    handleAddToCart,
+    handleWishlist,
+    handleQuickView,
+  }
+}
+
+// ── Desktop card (unchanged layout) ─────────────────────────────────────
+function FpCard({
+  product,
+  onQuickView,
+}: {
+  product: IProduct
+  onQuickView: (p: IProduct) => void
+}) {
+  const router = useRouter()
+  const {
+    isAdding,
+    inWishlist,
+    displayPrice,
+    originalPrice,
+    discountPct,
+    isOutOfStock,
+    handleAddToCart,
+    handleWishlist,
+    handleQuickView,
+  } = useCardLogic(product, onQuickView)
+
   return (
-    <div className="fp-card">
+    <div
+      className="fp-card"
+      onClick={() => router.push(`/product/${product.slug}`)}
+      style={{ cursor: 'pointer' }}
+    >
       {/* Top row: meta left, icons right */}
       <div className="fp-card-top">
         <div className="fp-meta">
@@ -143,7 +833,7 @@ function FpCard({
           </button>
           <button
             className="fp-icon-btn"
-            onClick={() => router.push(`/product/${product.slug}`)}
+            onClick={handleQuickView}
             aria-label="Quick view"
           >
             <Eye size={15} strokeWidth={2} />
@@ -165,7 +855,7 @@ function FpCard({
         )}
       </div>
 
-      {/* ADD TO CART hover button — slides up from bottom */}
+      {/* ADD TO CART hover button */}
       <div className="fp-cart-hover">
         <button
           className="fp-add-to-cart-btn"
@@ -191,7 +881,113 @@ function FpCard({
   )
 }
 
-// ── Skeleton card ────────────────────────────────────────────────────────
+// ── Mobile card — reference design: centered title, price, 3 icons, image ──
+function FpCardMobile({
+  product,
+  onQuickView,
+}: {
+  product: IProduct
+  onQuickView: (p: IProduct) => void
+}) {
+  const router = useRouter()
+  const {
+    isAdding,
+    inWishlist,
+    displayPrice,
+    originalPrice,
+    discountPct,
+    isOutOfStock,
+    handleAddToCart,
+    handleWishlist,
+    handleQuickView,
+  } = useCardLogic(product, onQuickView)
+
+  return (
+    <div
+      className="fpm-card"
+      onClick={() => router.push(`/product/${product.slug}`)}
+      style={{ cursor: 'pointer' }}
+    >
+      {/* Centered name */}
+      <h3 className="fpm-name">{product.name}</h3>
+
+      {/* Centered price row */}
+      <div className="fpm-pricing">
+        <span className="fpm-price">৳{displayPrice.toLocaleString()}</span>
+        {originalPrice && (
+          <span className="fpm-original">৳{originalPrice.toLocaleString()}</span>
+        )}
+        {discountPct && <span className="fpm-badge">-{discountPct}%</span>}
+      </div>
+
+      {/* Centered 3-icon row */}
+      <div className="fpm-actions">
+        <button
+          className={`fpm-icon-btn${inWishlist ? ' fpm-icon-btn--wished' : ''}`}
+          onClick={handleWishlist}
+          aria-label="Wishlist"
+        >
+          <Heart size={16} fill={inWishlist ? '#ffffff' : 'none'} strokeWidth={2} />
+        </button>
+
+        <button
+          className={`fpm-icon-btn fpm-icon-btn--cart${isOutOfStock ? ' fpm-icon-btn--disabled' : ''}`}
+          onClick={handleAddToCart}
+          disabled={isAdding || isOutOfStock}
+          aria-label="Add to cart"
+        >
+          {isAdding ? (
+            <span className="fpm-spinner" />
+          ) : (
+            <ShoppingBag size={16} strokeWidth={2} />
+          )}
+        </button>
+
+        <button
+          className="fpm-icon-btn"
+          onClick={handleQuickView}
+          aria-label="Quick view"
+        >
+          <Eye size={16} strokeWidth={2} />
+        </button>
+      </div>
+
+      {/* Product image */}
+      <div className="fpm-img-wrap">
+        {product.mainImage?.url ? (
+          <img
+            src={product.mainImage.url}
+            alt={product.mainImage.alt}
+            className="fpm-img"
+            draggable={false}
+          />
+        ) : (
+          <div className="fpm-img-placeholder" />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Mobile skeleton ───────────────────────────────────────────────────────
+function FpSkeletonMobile() {
+  return (
+    <div className="fpm-card fpm-skeleton">
+      <div className="fpm-sk-line fpm-sk-line--name" />
+      <div className="fpm-sk-line fpm-sk-line--price" />
+      <div className="fpm-sk-icons">
+        <div className="fpm-sk-circle" />
+        <div className="fpm-sk-circle" />
+        <div className="fpm-sk-circle" />
+      </div>
+      <div className="fpm-img-wrap">
+        <div className="fpm-sk-img" />
+      </div>
+    </div>
+  )
+}
+
+// ── Desktop skeleton ─────────────────────────────────────────────────────
 function FpSkeleton() {
   return (
     <div className="fp-card fp-skeleton">
@@ -214,24 +1010,32 @@ function FpSkeleton() {
 
 // ── Main section ─────────────────────────────────────────────────────────
 export default function FeaturedProducts() {
-  const router = useRouter()
+  const [quickViewProduct, setQuickViewProduct] = useState<IProduct | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [allProducts, setAllProducts] = useState<IProduct[]>([])
   const [error, setError] = useState(false)
 
   // Slider
   const [current, setCurrent] = useState(0)
-  const [visibleCount, setVisibleCount] = useState(4)
+  const [visibleCount, setVisibleCount] = useState(3)
   const [enableTransition, setEnableTransition] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Responsive
+  const [isMobile, setIsMobile] = useState(false)
+  const GAP = isMobile ? 0 : 24
+  const [containerW, setContainerW] = useState(0)
 
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth
+      const mobile = w <= 640
+      setIsMobile(mobile)
       if (w <= 640) setVisibleCount(1)
       else if (w < 900) setVisibleCount(2)
-      else if (w < 1200) setVisibleCount(3)
+      else if (w < 1400) setVisibleCount(3)
       else setVisibleCount(4)
+      if (containerRef.current) setContainerW(containerRef.current.offsetWidth)
     }
     update()
     window.addEventListener('resize', update)
@@ -279,22 +1083,6 @@ export default function FeaturedProducts() {
     if (dist > 50) goNext()
     else if (dist < -50) goPrev()
   }
-
-  // Card width
-  const [isMobile, setIsMobile] = useState(false)
-  const GAP = isMobile ? 0 : 24
-  const [containerW, setContainerW] = useState(0)
-
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth
-      setIsMobile(w <= 640)
-      if (containerRef.current) setContainerW(containerRef.current.offsetWidth)
-    }
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   const cardWidth =
     containerW > 0 ? (containerW - GAP * (visibleCount - 1)) / visibleCount : 0
@@ -348,7 +1136,7 @@ export default function FeaturedProducts() {
           font-weight: 400;
         }
 
-        /* ── NAV ARROWS (desktop/tablet — inside header) ── */
+        /* ── NAV ARROWS (desktop/tablet) ── */
         .fp-nav {
           display: flex;
           gap: 12px;
@@ -405,7 +1193,9 @@ export default function FeaturedProducts() {
           user-select: none;
         }
 
-        /* ── CARD ── */
+        /* ════════════════════════════════
+           DESKTOP CARD
+        ════════════════════════════════ */
         .fp-card {
           flex-shrink: 0;
           background: #f4f2ef;
@@ -424,7 +1214,6 @@ export default function FeaturedProducts() {
           box-shadow: 0 10px 36px rgba(23, 23, 47, 0.09);
         }
 
-        /* ── CARD TOP ROW ── */
         .fp-card-top {
           display: flex;
           align-items: flex-start;
@@ -434,7 +1223,6 @@ export default function FeaturedProducts() {
           flex-shrink: 0;
         }
 
-        /* ── META ── */
         .fp-meta {
           flex: 1;
           min-width: 0;
@@ -483,7 +1271,6 @@ export default function FeaturedProducts() {
           padding: 2px 8px;
         }
 
-        /* ── ACTION ICONS ── */
         .fp-actions {
           display: flex;
           gap: 8px;
@@ -505,7 +1292,7 @@ export default function FeaturedProducts() {
         }
 
         .fp-icon-btn:hover {
-          background: #bf7a50;
+          background: #17172f;
           transform: scale(1.08);
         }
 
@@ -513,7 +1300,6 @@ export default function FeaturedProducts() {
           background: #17172f;
         }
 
-        /* ── IMAGE AREA ── */
         .fp-img-wrap {
           flex: 1;
           display: flex;
@@ -521,7 +1307,6 @@ export default function FeaturedProducts() {
           justify-content: center;
           overflow: hidden;
           min-height: 0;
-          /* Shift image up slightly on hover to make room for button */
           transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
@@ -549,7 +1334,6 @@ export default function FeaturedProducts() {
           border-radius: 4px;
         }
 
-        /* ── ADD TO CART HOVER BUTTON ── */
         .fp-cart-hover {
           position: absolute;
           left: 16px;
@@ -578,8 +1362,7 @@ export default function FeaturedProducts() {
           justify-content: space-between;
           padding: 0 24px;
           cursor: pointer;
-          transition: background 0.3s ease, transform 0.3s ease,
-                      box-shadow 0.3s ease;
+          transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .fp-add-to-cart-btn:disabled {
@@ -606,7 +1389,6 @@ export default function FeaturedProducts() {
           box-shadow: 0 6px 20px rgba(208, 138, 96, 0.4);
         }
 
-        /* ── SPINNER (for "Adding…" state) ── */
         .fp-spinner {
           width: 16px;
           height: 16px;
@@ -621,41 +1403,26 @@ export default function FeaturedProducts() {
           to { transform: rotate(360deg); }
         }
 
-        /* ── SKELETON ── */
+        /* ── Desktop skeleton ── */
         .fp-skeleton {
           pointer-events: none;
         }
 
         .fp-sk-line {
           height: 14px;
-          background: linear-gradient(
-            90deg,
-            #e8e4df 25%,
-            #dedad4 50%,
-            #e8e4df 75%
-          );
+          background: linear-gradient(90deg, #e8e4df 25%, #dedad4 50%, #e8e4df 75%);
           background-size: 200% 100%;
           border-radius: 4px;
           animation: fp-shimmer 1.4s infinite;
         }
-        .fp-sk-line--long {
-          width: 78%;
-          height: 16px;
-        }
-        .fp-sk-line--mid {
-          width: 52%;
-        }
+        .fp-sk-line--long { width: 78%; height: 16px; }
+        .fp-sk-line--mid  { width: 52%; }
 
         .fp-sk-circle {
           width: 38px;
           height: 38px;
           border-radius: 999px;
-          background: linear-gradient(
-            90deg,
-            #e8e4df 25%,
-            #dedad4 50%,
-            #e8e4df 75%
-          );
+          background: linear-gradient(90deg, #e8e4df 25%, #dedad4 50%, #e8e4df 75%);
           background-size: 200% 100%;
           animation: fp-shimmer 1.4s infinite;
           flex-shrink: 0;
@@ -664,23 +1431,18 @@ export default function FeaturedProducts() {
         .fp-sk-img {
           width: 100%;
           height: 100%;
-          background: linear-gradient(
-            90deg,
-            #e8e4df 25%,
-            #dedad4 50%,
-            #e8e4df 75%
-          );
+          background: linear-gradient(90deg, #e8e4df 25%, #dedad4 50%, #e8e4df 75%);
           background-size: 200% 100%;
           border-radius: 4px;
           animation: fp-shimmer 1.4s infinite;
         }
 
         @keyframes fp-shimmer {
-          0% { background-position: 200% 0; }
+          0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
 
-        /* ── BOTTOM CTA ── */
+        /* ── CTA ── */
         .fp-cta-wrap {
           text-align: center;
           margin-top: 48px;
@@ -711,7 +1473,7 @@ export default function FeaturedProducts() {
           box-shadow: 0 8px 28px rgba(208, 138, 96, 0.35);
         }
 
-        /* ── ERROR / EMPTY ── */
+        /* ── Error / empty ── */
         .fp-message {
           text-align: center;
           padding: 4rem 0;
@@ -738,47 +1500,215 @@ export default function FeaturedProducts() {
           color: #fff;
         }
 
+        /* ════════════════════════════════
+           MOBILE CARD  (fpm-*)
+           Matches reference: centered title,
+           price, 3 icon buttons, then image
+        ════════════════════════════════ */
+        .fpm-card {
+          flex-shrink: 0;
+          background: #f4f2ef;
+          border-radius: 0;
+          padding: 22px 16px 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          position: relative;
+          height: 360px;
+          box-sizing: border-box;
+          overflow: hidden;
+        }
+
+        /* Centered product name */
+        .fpm-name {
+          margin: 0 0 10px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 1rem;
+          font-weight: 500;
+          color: #17172f;
+          line-height: 1.3;
+          letter-spacing: -0.01em;
+          text-align: center;
+          word-break: break-word;
+          width: 100%;
+        }
+
+        /* Centered price row */
+        .fpm-pricing {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin-bottom: 16px;
+        }
+
+        .fpm-price {
+          font-family: 'Poppins', sans-serif;
+          font-size: 1rem;
+          font-weight: 600;
+          color: #d08a60;
+        }
+
+        .fpm-original {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.85rem;
+          font-weight: 400;
+          color: #bbb;
+          text-decoration: line-through;
+        }
+
+        .fpm-badge {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.7rem;
+          font-weight: 700;
+          color: #ffffff;
+          background: #17172f;
+          border-radius: 999px;
+          padding: 2px 8px;
+        }
+
+        /* Centered 3-icon row */
+        .fpm-actions {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin-bottom: 18px;
+          flex-shrink: 0;
+        }
+
+        .fpm-icon-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 999px;
+          border: none;
+          background: #d08a60;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #ffffff;
+          transition: background 0.25s ease, transform 0.25s ease;
+          flex-shrink: 0;
+        }
+
+        .fpm-icon-btn:hover {
+          background: #17172f;
+        }
+
+        .fpm-icon-btn:active {
+          transform: scale(0.94);
+        }
+
+        .fpm-icon-btn--wished {
+          background: #17172f;
+        }
+
+        .fpm-icon-btn--disabled {
+          opacity: 0.55;
+          cursor: default;
+        }
+
+        /* Product image area — fills remaining space */
+        .fpm-img-wrap {
+          flex: 1;
+          width: 100%;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          overflow: hidden;
+          min-height: 0;
+        }
+
+        .fpm-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          object-position: center bottom;
+          pointer-events: none;
+        }
+
+        .fpm-img-placeholder {
+          width: 100%;
+          height: 100%;
+          background: #e8e4df;
+          border-radius: 4px;
+        }
+
+        /* Mobile spinner */
+        .fpm-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.4);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          display: inline-block;
+          animation: fp-spin 0.7s linear infinite;
+        }
+
+        /* Mobile skeleton */
+        .fpm-skeleton {
+          pointer-events: none;
+        }
+
+        .fpm-sk-line {
+          background: linear-gradient(90deg, #e8e4df 25%, #dedad4 50%, #e8e4df 75%);
+          background-size: 200% 100%;
+          border-radius: 4px;
+          animation: fp-shimmer 1.4s infinite;
+          margin-bottom: 10px;
+        }
+        .fpm-sk-line--name  { width: 70%; height: 16px; }
+        .fpm-sk-line--price { width: 40%; height: 14px; }
+
+        .fpm-sk-icons {
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+          margin-bottom: 16px;
+        }
+
+        .fpm-sk-circle {
+          width: 44px;
+          height: 44px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #e8e4df 25%, #dedad4 50%, #e8e4df 75%);
+          background-size: 200% 100%;
+          animation: fp-shimmer 1.4s infinite;
+          flex-shrink: 0;
+        }
+
+        .fpm-sk-img {
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, #e8e4df 25%, #dedad4 50%, #e8e4df 75%);
+          background-size: 200% 100%;
+          border-radius: 4px;
+          animation: fp-shimmer 1.4s infinite;
+        }
+
         /* ══════════════════════════════
            TABLET (max 1024px)
         ══════════════════════════════ */
         @media (max-width: 1024px) {
-          .fp-section {
-            padding: 48px 0 64px;
-          }
-
-          .fp-container {
-            padding: 0 2rem;
-          }
-
-          .fp-card {
-            height: 380px;
-            border-radius: 6px;
-          }
-
-          .fp-track {
-            gap: 20px;
-          }
-
-          .fp-cta-wrap {
-            margin-top: 36px;
-          }
-
-          .fp-add-to-cart-btn {
-            height: 50px;
-          }
+          .fp-section { padding: 48px 0 64px; }
+          /* NOTE: no padding override here — fp-container keeps the same
+             clamp(4.6rem, 4vw, 4rem) padding as CategoryStrip (.cs-container)
+             so both sections stay perfectly aligned across all tablet widths */
+          .fp-card { height: 380px; border-radius: 6px; }
+          .fp-track { gap: 20px; }
+          .fp-cta-wrap { margin-top: 36px; }
+          .fp-add-to-cart-btn { height: 50px; }
         }
 
         /* ══════════════════════════════
            MOBILE (max 640px)
         ══════════════════════════════ */
         @media (max-width: 640px) {
-          .fp-section {
-            padding: 40px 0 52px;
-          }
+          .fp-section { padding: 40px 0 52px; }
 
-          .fp-container {
-            padding: 0 1rem;
-          }
+          .fp-container { padding: 0 1rem; }
 
           .fp-header {
             flex-direction: column;
@@ -789,17 +1719,11 @@ export default function FeaturedProducts() {
             margin-bottom: 24px;
           }
 
-          .fp-title {
-            font-size: clamp(1.5rem, 7vw, 2rem);
-          }
+          .fp-title { font-size: clamp(1.5rem, 7vw, 2rem); }
+          .fp-subtitle { font-size: 0.82rem; }
 
-          .fp-subtitle {
-            font-size: 0.82rem;
-          }
-
-          .fp-nav {
-            display: none;
-          }
+          /* Hide desktop nav arrows on mobile */
+          .fp-nav { display: none; }
 
           .fp-nav-bottom {
             display: flex;
@@ -809,58 +1733,11 @@ export default function FeaturedProducts() {
             margin-top: 24px;
           }
 
-          .fp-nav-btn {
-            width: 42px;
-            height: 42px;
-          }
+          .fp-nav-btn { width: 42px; height: 42px; }
 
-          .fp-track {
-            gap: 0;
-          }
+          .fp-track { gap: 0; }
 
-          .fp-card {
-            height: 360px;
-            border-radius: 0;
-            padding: 18px 18px 0;
-          }
-
-          /* On mobile show cart button on :active (touch) */
-          .fp-card:active .fp-cart-hover {
-            opacity: 1;
-            transform: translateY(0);
-          }
-
-          .fp-name {
-            font-size: 0.9rem;
-          }
-
-          .fp-price {
-            font-size: 0.95rem;
-          }
-
-          .fp-icon-btn {
-            width: 34px;
-            height: 34px;
-          }
-
-          .fp-add-to-cart-btn {
-            height: 48px;
-            padding: 0 18px;
-          }
-
-          .fp-add-to-cart-btn span {
-            font-size: 0.82rem;
-          }
-
-          .fp-cart-hover {
-            left: 12px;
-            right: 12px;
-            bottom: 12px;
-          }
-
-          .fp-cta-wrap {
-            margin-top: 32px;
-          }
+          .fp-cta-wrap { margin-top: 32px; }
 
           .fp-cta-btn {
             padding: 0 32px;
@@ -873,41 +1750,20 @@ export default function FeaturedProducts() {
            SMALL MOBILE (max 420px)
         ══════════════════════════════ */
         @media (max-width: 420px) {
-          .fp-section {
-            padding: 32px 0 44px;
-          }
+          .fp-section { padding: 32px 0 44px; }
+          .fp-container { padding: 0 0.85rem; }
 
-          .fp-container {
-            padding: 0 0.85rem;
-          }
+          .fpm-card { height: 320px; padding: 16px 12px 0; }
+          .fpm-name { font-size: 0.92rem; }
+          .fpm-price { font-size: 0.92rem; }
+          .fpm-icon-btn { width: 40px; height: 40px; }
+          .fpm-actions { gap: 10px; margin-bottom: 14px; }
 
-          .fp-card {
-            height: 320px;
-            padding: 14px 14px 0;
-          }
+          .fp-title { font-size: 1.4rem; }
+          .fp-subtitle { font-size: 0.78rem; }
 
-          .fp-title {
-            font-size: 1.4rem;
-          }
-
-          .fp-subtitle {
-            font-size: 0.78rem;
-          }
-
-          .fp-nav-btn {
-            width: 38px;
-            height: 38px;
-          }
-
-          .fp-nav-bottom {
-            gap: 10px;
-            margin-top: 18px;
-          }
-
-          .fp-add-to-cart-btn {
-            height: 44px;
-            padding: 0 16px;
-          }
+          .fp-nav-btn { width: 38px; height: 38px; }
+          .fp-nav-bottom { gap: 10px; margin-top: 18px; }
 
           .fp-cta-btn {
             padding: 0 24px;
@@ -917,9 +1773,11 @@ export default function FeaturedProducts() {
         }
       `}</style>
 
+      <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
+
       <section className="fp-section">
         <div className="fp-container">
-          {/* Header — top nav hidden on mobile via CSS */}
+          {/* Header */}
           <div className="fp-header">
             <div>
               <h2 className="fp-title">Best selling bags</h2>
@@ -978,7 +1836,7 @@ export default function FeaturedProducts() {
                       maxWidth: cardWidth || 280,
                     }}
                   >
-                    <FpSkeleton />
+                    {isMobile ? <FpSkeletonMobile /> : <FpSkeleton />}
                   </div>
                 ))
               ) : error ? (
@@ -1005,7 +1863,12 @@ export default function FeaturedProducts() {
                       maxWidth: cardWidth || 280,
                     }}
                   >
-                    <FpCard product={product} router={router} />
+                    {/* Render mobile card on mobile, desktop card otherwise */}
+                    {isMobile ? (
+                      <FpCardMobile product={product} onQuickView={setQuickViewProduct} />
+                    ) : (
+                      <FpCard product={product} onQuickView={setQuickViewProduct} />
+                    )}
                   </div>
                 ))
               )}
