@@ -124,7 +124,9 @@ function ReviewCard({ review }: { review: Review }) {
       </div>
 
       {/* Comment */}
-      <p className="cr-comment">{review.comment}</p>
+      <div className="cr-comment-wrap">
+        <p className="cr-comment">{review.comment}</p>
+      </div>
     </div>
   )
 }
@@ -142,8 +144,10 @@ function ReviewSkeleton() {
       <div className="cr-product-img-wrap">
         <div className="cr-sk-img" />
       </div>
-      <div className="cr-sk-line cr-sk-line--text" />
-      <div className="cr-sk-line cr-sk-line--text" style={{ width: '70%', marginTop: 6 }} />
+      <div className="cr-comment-wrap">
+        <div className="cr-sk-line cr-sk-line--text" />
+        <div className="cr-sk-line cr-sk-line--text" style={{ width: '70%', marginTop: 6 }} />
+      </div>
     </div>
   )
 }
@@ -348,9 +352,12 @@ export default function CustomerReview() {
           gap: 24px;
           will-change: transform;
           user-select: none;
+          align-items: stretch;
         }
 
-        /* ── CARD ── */
+        /* ── CARD ──
+           min-height (not fixed height) so the card can breathe instead of
+           clipping/cramping content when text is short on narrower widths */
         .cr-card {
           flex-shrink: 0;
           background: #f4f2ef;
@@ -361,7 +368,7 @@ export default function CustomerReview() {
           align-items: center;
           box-sizing: border-box;
           transition: box-shadow 0.3s ease;
-          height: 420px;
+          min-height: 420px;
         }
 
         .cr-card:hover {
@@ -441,7 +448,17 @@ export default function CustomerReview() {
           background: #e8e4df;
         }
 
-        /* Comment */
+        /* Comment wrapper — flex:1 + centered so short or long comments
+           always sit nicely inside the card instead of looking cut off
+           at the bottom edge */
+        .cr-comment-wrap {
+          flex: 1;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
         .cr-comment {
           margin: 0;
           font-family: 'Poppins', sans-serif;
@@ -455,7 +472,6 @@ export default function CustomerReview() {
           display: -webkit-box;
           -webkit-line-clamp: 3;
           -webkit-box-orient: vertical;
-          flex-shrink: 0;
         }
 
         /* ── SKELETON ── */
@@ -497,14 +513,25 @@ export default function CustomerReview() {
           100% { background-position: -200% 0; }
         }
 
-        /* ══ TABLET ══ */
-        @media (max-width: 1024px) {
-          .cr-section { padding: 48px 0 64px; }
-          .cr-track { gap: 20px; }
-          .cr-card { height: 380px; }
+        /* ══ LARGE TABLET / SMALL DESKTOP (visibleCount = 3, 900–1400px) ══ */
+        @media (max-width: 1399px) and (min-width: 901px) {
+          .cr-section { padding: 52px 0 70px; }
+          .cr-track { gap: 22px; }
+          .cr-card { min-height: 400px; }
         }
 
-        /* ══ MOBILE ══ */
+        /* ══ TABLET (visibleCount = 2, 641–900px) ══
+           This is the range that was previously broken: CSS had no rule
+           here so it fell back to the 420px desktop card height meant
+           for 4-up layouts, leaving the comment looking cramped/cut. */
+        @media (max-width: 900px) and (min-width: 641px) {
+          .cr-section { padding: 48px 0 60px; }
+          .cr-track { gap: 18px; }
+          .cr-card { min-height: 360px; padding: 22px 18px 24px; }
+          .cr-product-img-wrap { height: 170px; margin-bottom: 16px; }
+        }
+
+        /* ══ MOBILE (visibleCount = 1, <=640px) ══ */
         @media (max-width: 640px) {
           .cr-section { padding: 40px 0 52px; }
           .cr-container { padding: 0 1rem; }
@@ -535,7 +562,7 @@ export default function CustomerReview() {
 
           .cr-card {
             border-radius: 0;
-            height: 360px;
+            min-height: 340px;
             padding: 20px 16px 24px;
           }
         }
@@ -548,7 +575,7 @@ export default function CustomerReview() {
           .cr-subtitle { font-size: 0.78rem; }
           .cr-nav-btn { width: 38px; height: 38px; }
           .cr-nav-bottom { gap: 10px; margin-top: 18px; }
-          .cr-card { height: 320px; padding: 16px 12px 20px; }
+          .cr-card { min-height: 300px; padding: 16px 12px 20px; }
           .cr-name { font-size: 0.88rem; }
           .cr-product-img-wrap { height: 140px; }
           .cr-sk-img { height: 140px; }
