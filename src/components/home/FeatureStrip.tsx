@@ -30,7 +30,7 @@ export default function FeatureStrip() {
     <>
       <style jsx global>{`
         .fs-section {
-          padding: 40px 0;
+          padding: 40px 0 64px;
           background: #ffffff;
         }
 
@@ -99,13 +99,28 @@ export default function FeatureStrip() {
         }
 
         @media (max-width: 640px) {
-          .fs-section { padding: 28px 0; }
-          .fs-container { padding: 0 1rem; }
+          .fs-section {
+            padding: 40px 0 52px;
+          }
+          .fs-container {
+            padding: 0 1rem;
+          }
           .fs-grid {
             grid-template-columns: 1fr;
             gap: 14px;
           }
-          .fs-card { padding: 24px 18px; }
+          .fs-card {
+            padding: 24px 18px;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .fs-section {
+            padding: 32px 0 44px;
+          }
+          .fs-container {
+            padding: 0 0.85rem;
+          }
         }
       `}</style>
 

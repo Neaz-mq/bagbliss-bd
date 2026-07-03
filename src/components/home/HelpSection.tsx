@@ -24,6 +24,15 @@ export default function HelpSection() {
   return (
     <>
       <style jsx global>{`
+        /* Explicit white spacer so the gap always matches the page's
+           actual white background instead of whatever the body/html
+           default background happens to be (fixes the off-color band) */
+        .hs-gap {
+          width: 100%;
+          height: 48px;
+          background: #ffffff;
+        }
+
         .hs-section {
           position: relative;
           width: 100%;
@@ -123,34 +132,78 @@ export default function HelpSection() {
           color: #ece9e5;
         }
 
+        /* Tablet: still centered as a column, but text stays left-aligned within itself */
         @media (max-width: 1024px) {
+          .hs-gap {
+            height: 40px;
+          }
           .hs-container {
             flex-direction: column;
-            align-items: flex-start;
-            padding: 32px clamp(1.5rem, 4vw, 4rem);
+            align-items: center;
+            text-align: center;
+            padding: 36px clamp(1.25rem, 4vw, 4rem);
+          }
+          .hs-text {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           }
           .hs-contacts {
+            justify-content: center;
             gap: 28px;
           }
         }
 
+        /* Mobile: fully centered, contact items centered as a block, extra breathing room */
         @media (max-width: 640px) {
-          .hs-section { min-height: auto; }
-          .hs-container {
-            padding: 28px 1.25rem;
-            gap: 24px;
+          .hs-gap {
+            height: 32px;
           }
-          .hs-text { max-width: 100%; }
-          .hs-title { font-size: 1.3rem; }
-          .hs-subtitle { font-size: 0.85rem; }
+          .hs-section {
+            min-height: auto;
+          }
+          .hs-container {
+            padding: 44px 1.5rem 48px;
+            gap: 30px;
+            align-items: center;
+            text-align: center;
+          }
+          .hs-text {
+            max-width: 100%;
+            align-items: center;
+          }
+          .hs-title {
+            font-size: 1.3rem;
+          }
+          .hs-subtitle {
+            font-size: 0.85rem;
+          }
           .hs-contacts {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 18px;
+            align-items: center;
+            gap: 22px;
             width: 100%;
+          }
+          .hs-contact-item {
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+          }
+        }
+
+        /* Small mobile: match container padding used elsewhere (fs/cr/fp) */
+        @media (max-width: 420px) {
+          .hs-gap {
+            height: 28px;
+          }
+          .hs-container {
+            padding: 36px 0.85rem 40px;
           }
         }
       `}</style>
+
+      <div className="hs-gap" aria-hidden="true" />
 
       <section className="hs-section">
         <div className="hs-overlay" aria-hidden="true" />
