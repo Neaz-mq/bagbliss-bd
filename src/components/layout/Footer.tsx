@@ -3,38 +3,47 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import {
-  ShoppingBag, Facebook, Instagram, Youtube, ArrowUp, ChevronDown,
+  ShoppingBag,
+  Facebook,
+  Instagram,
+  Youtube,
+  ArrowUp,
+  ChevronDown,
 } from 'lucide-react'
 import { ROUTES } from '@/constants'
 
 const ACCOUNT_LINKS = [
-  { label: 'My Cart',     href: ROUTES.cart },
+  { label: 'My Cart', href: ROUTES.cart },
   { label: 'Track Order', href: ROUTES.trackOrder },
-  { label: 'My Account',  href: ROUTES.account },
-  { label: 'Wishlist',    href: ROUTES.wishlist },
-  { label: 'My Orders',   href: ROUTES.orders },
+  { label: 'My Account', href: ROUTES.account },
+  { label: 'Wishlist', href: ROUTES.wishlist },
+  { label: 'My Orders', href: ROUTES.orders },
 ]
 
 const PRODUCT_LINKS = [
-  { label: 'All Bags',       href: ROUTES.shop },
+  { label: 'All Bags', href: ROUTES.shop },
   { label: 'Mini Crossbody', href: '/shop?category=mini-crossbody' },
-  { label: 'Chain Strap',    href: '/shop?category=chain-strap' },
-  { label: 'Leather Bags',   href: '/shop?category=leather' },
-  { label: 'New Arrivals',   href: '/shop?sort=newest' },
+  { label: 'Chain Strap', href: '/shop?category=chain-strap' },
+  { label: 'Leather Bags', href: '/shop?category=leather' },
+  { label: 'New Arrivals', href: '/shop?sort=newest' },
 ]
 
 const COMPANY_LINKS = [
-  { label: 'About Us',          href: '/about' },
-  { label: 'Return Policy',     href: '/returns' },
-  { label: 'Privacy Policy',    href: '/privacy' },
-  { label: 'Payment Policy',    href: '/payment-policy' },
+  { label: 'About Us', href: '/about' },
+  { label: 'Return Policy', href: '/returns' },
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Payment Policy', href: '/payment-policy' },
   { label: 'Terms & Condition', href: '/terms' },
 ]
 
 function SocialLink({
-  href, icon: Icon, label,
+  href,
+  icon: Icon,
+  label,
 }: {
-  href: string; icon: React.ElementType; label: string
+  href: string
+  icon: React.ElementType
+  label: string
 }) {
   return (
     <Link
@@ -58,7 +67,8 @@ function SocialLink({
  * with no leftover "auto" rows overlapping other items.
  */
 function FooterColumn({
-  title, links,
+  title,
+  links,
 }: {
   title: string
   links: { label: string; href: string }[]
@@ -74,7 +84,10 @@ function FooterColumn({
         aria-expanded={open}
       >
         {title}
-        <ChevronDown size={16} className={`footer-column-chevron ${open ? 'is-open' : ''}`} />
+        <ChevronDown
+          size={16}
+          className={`footer-column-chevron ${open ? 'is-open' : ''}`}
+        />
       </button>
 
       <div className={`footer-links-wrap ${open ? 'is-open' : ''}`}>
@@ -169,19 +182,34 @@ export default function Footer() {
         }
 
         .footer-logo {
-          display: flex;
+          display: inline-flex;
           align-items: center;
           justify-content: flex-start;
-          gap: 8px;
+          gap: 12px;
           font-size: 1.6rem;
           font-weight: 700;
           color: #17172f;
           text-decoration: none;
           letter-spacing: -0.02em;
           margin-bottom: 18px;
+          line-height: 1;
         }
 
-        .footer-logo svg { color: #d08a60; }
+        .footer-logo svg {
+          color: #d08a60;
+          display: block;
+          flex-shrink: 0;
+        }
+        .footer-logo span {
+          display: flex;
+          align-items: center;
+          line-height: 1;
+        }
+
+        .footer-grid-wrap {
+          border-bottom: none !important;
+          box-shadow: none !important;
+        }
 
         .footer-brand-desc {
           font-size: 0.88rem;
@@ -265,7 +293,9 @@ export default function Footer() {
           transition: color 0.2s ease;
         }
 
-        .footer-link:hover { color: #d08a60; }
+        .footer-link:hover {
+          color: #d08a60;
+        }
 
         .footer-back-to-top {
           width: 44px;
@@ -282,12 +312,13 @@ export default function Footer() {
           flex-shrink: 0;
         }
 
-        .footer-back-to-top:hover { background: #b9744c; }
+        .footer-back-to-top:hover {
+          background: #b9744c;
+        }
 
         .footer-bottom {
           background: #fafaf8;
           width: 100%;
-          border-top: 1px solid #e6e2db;
           display: flex;
           justify-content: center;
         }
@@ -337,9 +368,13 @@ export default function Footer() {
           text-decoration: none;
         }
 
-        .footer-bottom-links a:hover { color: #d08a60; }
+        .footer-bottom-links a:hover {
+          color: #d08a60;
+        }
 
-        .footer-bottom-sep { color: #c9c4bc; }
+        .footer-bottom-sep {
+          color: #c9c4bc;
+        }
 
         @media (max-width: 1024px) {
           .footer-grid {
@@ -359,11 +394,19 @@ export default function Footer() {
           .footer-grid {
             grid-template-columns: 1fr 1fr;
           }
+          .footer-column:last-child {
+            border-bottom: none;
+          }
         }
 
         /* ---------- MOBILE ---------- */
         @media (max-width: 640px) {
-          .footer-main { padding: 40px 0 8px; }
+          .footer-main {
+            padding: 40px 0 0;
+          }
+          .footer-column:last-child {
+            border-bottom: none;
+          }
 
           .container-bagbliss {
             padding: 0 1.5rem;
@@ -391,7 +434,9 @@ export default function Footer() {
             align-items: flex-start;
           }
 
-          .footer-brand-desc { max-width: 100%; }
+          .footer-brand-desc {
+            max-width: 100%;
+          }
 
           .footer-brand-column {
             padding-bottom: 28px;
@@ -442,12 +487,14 @@ export default function Footer() {
           .footer-back-to-top {
             align-self: flex-end;
             margin-top: 16px;
+            margin-right: 72px;
+            margin-bottom: 18px;
           }
 
           /* Border removed on mobile — avoids a double-line look right
              under the last accordion row's own divider */
           .footer-bottom {
-            border-top: none;
+            display: none;
           }
 
           /*
@@ -460,7 +507,9 @@ export default function Footer() {
             flex-direction: column;
             align-items: flex-start;
             padding-top: 18px;
-            padding-bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px) + 20px);
+            padding-bottom: calc(
+              var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px) + 20px
+            );
             padding-left: var(--floating-widget-w);
             padding-right: var(--floating-widget-w);
             text-align: left;
@@ -485,7 +534,6 @@ export default function Footer() {
           <div className="container-bagbliss">
             <div className="footer-grid-wrap">
               <div className="footer-grid">
-
                 {/* Brand Column */}
                 <div className="footer-brand-column">
                   <Link href="/" className="footer-logo">
@@ -499,14 +547,26 @@ export default function Footer() {
                   </p>
 
                   <div className="footer-social">
-                    <SocialLink href="https://facebook.com"  icon={Facebook}  label="Facebook"  />
-                    <SocialLink href="https://instagram.com" icon={Instagram} label="Instagram" />
-                    <SocialLink href="https://youtube.com"   icon={Youtube}   label="YouTube"   />
+                    <SocialLink
+                      href="https://facebook.com"
+                      icon={Facebook}
+                      label="Facebook"
+                    />
+                    <SocialLink
+                      href="https://instagram.com"
+                      icon={Instagram}
+                      label="Instagram"
+                    />
+                    <SocialLink
+                      href="https://youtube.com"
+                      icon={Youtube}
+                      label="YouTube"
+                    />
                   </div>
                 </div>
 
-                <FooterColumn title="My Account"  links={ACCOUNT_LINKS} />
-                <FooterColumn title="Product"     links={PRODUCT_LINKS} />
+                <FooterColumn title="My Account" links={ACCOUNT_LINKS} />
+                <FooterColumn title="Product" links={PRODUCT_LINKS} />
                 <FooterColumn title="Our Company" links={COMPANY_LINKS} />
               </div>
 
