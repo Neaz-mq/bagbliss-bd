@@ -321,6 +321,7 @@ export default function Footer() {
           width: 100%;
           display: flex;
           justify-content: center;
+          border-top: 1px solid #e6e2db;
         }
 
         /*
@@ -388,6 +389,13 @@ export default function Footer() {
           .footer-brand-desc {
             max-width: 480px;
           }
+
+          /* Border-top on .footer-bottom should only appear on screens
+             1024px and wider, so it's switched off for everything
+             narrower than that here. */
+          .footer-bottom {
+            border-top: none;
+          }
         }
 
         @media (max-width: 768px) {
@@ -424,18 +432,45 @@ export default function Footer() {
             text-align: left;
           }
 
-          .footer-brand-column,
-          .footer-logo,
-          .footer-brand-desc,
-          .footer-social,
-          .footer-links-list {
-            text-align: left;
-            justify-content: flex-start;
-            align-items: flex-start;
+          /*
+            FIX: brand block (logo, description, socials) is centered
+            on mobile instead of left-aligned.
+
+            .footer-logo is inline-flex, so text-align:center on the
+            parent centers the whole logo block horizontally, while
+            justify-content:center keeps the icon + "BagBliss BD" text
+            centered relative to each other inside that block. The
+            explicit width:fit-content + margin:0 auto is a second,
+            more robust way of centering the same inline-flex block —
+            keeping both means the logo stays centered even if the
+            parent's text-align is ever overridden elsewhere.
+          */
+          .footer-brand-column {
+            text-align: center;
+          }
+
+          .footer-logo {
+            justify-content: center;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
           }
 
           .footer-brand-desc {
             max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+          }
+
+          .footer-social {
+            justify-content: center;
+          }
+
+          .footer-links-list {
+            text-align: left;
+            justify-content: flex-start;
+            align-items: flex-start;
           }
 
           .footer-brand-column {
