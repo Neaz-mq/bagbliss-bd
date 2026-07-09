@@ -355,9 +355,20 @@ export default function CustomerReview() {
           align-items: stretch;
         }
 
+        /* Slide wrapper — the direct flex child of .cr-track (inline width
+           is set from JS). align-items:stretch on .cr-track makes this
+           wrapper match the height of the tallest slide in the row, and
+           it now needs to be a flex column itself so the .cr-card inside
+           can be told to fill 100% of that stretched height. */
+        .cr-slide {
+          display: flex;
+        }
+
         /* ── CARD ──
-           min-height (not fixed height) so the card can breathe instead of
-           clipping/cramping content when text is short on narrower widths */
+           height:100% (instead of just min-height) so every card in a row
+           fills the full stretched height of its wrapper — this is what
+           keeps all cards the same height, including on tablet/mobile
+           breakpoints where comment/name line counts can differ. */
         .cr-card {
           flex-shrink: 0;
           background: #f4f2ef;
@@ -368,6 +379,8 @@ export default function CustomerReview() {
           align-items: center;
           box-sizing: border-box;
           transition: box-shadow 0.3s ease;
+          width: 100%;
+          height: 100%;
           min-height: 420px;
         }
 
@@ -622,12 +635,12 @@ export default function CustomerReview() {
             >
               {isLoading
                 ? Array.from({ length: visibleCount }).map((_, i) => (
-                    <div key={i} style={{ width: cardWidth || 280, minWidth: cardWidth || 280, maxWidth: cardWidth || 280 }}>
+                    <div key={i} className="cr-slide" style={{ width: cardWidth || 280, minWidth: cardWidth || 280, maxWidth: cardWidth || 280 }}>
                       <ReviewSkeleton />
                     </div>
                   ))
                 : reviews.map((review) => (
-                    <div key={review.id} style={{ width: cardWidth || 280, minWidth: cardWidth || 280, maxWidth: cardWidth || 280 }}>
+                    <div key={review.id} className="cr-slide" style={{ width: cardWidth || 280, minWidth: cardWidth || 280, maxWidth: cardWidth || 280 }}>
                       <ReviewCard review={review} />
                     </div>
                   ))}
