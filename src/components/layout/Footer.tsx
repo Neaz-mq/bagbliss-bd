@@ -483,7 +483,18 @@ export default function Footer() {
             border-bottom: 1px solid #e6e2db;
           }
 
+          /*
+            FIX: the desktop rule above sets margin: 0 0 18px on
+            .footer-column-title. That margin was never reset for
+            mobile, so it STACKED with the padding: 18px 2px added
+            right below — giving ~36px of dead space between the
+            title ("My Account") and the first link ("My Cart")
+            instead of the single ~18px gap that was intended.
+            Resetting margin to 0 here means only the padding
+            controls the spacing on mobile.
+          */
           .footer-column-title {
+            margin: 0;
             cursor: pointer;
             padding: 18px 2px;
           }
