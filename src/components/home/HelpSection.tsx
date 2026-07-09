@@ -132,8 +132,13 @@ export default function HelpSection() {
           color: #ece9e5;
         }
 
-        /* Tablet: still centered as a column, but text stays left-aligned within itself */
-        @media (max-width: 1024px) {
+        /* Centered / stacked layout: title + subtitle + contacts row all
+           centered as a block. Kicks in earlier now (1250px) so mid-size
+           and tablet viewports (e.g. 1190px) get the centered look instead
+           of the left/right split. Each contact item itself STAYS
+           icon+text side by side here — full per-item stacking only
+           kicks in at the 640px mobile query. */
+        @media (max-width: 1250px) {
           .hs-gap {
             height: 40px;
           }
