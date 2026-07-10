@@ -2,12 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Send, RotateCcw, MessageCircle } from 'lucide-react'
+import { X, Send, RotateCcw, MessageCircle, ShoppingBag } from 'lucide-react'
 
 // ── Config ────────────────────────────────────────────────────────────────
 const WHATSAPP_NUMBER = '8801303660481'
 const DEFAULT_MESSAGE = 'Hello BagBliss BD! 👜 I have a question about your bags.'
-const BRAND = '#E91E8C'
+const BRAND = '#CA865D'
+const BRAND_DARK = '#8f5f3d'
 const DARK = '#0f0f13'
 
 // ── Bottom nav height + margin — must match your Navbar.tsx floating pill
@@ -90,8 +91,8 @@ function WhatsAppPanel({ onClose, isMobile }: { onClose: () => void; isMobile: b
           background: 'rgba(255,255,255,0.2)',
           border: '2px solid rgba(255,255,255,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 20, flexShrink: 0,
-        }}>👜</div>
+          flexShrink: 0,
+        }}><ShoppingBag size={22} color="#fff" strokeWidth={1.75} /></div>
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'white', margin: 0 }}>BagBliss BD Support</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
@@ -248,7 +249,7 @@ function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ position: 'relative' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${BRAND}, #9c1060)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, boxShadow: `0 4px 16px ${BRAND}50` }}>👜</div>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 16px ${BRAND}50` }}><ShoppingBag size={20} color="#fff" strokeWidth={1.75} /></div>
               <div style={{ position: 'absolute', bottom: -2, right: -2, width: 11, height: 11, borderRadius: '50%', background: '#22c55e', border: '2px solid #0f0f13' }} />
             </div>
             <div>
@@ -276,13 +277,13 @@ function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean
         {msgs.map((m, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 6 }}>
             {m.role === 'assistant' && (
-              <div style={{ width: 24, height: 24, borderRadius: 8, flexShrink: 0, background: `linear-gradient(135deg, ${BRAND}, #9c1060)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>👜</div>
+              <div style={{ width: 24, height: 24, borderRadius: 8, flexShrink: 0, background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShoppingBag size={13} color="#fff" strokeWidth={2} /></div>
             )}
             <div style={{
               maxWidth: '75%', padding: '10px 14px', fontSize: 13, lineHeight: 1.6,
               borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
               ...(m.role === 'user'
-                ? { background: `linear-gradient(135deg, ${BRAND}, #c4166f)`, color: '#fff', boxShadow: `0 4px 16px ${BRAND}35` }
+                ? { background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`, color: '#fff', boxShadow: `0 4px 16px ${BRAND}35` }
                 : { background: '#fff', color: '#1a1a1a', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.06)' }
               ),
             }}>
@@ -293,7 +294,7 @@ function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean
 
         {loading && (
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 8, background: `linear-gradient(135deg, ${BRAND}, #9c1060)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>👜</div>
+            <div style={{ width: 24, height: 24, borderRadius: 8, background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShoppingBag size={13} color="#fff" strokeWidth={2} /></div>
             <div style={{ background: '#fff', borderRadius: '18px 18px 18px 4px', padding: '12px 16px', display: 'flex', gap: 5, alignItems: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.06)' }}>
               {[0, 1, 2].map(i => (
                 <motion.span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#ccc', display: 'block' }}
@@ -330,7 +331,7 @@ function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean
           <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="Ask about bags..." disabled={loading}
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: '#1a1a1a' }}
           />
-          <button onClick={() => send()} disabled={!input.trim() || loading} style={{ width: 32, height: 32, borderRadius: 10, border: 'none', background: input.trim() ? `linear-gradient(135deg, ${BRAND}, #c4166f)` : '#e8e8e8', color: input.trim() ? '#fff' : '#aaa', cursor: input.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: input.trim() ? `0 4px 12px ${BRAND}45` : 'none', transition: 'all 0.2s' }}>
+          <button onClick={() => send()} disabled={!input.trim() || loading} style={{ width: 32, height: 32, borderRadius: 10, border: 'none', background: input.trim() ? `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` : '#e8e8e8', color: input.trim() ? '#fff' : '#aaa', cursor: input.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: input.trim() ? `0 4px 12px ${BRAND}45` : 'none', transition: 'all 0.2s' }}>
             <Send size={13} />
           </button>
         </div>
@@ -475,7 +476,7 @@ export default function ChatLauncher() {
                   onClick={() => setActive('ai')}
                   style={{
                     width: 50, height: 50, borderRadius: '50%', border: 'none', cursor: 'pointer',
-                    background: `linear-gradient(135deg, ${BRAND}, #9c1060)`,
+                    background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: `0 6px 20px ${BRAND}55`,
                     transition: 'transform 0.15s, box-shadow 0.15s',
@@ -484,7 +485,7 @@ export default function ChatLauncher() {
                   onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = `0 8px 24px ${BRAND}70` }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = `0 6px 20px ${BRAND}55` }}
                 >
-                  <span style={{ fontSize: 20 }}>👜</span>
+                  <ShoppingBag size={22} color="#fff" strokeWidth={1.75} />
                 </button>
               </motion.div>
             </motion.div>
@@ -505,7 +506,7 @@ export default function ChatLauncher() {
             borderRadius: '50%', border: 'none', cursor: 'pointer',
             background: isOpen
               ? '#1a1a1a'
-              : `linear-gradient(135deg, ${BRAND} 0%, #9c1060 100%)`,
+              : `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: isOpen
               ? '0 8px 24px rgba(0,0,0,0.3)'

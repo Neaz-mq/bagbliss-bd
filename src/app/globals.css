@@ -152,12 +152,12 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
+  background: #CA865D;
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent-dark);
+  background: #b5724a;
 }
 
 /* ============================================
