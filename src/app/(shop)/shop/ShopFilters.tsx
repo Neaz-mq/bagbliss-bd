@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { FilterState } from './ShopClient'
+import { COLOR_PALETTE } from './colorPalette'
 
 interface Props {
   filters: FilterState
@@ -25,16 +26,10 @@ const PRICE_RANGES = [
   { label: '৳2,000 & Above', min: 2000, max: null },
 ]
 
-const COLORS = [
-  { hex: '#e91e8c', name: 'Pink' },
-  { hex: '#1a1a2e', name: 'Navy' },
-  { hex: '#c9a84c', name: 'Gold' },
-  { hex: '#9b59b6', name: 'Purple' },
-  { hex: '#f5f5f0', name: 'White' },
-  { hex: '#8B4513', name: 'Brown' },
-  { hex: '#228B22', name: 'Green' },
-  { hex: '#d2b48c', name: 'Beige' },
-]
+// ✅ FIX: local COLORS array removed — it was a second, independent copy of
+// the swatch palette. ShopClient's matching logic and this render list now
+// both import from the same COLOR_PALETTE (see ./colorPalette.ts), so they
+// can never drift out of sync.
 
 function FilterSection({
   title,
@@ -165,7 +160,7 @@ export default function ShopFilters({ filters, onChange }: Props) {
       {/* Colors */}
       <FilterSection title="Color">
         <div className="shop-color-grid">
-          {COLORS.map(({ hex, name }) => (
+          {COLOR_PALETTE.map(({ hex, name }) => (
             <button
               key={hex}
               type="button"

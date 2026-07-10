@@ -4084,7 +4084,7 @@ p {
   max-height: calc(100vh - 68px - 2rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 0.875rem 1rem 0;
+  padding: 0 0.875rem 1rem 6px;   /* ✅ left 0 → 6px, hover-scale clip fix */
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
   transition: scrollbar-color 0.2s ease;
@@ -4257,6 +4257,8 @@ p {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 0.5rem;
+  padding-left: 6px;   /* ✅ NEW — hover scale-er jonno buffer */
+  padding-top: 2px;    /* ✅ optional — top row-o same reason e cut hote pare */
 }
 
 .shop-color-btn {

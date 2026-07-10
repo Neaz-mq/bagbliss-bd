@@ -9,6 +9,7 @@ import {
 import ShopFilters from './ShopFilters'
 import ShopActiveFilters from './ShopActiveFilters'
 import ShopProductCard from './ShopProductCard'
+import { getColorFamily } from './colorPalette'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 export interface Product {
@@ -19,7 +20,7 @@ export interface Product {
   originalPrice?:  number
   images:          string[]
   category:        string
-  colors?:         string[]
+  colors?:         any[]
   rating?:         number
   reviewCount?:    number
   stock:           number
@@ -60,16 +61,13 @@ const CATEGORIES = ['All', 'Mini Crossbody', 'Chain Strap', 'Leather', 'Canvas',
 const ITEMS_PER_PAGE = 12
 
 // ── Helper: slugify a category label the same way pushUrl() does ──────────
-// 'Party & Evening' -> 'party-&-evening'.toLowerCase() -> 'party-&-evening'
-// We strip characters that aren't letters/numbers/spaces before slugifying
-// so slugs stay URL-clean, and match the same normalization on both ends.
 function slugifyCategory(label: string): string {
   return label
     .toLowerCase()
-    .replace(/&/g, '')          // drop ampersands entirely
-    .replace(/\s+/g, ' ')       // collapse whitespace
+    .replace(/&/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
-    .replace(/\s+/g, '-')       // spaces -> dashes
+    .replace(/\s+/g, '-')
 }
 
 // ── Helper: normalize DB product → UI Product ─────────────────────────────
@@ -105,6 +103,43 @@ function normalizeProduct(p: any): Product {
   }
 }
 
+// ── Color matching helper ──────────────────────────────────────────────────
+function extractHex(c: unknown): string {
+  if (c && typeof c === 'object') {
+    return (c as { hex?: unknown }).hex as string ?? ''
+  }
+  return c as string
+}
+
+function normalizeColorToken(c: unknown): string {
+  return String(extractHex(c) ?? '').trim().toLowerCase()
+}
+
+function productMatchesColors(product: Product, selectedColors: string[]): boolean {
+  if (selectedColors.length === 0) return true
+  if (!product.colors || product.colors.length === 0) return false
+
+  const productFamilies = new Set(
+    product.colors
+      .filter((c) => c != null)
+      .map((c) => getColorFamily(normalizeColorToken(c)))
+      .filter((f): f is string => f !== null)
+  )
+
+  return selectedColors.some((c) => {
+    const family = getColorFamily(normalizeColorToken(c))
+    return family !== null && productFamilies.has(family)
+  })
+}
+
+// ── Stock matching helper ───────────────────────────────────────────────────
+// ✅ NEW: mirrors productMatchesColors() pattern — simple, explicit, and easy
+// to reason about. A product is "in stock" if its total stock count is > 0.
+function productMatchesStock(product: Product, inStockOnly: boolean): boolean {
+  if (!inStockOnly) return true
+  return product.stock > 0
+}
+
 // ── Build API query string ─────────────────────────────────────────────────
 function buildApiUrl(
   page: number,
@@ -123,10 +158,16 @@ function buildApiUrl(
     params.set('category', slugifyCategory(filters.categories[0]))
   }
 
-  if (filters.onSaleOnly) params.set('flashSale', 'true')
+  if (filters.onSaleOnly)  params.set('flashSale', 'true')
+  if (filters.inStockOnly) params.set('inStock',   'true') // ✅ NEW — passed through if/when API supports it
 
   if (filters.priceMin !== null) params.set('priceMin', String(filters.priceMin))
   if (filters.priceMax !== null) params.set('priceMax', String(filters.priceMax))
+
+  // ⚠️ NOTE: intentionally NOT sending `colors` to the API — see
+  // productMatchesColors() comment above. Same caution applies to
+  // `inStock`: if the API route doesn't understand it yet, the client-side
+  // filter below (productMatchesStock) still makes it work correctly.
 
   return `/api/products?${params.toString()}`
 }
@@ -146,17 +187,13 @@ export default function ShopClient() {
   const [isSortOpen,    setIsSortOpen]    = useState(false)
   const [currentPage,   setCurrentPage]   = useState(1)
 
-  // ✅ ALL filters now live in local component state only (NOT read from the
-  // URL on mount) — same pattern as priceMin/priceMax before. This guarantees
-  // a full page refresh always starts completely clean (no category, search,
-  // sort, or sale filter carried over), even though the URL is still kept in
-  // sync while you're clicking around so links stay shareable/back-button-able
-  // *within* a session.
   const [sort,        setSort]        = useState('newest')
   const [searchQuery, setSearchQuery] = useState('')
   const [localSearch,  setLocalSearch] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [onSaleOnly,  setOnSaleOnly]  = useState(false)
+  const [inStockOnly, setInStockOnly] = useState(false) // ✅ NEW
   const [priceMin,    setPriceMin]    = useState<number | null>(null)
   const [priceMax,    setPriceMax]    = useState<number | null>(null)
 
@@ -164,10 +201,10 @@ export default function ShopClient() {
     categories:  selectedCategories,
     priceMin,
     priceMax,
-    colors:      [],
+    colors:      selectedColors,
     onSaleOnly,
-    inStockOnly: false,
-  }), [selectedCategories, priceMin, priceMax, onSaleOnly])
+    inStockOnly, // ✅ FIX: was hardcoded to false, so the checkbox always snapped back
+  }), [selectedCategories, priceMin, priceMax, selectedColors, onSaleOnly, inStockOnly])
 
   // ── On mount: wipe any stale query params left over from before a
   // refresh, so the address bar always matches the clean local state above.
@@ -197,9 +234,30 @@ export default function ShopClient() {
         if (!res.ok) throw new Error(`Server error: ${res.status}`)
 
         const data: ApiResponse = await res.json()
-        setProducts(data.products.map(normalizeProduct))
-        setTotalCount(data.total)
-        setTotalPages(data.pages)
+        let normalized = data.products.map(normalizeProduct)
+        let total = data.total
+        let pages = data.pages
+
+        // ✅ Client-side safety net for colors (unchanged)
+        if (filters.colors.length > 0) {
+          normalized = normalized.filter((p) => productMatchesColors(p, filters.colors))
+          total = normalized.length
+          pages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE))
+        }
+
+        // ✅ NEW: client-side safety net for "In Stock Only". Same reasoning
+        // as colors — if /api/products doesn't (yet) honor `inStock=true`,
+        // this filters the already-fetched page client-side so the
+        // checkbox visibly works immediately, no backend changes required.
+        if (filters.inStockOnly) {
+          normalized = normalized.filter((p) => productMatchesStock(p, true))
+          total = normalized.length
+          pages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE))
+        }
+
+        setProducts(normalized)
+        setTotalCount(total)
+        setTotalPages(pages)
       } catch (err: any) {
         if (err.name === 'AbortError') return
         console.error('Fetch error:', err)
@@ -214,10 +272,6 @@ export default function ShopClient() {
   }, [currentPage, sort, searchQuery, filters])
 
   // ── URL writer ─────────────────────────────────────────────────────────
-  // Keeps the address bar in sync with the current filters while the user is
-  // interacting with the page (nice for sharing a link / using back-forward),
-  // but this is purely cosmetic now — it is NOT what drives state, so it has
-  // no bearing on what happens after a refresh.
   const syncUrl = useCallback(
     (newSort: string, newFilters: FilterState, newSearch: string) => {
       const params = new URLSearchParams()
@@ -225,7 +279,9 @@ export default function ShopClient() {
       if (newFilters.categories.length === 1) {
         params.set('category', slugifyCategory(newFilters.categories[0]))
       }
+      if (newFilters.colors.length > 0) params.set('colors', newFilters.colors.join(','))
       if (newFilters.onSaleOnly)  params.set('filter', 'flash-sale')
+      if (newFilters.inStockOnly) params.set('stock', 'in-stock') // ✅ NEW
       if (newSearch.trim())       params.set('search', newSearch.trim())
       const query = params.toString()
       router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
@@ -238,7 +294,9 @@ export default function ShopClient() {
     setSelectedCategories(newFilters.categories)
     setPriceMin(newFilters.priceMin)
     setPriceMax(newFilters.priceMax)
+    setSelectedColors(newFilters.colors)
     setOnSaleOnly(newFilters.onSaleOnly)
+    setInStockOnly(newFilters.inStockOnly) // ✅ FIX: was never persisted before
     syncUrl(sort, newFilters, searchQuery)
     setCurrentPage(1)
   }
@@ -268,7 +326,9 @@ export default function ShopClient() {
     setLocalSearch('')
     setSearchQuery('')
     setSelectedCategories([])
+    setSelectedColors([])
     setOnSaleOnly(false)
+    setInStockOnly(false) // ✅ NEW
     setPriceMin(null)
     setPriceMax(null)
     setSort('newest')
@@ -291,8 +351,6 @@ export default function ShopClient() {
     <div className="shop-page mobile-nav-spacing">
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      {/* Inline styles used here on purpose: guarantees the heading is
-          white + centered no matter what globals.css does or doesn't have. */}
       <div
         className="shop-hero"
         style={{

@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react'
 import type { FilterState } from './ShopClient'
+import { COLOR_PALETTE } from './colorPalette'
 
 interface Props {
   filters: FilterState
@@ -15,16 +16,14 @@ interface Props {
   onClearAll: () => void
 }
 
-const COLOR_NAMES: Record<string, string> = {
-  '#e91e8c': 'Pink',
-  '#1a1a2e': 'Navy',
-  '#c9a84c': 'Gold',
-  '#9b59b6': 'Purple',
-  '#f5f5f0': 'White',
-  '#8B4513': 'Brown',
-  '#228B22': 'Green',
-  '#d2b48c': 'Beige',
-}
+// ✅ FIX: local COLOR_NAMES lookup removed — it was a third independent
+// copy of the swatch palette (ShopFilters had one, ShopClient's matching
+// logic effectively had one too). Now derived from the single shared
+// COLOR_PALETTE in ./colorPalette.ts, so a new color added there
+// automatically shows up here too instead of falling back to raw hex.
+const COLOR_NAMES: Record<string, string> = Object.fromEntries(
+  COLOR_PALETTE.map(({ hex, name }) => [hex, name])
+)
 
 export default function ShopActiveFilters({
   filters,
