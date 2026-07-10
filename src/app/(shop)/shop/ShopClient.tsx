@@ -226,57 +226,152 @@ export default function ShopClient() {
     <div className="shop-page mobile-nav-spacing">
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <div className="shop-hero">
-        <div className="container-bagbliss">
-          <div className="shop-hero-content">
-            <div className="section-badge">
-              <Tag size={12} />
-              Our Collection
-            </div>
-            <h1 className="shop-hero-title">
-              Find Your Perfect <span className="text-gradient">Bag</span>
-            </h1>
-            <p className="shop-hero-subtitle">
-              {isLoading
-                ? 'Loading products...'
-                : `${totalCount} styles available · Fast delivery across Bangladesh`}
-            </p>
+      {/* Inline styles used here on purpose: guarantees the heading is
+          white + centered no matter what globals.css does or doesn't have. */}
+      <div
+        className="shop-hero"
+        style={{
+          position: 'relative',
+          background: 'linear-gradient(135deg, #16151f 0%, #2c2118 55%, #6b3f28 100%)',
+          padding: '4rem 1.5rem 3.5rem',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            maxWidth: '760px',
+            margin: '0 auto',
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.375rem 1rem',
+              background: 'rgba(202, 134, 93, 0.16)',
+              border: '1px solid rgba(202, 134, 93, 0.4)',
+              borderRadius: '9999px',
+              color: '#EBC29F',
+              fontFamily: 'var(--font-body)',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              marginBottom: '1.25rem',
+            }}
+          >
+            <Tag size={12} />
+            Our Collection
           </div>
 
-          {/* ✅ suppressHydrationWarning on form, input, and all buttons */}
-          <form onSubmit={handleSearch} className="shop-search-form" suppressHydrationWarning>
-            <Search size={18} className="shop-search-icon" />
-            <input
-              type="text"
-              placeholder="Search bags, colors, styles..."
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              className="shop-search-input"
-              suppressHydrationWarning  // ✅ stops fdprocessedid mismatch
-            />
-            {localSearch && (
-              <button
-                type="button"
-                onClick={handleSearchClear}
-                className="shop-search-clear"
-                suppressHydrationWarning
-              >
-                <X size={16} />
-              </button>
-            )}
-            <button
-              type="submit"
-              className="shop-search-btn"
-              suppressHydrationWarning  // ✅ stops fdprocessedid mismatch
-            >
-              Search
-            </button>
-          </form>
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2.25rem, 5vw, 3.75rem)',
+              fontWeight: 700,
+              color: '#ffffff',
+              lineHeight: 1.08,
+              margin: '0 0 0.75rem',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Find your{' '}
+            <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>perfect</span> bag
+          </h1>
+
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '0.95rem',
+              color: 'rgba(255, 255, 255, 0.68)',
+              margin: 0,
+            }}
+          >
+            {isLoading
+              ? 'Counting the bags…'
+              : `${totalCount} styles in stock · delivered across Bangladesh in 2–4 days`}
+          </p>
         </div>
       </div>
 
-      {/* ── Category Pills ────────────────────────────────────────────── */}
-      <div className="shop-category-bar">
+      {/* ── Floating Search — centered, overlaps the hero/category seam ── */}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 5,
+          marginTop: '-2.5rem',
+          padding: '0 1.5rem',
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
+        <form
+          onSubmit={handleSearch}
+          className="shop-search-form"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'white',
+            borderRadius: '9999px',
+            padding: '0.5rem 0.5rem 0.5rem 1.25rem',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.28)',
+            width: '100%',
+            maxWidth: '600px',
+          }}
+          suppressHydrationWarning
+        >
+          <Search size={18} className="shop-search-icon" />
+          <input
+            type="text"
+            placeholder="Search bags, colors, styles..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            className="shop-search-input"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.95rem' }}
+            suppressHydrationWarning
+          />
+          {localSearch && (
+            <button
+              type="button"
+              onClick={handleSearchClear}
+              className="shop-search-clear"
+              suppressHydrationWarning
+            >
+              <X size={16} />
+            </button>
+          )}
+          <button
+            type="submit"
+            className="shop-search-btn"
+            style={{
+              padding: '0.625rem 1.5rem',
+              background: 'var(--color-accent, #CA865D)',
+              color: 'white',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              border: 'none',
+              borderRadius: '9999px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+            suppressHydrationWarning
+          >
+            Search
+          </button>
+        </form>
+      </div>
+
+      {/* ── Category Pills — fixed height, so nothing overlaps on scroll ── */}
+      <div className="shop-category-bar" style={{ marginTop: '1.75rem' }}>
         <div className="container-bagbliss">
           <div className="shop-category-pills">
             {CATEGORIES.map((cat) => {
@@ -298,7 +393,7 @@ export default function ShopClient() {
                     handleFilterChange({ ...filters, categories: newCats })
                   }}
                   className={`shop-category-pill ${isActive ? 'shop-category-pill-active' : ''}`}
-                  suppressHydrationWarning  // ✅
+                  suppressHydrationWarning
                 >
                   {cat}
                 </button>
@@ -317,7 +412,7 @@ export default function ShopClient() {
               type="button"
               onClick={() => setIsSidebarOpen(true)}
               className="shop-filter-toggle"
-              suppressHydrationWarning  // ✅
+              suppressHydrationWarning
             >
               <SlidersHorizontal size={16} />
               Filters
@@ -348,7 +443,7 @@ export default function ShopClient() {
                 type="button"
                 onClick={() => setIsSortOpen(!isSortOpen)}
                 className="shop-sort-btn"
-                suppressHydrationWarning  // ✅
+                suppressHydrationWarning
               >
                 <ArrowUpDown size={15} />
                 {currentSortLabel}
@@ -364,7 +459,7 @@ export default function ShopClient() {
                         type="button"
                         onClick={() => handleSortChange(opt.value)}
                         className={`shop-sort-option ${sort === opt.value ? 'shop-sort-option-active' : ''}`}
-                        suppressHydrationWarning  // ✅
+                        suppressHydrationWarning
                       >
                         {opt.label}
                       </button>
@@ -381,7 +476,7 @@ export default function ShopClient() {
                 onClick={() => setViewMode('grid')}
                 className={`shop-view-btn ${viewMode === 'grid' ? 'shop-view-btn-active' : ''}`}
                 aria-label="Grid view"
-                suppressHydrationWarning  // ✅
+                suppressHydrationWarning
               >
                 <Grid2X2 size={17} />
               </button>
@@ -390,7 +485,7 @@ export default function ShopClient() {
                 onClick={() => setViewMode('list')}
                 className={`shop-view-btn ${viewMode === 'list' ? 'shop-view-btn-active' : ''}`}
                 aria-label="List view"
-                suppressHydrationWarning  // ✅
+                suppressHydrationWarning
               >
                 <LayoutList size={17} />
               </button>
@@ -433,7 +528,7 @@ export default function ShopClient() {
             {error && !isLoading && (
               <div className="shop-empty">
                 <div className="shop-empty-icon"><ShoppingBag size={40} strokeWidth={1.5} /></div>
-                <h3 className="shop-empty-title">Failed to load products</h3>
+                <h3 className="shop-empty-title">Couldn't load the shop</h3>
                 <p className="shop-empty-subtitle">{error}</p>
                 <button
                   type="button"
@@ -463,8 +558,8 @@ export default function ShopClient() {
             {!isLoading && !error && products.length === 0 && (
               <div className="shop-empty">
                 <div className="shop-empty-icon"><ShoppingBag size={40} strokeWidth={1.5} /></div>
-                <h3 className="shop-empty-title">No bags found</h3>
-                <p className="shop-empty-subtitle">Try adjusting your filters or search query.</p>
+                <h3 className="shop-empty-title">No bags match those filters</h3>
+                <p className="shop-empty-subtitle">Clear a filter or try a different search term.</p>
                 <button
                   type="button"
                   onClick={clearAllFilters}

@@ -13,7 +13,7 @@
   --color-primary-light: #2d2d4e;
   --color-primary-dark: #0f0f1a;
 
-  --color-accent: #e91e8c;
+  --color-accent: #CA865D;  
   --color-accent-light: #ff4db3;
   --color-accent-dark: #b5156d;
 
@@ -55,7 +55,7 @@
   --shadow-sm: 0 1px 3px rgba(26, 26, 46, 0.08);
   --shadow-md: 0 4px 16px rgba(26, 26, 46, 0.12);
   --shadow-lg: 0 8px 32px rgba(26, 26, 46, 0.16);
-  --shadow-accent: 0 4px 24px rgba(233, 30, 140, 0.25);
+  --shadow-accent: 0 4px 24px rgba(202, 134, 93, 0.25);
   --shadow-gold: 0 4px 24px rgba(201, 168, 76, 0.25);
 
   /* ── Transitions ── */
@@ -3778,9 +3778,9 @@ p {
 .shop-category-bar {
   background: white;
   border-bottom: 1px solid rgba(26, 26, 46, 0.06);
-  position: sticky;
-  top: 72px;
-  z-index: 50;
+  position: relative;   /* was: sticky */
+  z-index: 10;
+  margin-top: 1.75rem;
 }
 
 .shop-category-pills {
@@ -4087,7 +4087,20 @@ p {
   width: 260px;
   flex-shrink: 0;
   position: sticky;
-  top: calc(72px + 50px + 1rem);
+  top: calc(68px + 1rem);
+  max-height: calc(100vh - 68px - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 1rem;
+}
+
+.shop-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.shop-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(202, 134, 93, 0.25);
+  border-radius: 99px;
 }
 
 @media (min-width: 1024px) {

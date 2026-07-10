@@ -70,7 +70,7 @@ export default function RootLayout({
             },
             success: {
               iconTheme: {
-                primary: '#E91E8C',
+                primary: '#CA865D',
                 secondary: '#FDFAF7',
               },
             },
