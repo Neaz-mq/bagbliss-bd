@@ -14,8 +14,8 @@
   --color-primary-dark: #0f0f1a;
 
   --color-accent: #CA865D;  
-  --color-accent-light: #ff4db3;
-  --color-accent-dark: #b5156d;
+  --color-accent-light: #e0a67d;
+  --color-accent-dark: #b5724a; 
 
   --color-gold: #c9a84c;
   --color-gold-light: #e8c96e;
@@ -2313,13 +2313,12 @@ p {
 .products-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 @media (min-width: 640px) {
   .products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
+    gap: 1.75rem;
   }
 }
 
@@ -2332,8 +2331,8 @@ p {
 
 @media (min-width: 1024px) {
   .products-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.25rem;
   }
 }
 
@@ -3797,17 +3796,11 @@ p {
 
 .shop-category-pill {
   padding: 0.4rem 1.1rem;
-  font-family: var(--font-body);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--color-text-secondary);
-  background: var(--color-surface);
-  border: 1.5px solid rgba(26, 26, 46, 0.08);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
+  background: transparent;
+  border: 1.5px solid rgba(26, 26, 46, 0.1);
 }
 
 .shop-category-pill:hover {
@@ -3816,9 +3809,9 @@ p {
 }
 
 .shop-category-pill-active {
-  background: var(--color-accent) !important;
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
   color: white !important;
-  border-color: var(--color-accent) !important;
 }
 
 /* ── Toolbar ────────────────────────────────── */
@@ -3827,8 +3820,8 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.5rem 0 1rem;
   flex-wrap: wrap;
+  padding: 2rem 0 1.5rem;
 }
 
 .shop-toolbar-left {
@@ -4091,16 +4084,32 @@ p {
   max-height: calc(100vh - 68px - 2rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-bottom: 1rem;
+  padding: 0 0.875rem 1rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease;
+}
+
+.shop-sidebar:hover {
+  scrollbar-color: rgba(202, 134, 93, 0.35) transparent;
 }
 
 .shop-sidebar::-webkit-scrollbar {
   width: 4px;
 }
 
+.shop-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .shop-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(202, 134, 93, 0.25);
+  background: transparent;
   border-radius: 99px;
+  transition: background 0.2s ease;
+}
+
+.shop-sidebar:hover::-webkit-scrollbar-thumb {
+  background: rgba(202, 134, 93, 0.35);
 }
 
 @media (min-width: 1024px) {
@@ -4116,14 +4125,14 @@ p {
 
 /* ── Filters Panel ───────────────────────────── */
 .shop-filters {
-  background: white;
-  border-radius: var(--radius-xl);
-  border: 1px solid rgba(26, 26, 46, 0.07);
-  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
 }
 
 .shop-filter-section {
-  border-bottom: 1px solid rgba(26, 26, 46, 0.06);
+  border-bottom: 1px solid rgba(26, 26, 46, 0.07);
 }
 
 .shop-filter-section:last-child {
@@ -4135,27 +4144,39 @@ p {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 1rem 1.25rem;
+  padding: 1.1rem 0.5rem;
+  margin: 0 -0.5rem;
   background: none;
   border: none;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  color: var(--color-primary);
   transition: background var(--transition-fast);
 }
 
+
 .shop-filter-section-header:hover {
-  background: rgba(26, 26, 46, 0.02);
+  background: rgba(202, 134, 93, 0.05);
 }
 
 .shop-filter-section-title {
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: var(--color-primary);
+  letter-spacing: 0.01em;
+}
+
+.shop-filter-section-header svg {
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.shop-filter-section-header:hover svg {
+  color: var(--color-accent);
 }
 
 .shop-filter-section-body {
-  padding: 0 1.25rem 1.25rem;
+  padding: 0 0 1.25rem;
 }
 
 .shop-filter-list {
@@ -4193,13 +4214,8 @@ p {
 }
 
 .shop-filter-count {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
+  background: transparent;
   color: var(--color-text-muted);
-  background: rgba(26, 26, 46, 0.06);
-  padding: 0.1rem 0.5rem;
-  border-radius: var(--radius-full);
 }
 
 /* Price Inputs */
@@ -4373,9 +4389,10 @@ p {
 .shop-list-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-right: 1.25rem;   /* breathing room from the card edge */
 }
-
 /* ── Pagination ──────────────────────────────── */
 .shop-pagination {
   display: flex;
@@ -5558,12 +5575,12 @@ p {
 /* ── Shared text helpers ──────────────────── */
 .shop-card-category {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 600;
   color: var(--color-accent);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0 0 4px;
+  letter-spacing: 0.09em;
+  margin: 0 0 3px;
 }
 
 .shop-card-rating {
@@ -5580,17 +5597,17 @@ p {
 
 .shop-card-price-row {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 4px;
+  margin-top: 2px;
 }
+
 
 .shop-card-price {
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--color-primary);
 }
 
 .shop-card-original {
@@ -5620,28 +5637,29 @@ p {
 .shop-card-badge-sale {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
-  background: var(--color-accent);
-  color: #fff;
+  padding: 3px 9px;
+  background: white;
+  color: var(--color-accent);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 700;
-  border-radius: 6px;
+  border-radius: 4px;
   letter-spacing: 0.02em;
+  border: 1px solid rgba(202, 134, 93, 0.3);
 }
 
 .shop-card-badge-featured {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
-  background: rgba(201, 168, 76, 0.15);
-  color: #a07828;
+  padding: 3px 9px;
+  background: white;
+  color: var(--color-primary);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 700;
-  border-radius: 6px;
+  border-radius: 4px;
   letter-spacing: 0.02em;
-  border: 1px solid rgba(201, 168, 76, 0.35);
+  border: 1px solid rgba(26, 26, 46, 0.15);
 }
 
 /* ── Shared icon button ───────────────────── */
@@ -5649,12 +5667,12 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #fff;
-  border: 1px solid #f3f4f6;
-  color: #4b5563;
+  background: white;
+  border: 1px solid rgba(26, 26, 46, 0.08);
+  color: var(--color-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
@@ -5662,11 +5680,8 @@ p {
 }
 
 .shop-icon-btn:hover {
-  background: #fdf2f8;
-  border-color: #fce7f3;
+  border-color: var(--color-accent);
   color: var(--color-accent);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(233, 30, 140, 0.15);
 }
 
 .shop-icon-btn-active {
@@ -5708,21 +5723,19 @@ p {
    GRID CARD
    ══════════════════════════════════════════ */
 .shop-grid-card {
-  background: #fff;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  border: 1px solid #f3f4f6;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
   display: flex;
   flex-direction: column;
-  transition:
-    box-shadow 0.25s ease,
-    transform 0.25s ease;
+  transition: transform 0.3s ease;
   animation: shopCardIn 0.4s ease both;
 }
 
 .shop-grid-card:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-  transform: translateY(-3px);
+  box-shadow: none;
+  transform: none;
 }
 
 @keyframes shopCardIn {
@@ -5740,14 +5753,17 @@ p {
 .shop-grid-img-wrap {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 3 / 4;
   display: block;
-  background: #fafafa;
+  background: #f3ede6;
+  border-radius: 0.75rem;
 }
+
 
 /* next/image fill renders as absolute; object-fit via className */
 .shop-grid-img {
   object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
 /* Badges top-left */
@@ -5792,11 +5808,13 @@ p {
   gap: 6px;
   z-index: 3;
   opacity: 0;
-  transform: translateX(8px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+  transform: translateX(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
   pointer-events: none;
+}
+
+.shop-grid-card:hover .shop-grid-img {
+  transform: scale(1.03);
 }
 
 .shop-grid-actions-visible {
@@ -5807,7 +5825,7 @@ p {
 
 /* Info block */
 .shop-grid-info {
-  padding: 12px 14px 10px;
+  padding: 0.9rem 0.15rem 0;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -5820,7 +5838,7 @@ p {
   overflow: hidden;
   font-family: var(--font-body);
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--color-primary);
   line-height: 1.35;
   margin-bottom: 6px;
@@ -5861,24 +5879,28 @@ p {
   justify-content: center;
   gap: 6px;
   width: 100%;
-  padding: 11px 16px;
-  background: var(--color-primary);
-  color: #fff;
+  padding: 0.65rem 1rem;
+  margin-top: 0.75rem;
+  background: transparent;
+  color: var(--color-primary);
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s ease;
   letter-spacing: 0.02em;
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .shop-grid-atc-btn:hover:not(:disabled) {
   background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
 }
 
 .shop-grid-atc-btn:disabled {
-  background: #e5e7eb;
+  border-color: #e5e7eb;
   color: #9ca3af;
   cursor: not-allowed;
 }
@@ -5954,7 +5976,7 @@ p {
   align-items: center;
   gap: 7px;
   padding: 10px 20px;
-  background: var(--color-primary);
+  background: var(--color-accent);   /* was var(--color-primary) */
   color: #fff;
   font-family: var(--font-body);
   font-size: 0.82rem;
@@ -5966,9 +5988,7 @@ p {
   white-space: nowrap;
 }
 
-.shop-list-cart-btn:hover:not(:disabled) {
-  background: var(--color-accent);
-}
+
 
 .shop-list-cart-btn:disabled {
   background: #e5e7eb;
@@ -5976,11 +5996,77 @@ p {
   cursor: not-allowed;
 }
 
+/* ── Custom checkbox: guaranteed white checkmark, any browser/OS ── */
+.shop-filter-check-input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(26, 26, 46, 0.2);
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: all var(--transition-fast);
+}
+
+.shop-filter-check-input:hover {
+  border-color: var(--color-accent);
+}
+
+.shop-filter-check-input:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.shop-filter-check-input:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Radio buttons (price range) keep circular shape */
+.shop-filter-checkbox input[type="radio"].shop-filter-check-input {
+  border-radius: 50%;
+}
+
+.shop-filter-checkbox input[type="radio"].shop-filter-check-input:checked::after {
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border: none;
+  border-radius: 50%;
+  background: white;
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
 @media (max-width: 640px) {
-  .shop-list-card {
-    flex-wrap: wrap;
-    gap: 14px;
-  }
+ .shop-list-card {
+  display: flex;
+  gap: 1.25rem;
+  background: white;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid rgba(26, 26, 46, 0.06);
+  transition: all var(--transition-base);
+  animation: fadeIn 0.4s ease both;
+  padding: 0;         /* keep image flush, let inner elements handle spacing */
+}
+
+.shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;   /* clearer separation between cards */
+}
+
   .shop-list-img-wrap {
     width: 100px;
     height: 100px;

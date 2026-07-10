@@ -66,13 +66,16 @@ function FilterSection({
 }
 
 export default function ShopFilters({ filters, onChange }: Props) {
+  // ✅ FIX: single-select category, matching ShopClient's URL/API which
+  // only supports one active category (`?category=slug`). Previously this
+  // pushed into an array, so selecting a 2nd category made
+  // `categories.length !== 1`, which silently dropped the filter from the
+  // URL entirely — showing all products with no checkbox/pill highlighted.
   const toggleCategory = (cat: string) => {
     const has = filters.categories.includes(cat)
     onChange({
       ...filters,
-      categories: has
-        ? filters.categories.filter((c) => c !== cat)
-        : [...filters.categories, cat],
+      categories: has ? [] : [cat],
     })
   }
 

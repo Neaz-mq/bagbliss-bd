@@ -59,6 +59,28 @@ const CATEGORIES = ['All', 'Mini Crossbody', 'Chain Strap', 'Leather', 'Canvas',
 
 const ITEMS_PER_PAGE = 12
 
+// ── Helper: slugify a category label the same way pushUrl() does ──────────
+// 'Party & Evening' -> 'party-&-evening'.toLowerCase() -> 'party-&-evening'
+// We strip characters that aren't letters/numbers/spaces before slugifying
+// so slugs stay URL-clean, and match the same normalization on both ends.
+function slugifyCategory(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/&/g, '')          // drop ampersands entirely
+    .replace(/\s+/g, ' ')       // collapse whitespace
+    .trim()
+    .replace(/\s+/g, '-')       // spaces -> dashes
+}
+
+// Build a lookup so we can go from a URL slug back to the exact CATEGORIES label
+const CATEGORY_SLUG_MAP: Record<string, string> = CATEGORIES.reduce(
+  (acc, cat) => {
+    if (cat !== 'All') acc[slugifyCategory(cat)] = cat
+    return acc
+  },
+  {} as Record<string, string>
+)
+
 // ── Helper: normalize DB product → UI Product ─────────────────────────────
 function normalizeProduct(p: any): Product {
   const normalizedCategory = (p.category || '')
@@ -107,7 +129,7 @@ function buildApiUrl(
   if (searchQuery.trim()) params.set('search',    searchQuery.trim())
 
   if (filters.categories.length === 1) {
-    params.set('category', filters.categories[0].toLowerCase().replace(/\s+/g, '-'))
+    params.set('category', slugifyCategory(filters.categories[0]))
   }
 
   if (filters.onSaleOnly) params.set('flashSale', 'true')
@@ -136,10 +158,23 @@ export default function ShopClient() {
   const [localSearch, setLocalSearch] = useState(searchQuery)
 
   const filters = useMemo<FilterState>(() => {
-    const category  = searchParams.get('category') || ''
-    const filterVal = searchParams.get('filter')   || ''
+    const categorySlug = searchParams.get('category') || ''
+    const filterVal     = searchParams.get('filter')   || ''
+
+    // Look up the exact CATEGORIES label for this slug (case/&-safe).
+    // Falls back to a best-effort capitalization if it's an unknown slug,
+    // so nothing silently disappears even if data drifts from CATEGORIES.
+    const matchedCategory =
+      CATEGORY_SLUG_MAP[categorySlug] ||
+      (categorySlug
+        ? categorySlug
+            .split('-')
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ')
+        : '')
+
     return {
-      categories:  category ? [category.replace(/-/g, ' ')] : [],
+      categories:  matchedCategory ? [matchedCategory] : [],
       priceMin:    null,
       priceMax:    null,
       colors:      [],
@@ -189,7 +224,7 @@ export default function ShopClient() {
       const params = new URLSearchParams()
       if (newSort && newSort !== 'newest') params.set('sort', newSort)
       if (newFilters.categories.length === 1) {
-        params.set('category', newFilters.categories[0].toLowerCase().replace(/\s+/g, '-'))
+        params.set('category', slugifyCategory(newFilters.categories[0]))
       }
       if (newFilters.onSaleOnly)  params.set('filter', 'flash-sale')
       if (newSearch.trim())       params.set('search', newSearch.trim())
