@@ -60,7 +60,7 @@ function SocialLink({
 
 /**
  * Desktop: static column, always expanded, header not clickable.
- * Mobile (<640px): tap-to-expand accordion.
+ * Mobile (<=1024px): tap-to-expand accordion.
  *
  * The collapsible area is a single grid child (.footer-links-wrap >
  * .footer-links-inner) so the 0fr -> 1fr transition animates cleanly
@@ -329,10 +329,10 @@ export default function Footer() {
           the right, and only inside the mobile media query). Floating
           widgets sit at fixed positions on BOTH sides of the viewport
           at EVERY width, so both sides need a permanent safe zone —
-          not just below 640px. This is what was overlapping the
+          not just below 1024px. This is what was overlapping the
           copyright text and the "Terms & condition" link on tablet /
-          in-between widths (e.g. 996px, 627px) where neither the
-          1024px nor 640px breakpoint fully protected the bar.
+          in-between widths before the mobile breakpoint below covered
+          this range.
         */
         .footer-bottom-inner {
           display: flex;
@@ -377,38 +377,20 @@ export default function Footer() {
           color: #c9c4bc;
         }
 
+        /*
+          ---------- MOBILE ----------
+          FIX: breakpoint raised from 640px -> 768px -> 1024px. The
+          centered brand block + single-column accordion layout below
+          is what "looks right", but it previously only turned on
+          below 640px, then below 768px. Widths up through 1024px
+          (e.g. 1018px) were still falling through to the old
+          3-column, left-aligned, non-accordion layout that used to
+          live in a separate "@media (max-width: 1024px)" block.
+          That block has been removed and folded into this one, so
+          everything up to 1024px now gets the same centered/accordion
+          treatment as narrow phones.
+        */
         @media (max-width: 1024px) {
-          .footer-grid {
-            grid-template-columns: repeat(3, 1fr);
-            row-gap: 36px;
-            column-gap: 24px;
-          }
-          .footer-brand-column {
-            grid-column: 1 / -1;
-          }
-          .footer-brand-desc {
-            max-width: 480px;
-          }
-
-          /* Border-top on .footer-bottom should only appear on screens
-             1024px and wider, so it's switched off for everything
-             narrower than that here. */
-          .footer-bottom {
-            border-top: none;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .footer-grid {
-            grid-template-columns: 1fr 1fr;
-          }
-          .footer-column:last-child {
-            border-bottom: none;
-          }
-        }
-
-        /* ---------- MOBILE ---------- */
-        @media (max-width: 640px) {
           .footer-main {
             padding: 40px 0 0;
           }
@@ -433,8 +415,8 @@ export default function Footer() {
           }
 
           /*
-            FIX: brand block (logo, description, socials) is centered
-            on mobile instead of left-aligned.
+            Brand block (logo, description, socials) is centered on
+            mobile instead of left-aligned.
 
             .footer-logo is inline-flex, so text-align:center on the
             parent centers the whole logo block horizontally, while
@@ -484,14 +466,10 @@ export default function Footer() {
           }
 
           /*
-            FIX: the desktop rule above sets margin: 0 0 18px on
-            .footer-column-title. That margin was never reset for
-            mobile, so it STACKED with the padding: 18px 2px added
-            right below — giving ~36px of dead space between the
-            title ("My Account") and the first link ("My Cart")
-            instead of the single ~18px gap that was intended.
-            Resetting margin to 0 here means only the padding
-            controls the spacing on mobile.
+            The desktop rule above sets margin: 0 0 18px on
+            .footer-column-title. That margin is reset to 0 here so
+            only the padding below controls the title-to-first-link
+            spacing on mobile (avoids ~36px of dead space).
           */
           .footer-column-title {
             margin: 0;
@@ -543,12 +521,6 @@ export default function Footer() {
             display: none;
           }
 
-          /*
-            FIX: kept left/right safe padding on mobile too (previously
-            padding-right was reset to 0 here, which is exactly why the
-            chat bubble started covering "Terms & condition" once the
-            column layout kicked in). Both sides now stay protected.
-          */
           .footer-bottom-inner {
             flex-direction: column;
             align-items: flex-start;
