@@ -72,15 +72,6 @@ function slugifyCategory(label: string): string {
     .replace(/\s+/g, '-')       // spaces -> dashes
 }
 
-// Build a lookup so we can go from a URL slug back to the exact CATEGORIES label
-const CATEGORY_SLUG_MAP: Record<string, string> = CATEGORIES.reduce(
-  (acc, cat) => {
-    if (cat !== 'All') acc[slugifyCategory(cat)] = cat
-    return acc
-  },
-  {} as Record<string, string>
-)
-
 // ── Helper: normalize DB product → UI Product ─────────────────────────────
 function normalizeProduct(p: any): Product {
   const normalizedCategory = (p.category || '')
@@ -134,6 +125,9 @@ function buildApiUrl(
 
   if (filters.onSaleOnly) params.set('flashSale', 'true')
 
+  if (filters.priceMin !== null) params.set('priceMin', String(filters.priceMin))
+  if (filters.priceMax !== null) params.set('priceMax', String(filters.priceMax))
+
   return `/api/products?${params.toString()}`
 }
 
@@ -152,36 +146,37 @@ export default function ShopClient() {
   const [isSortOpen,    setIsSortOpen]    = useState(false)
   const [currentPage,   setCurrentPage]   = useState(1)
 
-  // ── Derive from URL ────────────────────────────────────────────────────
-  const sort        = useMemo(() => searchParams.get('sort')   || 'newest', [searchParams])
-  const searchQuery = useMemo(() => searchParams.get('search') || '',       [searchParams])
-  const [localSearch, setLocalSearch] = useState(searchQuery)
+  // ✅ ALL filters now live in local component state only (NOT read from the
+  // URL on mount) — same pattern as priceMin/priceMax before. This guarantees
+  // a full page refresh always starts completely clean (no category, search,
+  // sort, or sale filter carried over), even though the URL is still kept in
+  // sync while you're clicking around so links stay shareable/back-button-able
+  // *within* a session.
+  const [sort,        setSort]        = useState('newest')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [localSearch,  setLocalSearch] = useState('')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [onSaleOnly,  setOnSaleOnly]  = useState(false)
+  const [priceMin,    setPriceMin]    = useState<number | null>(null)
+  const [priceMax,    setPriceMax]    = useState<number | null>(null)
 
-  const filters = useMemo<FilterState>(() => {
-    const categorySlug = searchParams.get('category') || ''
-    const filterVal     = searchParams.get('filter')   || ''
+  const filters = useMemo<FilterState>(() => ({
+    categories:  selectedCategories,
+    priceMin,
+    priceMax,
+    colors:      [],
+    onSaleOnly,
+    inStockOnly: false,
+  }), [selectedCategories, priceMin, priceMax, onSaleOnly])
 
-    // Look up the exact CATEGORIES label for this slug (case/&-safe).
-    // Falls back to a best-effort capitalization if it's an unknown slug,
-    // so nothing silently disappears even if data drifts from CATEGORIES.
-    const matchedCategory =
-      CATEGORY_SLUG_MAP[categorySlug] ||
-      (categorySlug
-        ? categorySlug
-            .split('-')
-            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(' ')
-        : '')
-
-    return {
-      categories:  matchedCategory ? [matchedCategory] : [],
-      priceMin:    null,
-      priceMax:    null,
-      colors:      [],
-      onSaleOnly:  filterVal === 'flash-sale',
-      inStockOnly: false,
+  // ── On mount: wipe any stale query params left over from before a
+  // refresh, so the address bar always matches the clean local state above.
+  useEffect(() => {
+    if (searchParams.toString()) {
+      router.replace('/shop', { scroll: false })
     }
-  }, [searchParams])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Fetch ──────────────────────────────────────────────────────────────
   const abortRef = useRef<AbortController | null>(null)
@@ -219,7 +214,11 @@ export default function ShopClient() {
   }, [currentPage, sort, searchQuery, filters])
 
   // ── URL writer ─────────────────────────────────────────────────────────
-  const pushUrl = useCallback(
+  // Keeps the address bar in sync with the current filters while the user is
+  // interacting with the page (nice for sharing a link / using back-forward),
+  // but this is purely cosmetic now — it is NOT what drives state, so it has
+  // no bearing on what happens after a refresh.
+  const syncUrl = useCallback(
     (newSort: string, newFilters: FilterState, newSearch: string) => {
       const params = new URLSearchParams()
       if (newSort && newSort !== 'newest') params.set('sort', newSort)
@@ -230,18 +229,49 @@ export default function ShopClient() {
       if (newSearch.trim())       params.set('search', newSearch.trim())
       const query = params.toString()
       router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
-      setCurrentPage(1)
     },
     [router]
   )
 
   // ── Handlers ───────────────────────────────────────────────────────────
-  const handleFilterChange = (newFilters: FilterState) => pushUrl(sort, newFilters, searchQuery)
-  const handleSortChange   = (newSort: string) => { setIsSortOpen(false); pushUrl(newSort, filters, searchQuery) }
-  const handleSearch       = (e: React.FormEvent) => { e.preventDefault(); pushUrl(sort, filters, localSearch) }
-  const handleSearchClear  = () => { setLocalSearch(''); pushUrl(sort, filters, '') }
-  const clearAllFilters    = () => {
+  const handleFilterChange = (newFilters: FilterState) => {
+    setSelectedCategories(newFilters.categories)
+    setPriceMin(newFilters.priceMin)
+    setPriceMax(newFilters.priceMax)
+    setOnSaleOnly(newFilters.onSaleOnly)
+    syncUrl(sort, newFilters, searchQuery)
+    setCurrentPage(1)
+  }
+
+  const handleSortChange = (newSort: string) => {
+    setIsSortOpen(false)
+    setSort(newSort)
+    syncUrl(newSort, filters, searchQuery)
+    setCurrentPage(1)
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSearchQuery(localSearch)
+    syncUrl(sort, filters, localSearch)
+    setCurrentPage(1)
+  }
+
+  const handleSearchClear = () => {
     setLocalSearch('')
+    setSearchQuery('')
+    syncUrl(sort, filters, '')
+    setCurrentPage(1)
+  }
+
+  const clearAllFilters = () => {
+    setLocalSearch('')
+    setSearchQuery('')
+    setSelectedCategories([])
+    setOnSaleOnly(false)
+    setPriceMin(null)
+    setPriceMax(null)
+    setSort('newest')
     router.replace('/shop', { scroll: false })
     setCurrentPage(1)
   }
@@ -542,7 +572,7 @@ export default function ShopClient() {
             onRemovePrice={()  => handleFilterChange({ ...filters, priceMin: null, priceMax: null })}
             onRemoveSale={()   => handleFilterChange({ ...filters, onSaleOnly: false })}
             onRemoveStock={()  => handleFilterChange({ ...filters, inStockOnly: false })}
-            onRemoveSearch={()  => { setLocalSearch(''); pushUrl(sort, filters, '') }}
+            onRemoveSearch={()  => { setLocalSearch(''); handleSearchClear() }}
             onClearAll={clearAllFilters}
           />
         )}
