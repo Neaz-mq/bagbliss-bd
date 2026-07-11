@@ -3718,6 +3718,67 @@ p {
   max-width: 600px;
 }
 
+/* ── Category Pills — scroll affordance (edge fade) ── */
+.shop-category-bar {
+  position: relative;
+}
+
+.shop-category-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, transparent, white 85%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+@media (min-width: 1024px) {
+  .shop-category-bar::after {
+    display: none; /* not needed on desktop where pills don't overflow */
+  }
+}
+
+/* ── Category Pills — TABLET: wrap into rows instead of scrolling ── */
+/* ── Category Pills — MOBILE & TABLET: even 3-column grid ── */
+@media (max-width: 1023px) {
+  .shop-category-bar .shop-category-pills {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    flex-wrap: unset;
+    overflow-x: visible !important;
+    padding-inline: 0;
+  }
+
+  .shop-category-bar .shop-category-pills .shop-category-pill {
+    flex: unset;
+    min-width: 0;         /* let grid control width, not content */
+    width: 100%;
+    text-align: center;
+    justify-self: stretch;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shop-category-bar::after {
+    display: none; /* no scrolling, so no scroll-hint fade needed */
+  }
+}
+
+/* ── Category Pills — narrow phones: 2 columns ── */
+@media (max-width: 400px) {
+  .shop-category-bar .shop-category-pills {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+
 /* ── Shop Search — MOBILE FIX ONLY ─────────── */
 @media (max-width: 640px) {
   .shop-search-form {
@@ -3747,6 +3808,47 @@ p {
   .shop-search-btn {
     padding: 0.5rem 0.75rem !important;
     font-size: 0.58rem !important;
+  }
+}
+
+/* ── Category Pills — ROBUST FIX (replaces the mobile-only block) ── */
+.shop-category-bar .shop-category-pills {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.shop-category-bar .shop-category-pills .shop-category-pill {
+  flex: 0 0 auto;          /* never grow, never shrink, size = content */
+  width: auto;
+  min-width: max-content;  /* hard guarantee it can't compress below text width */
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 640px) {
+  .shop-category-bar .shop-category-pills .shop-category-pill {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.78rem;
+  }
+}
+
+/* ── Category Pills — MOBILE FIX ONLY ──────── */
+@media (max-width: 640px) {
+  .shop-category-pills {
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto !important;
+    padding-inline: 0.25rem;
+  }
+
+  .shop-category-pill {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: 0.4rem 0.9rem !important;
+    font-size: 0.78rem !important;
   }
 }
 
