@@ -3718,6 +3718,38 @@ p {
   max-width: 600px;
 }
 
+/* ── Shop Search — MOBILE FIX ONLY ─────────── */
+@media (max-width: 640px) {
+  .shop-search-form {
+    padding: 0.35rem 0.35rem 0.35rem 0.875rem !important;
+    gap: 0.375rem !important;
+  }
+
+  .shop-search-icon {
+    width: 16px !important;
+    height: 16px !important;
+    flex-shrink: 0;
+  }
+
+  .shop-search-input {
+    min-width: 0 !important;   /* lets it actually shrink inside the flex row */
+    font-size: 0.82rem !important;
+  }
+
+  .shop-search-btn {
+    padding: 0.55rem 0.9rem !important;
+    font-size: 0.78rem !important;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .shop-search-btn {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.58rem !important;
+  }
+}
+
 .shop-search-icon {
   color: var(--color-text-muted);
   flex-shrink: 0;
