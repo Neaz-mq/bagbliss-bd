@@ -3811,6 +3811,114 @@ p {
   }
 }
 
+/* ── Drawer footer buttons: fit two side-by-side on narrow mobile ── */
+.shop-drawer-footer {
+  flex-wrap: nowrap;
+}
+
+.shop-drawer-footer .btn-secondary,
+.shop-drawer-footer .btn-primary {
+  padding: 0.875rem 0.75rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  min-width: 0; /* allow flex item to shrink below content size */
+}
+
+/* Extra-narrow phones: stack full-width instead of squeezing side-by-side */
+@media (max-width: 380px) {
+  .shop-drawer-footer {
+    flex-direction: column;
+  }
+
+  .shop-drawer-footer .btn-secondary,
+  .shop-drawer-footer .btn-primary {
+    width: 100%;
+  }
+}
+
+/* ── Shop toolbar — mobile fix: view toggle crowding the edge ── */
+@media (max-width: 640px) {
+  .shop-toolbar {
+    align-items: center;
+  }
+
+  .shop-toolbar-right {
+    flex-shrink: 0;
+    margin-left: 0;
+    gap: 0.5rem;
+  }
+
+  .shop-sort-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+    gap: 0.3rem;
+  }
+
+  .shop-sort-wrapper {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .shop-sort-btn {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .shop-sort-btn > :not(svg) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shop-view-toggle {
+    flex-shrink: 0;
+  }
+}
+
+/* Extra-narrow phones: let left/right sections stack instead of squeezing */
+@media (max-width: 400px) {
+  .shop-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .shop-toolbar-right {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+}
+
+/* ── Drawer footer buttons: give them the differential flex from JSX classes ── */
+.shop-drawer-footer .btn-secondary,
+.shop-drawer-footer .btn-primary {
+  white-space: nowrap;
+  min-width: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+}
+
+.shop-drawer-btn-clear {
+  flex: 0 0 auto;
+  padding: 0.875rem 1.1rem;
+}
+
+.shop-drawer-btn-show {
+  flex: 1 1 auto;
+  padding: 0.875rem 1rem;
+}
+
+@media (max-width: 360px) {
+  .shop-drawer-footer {
+    flex-direction: column;
+  }
+
+  .shop-drawer-btn-clear,
+  .shop-drawer-btn-show {
+    width: 100%;
+  }
+}
+
 /* ── Category Pills — ROBUST FIX (replaces the mobile-only block) ── */
 .shop-category-bar .shop-category-pills {
   display: flex;
@@ -4119,6 +4227,16 @@ p {
   cursor: pointer;
   color: var(--color-text-muted);
   transition: all var(--transition-fast);
+}
+
+
+/* ── NEW: explicitly round the first/last child to match the pill ── */
+.shop-view-toggle .shop-view-btn:first-child {
+  border-radius: var(--radius-full) 0 0 var(--radius-full);
+}
+
+.shop-view-toggle .shop-view-btn:last-child {
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
 }
 
 .shop-view-btn:hover {

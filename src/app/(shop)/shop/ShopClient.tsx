@@ -3,8 +3,15 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
-  SlidersHorizontal, X, ChevronDown,
-  Grid2X2, LayoutList, Search, ShoppingBag, ArrowUpDown, Tag,
+  SlidersHorizontal,
+  X,
+  ChevronDown,
+  Grid2X2,
+  LayoutList,
+  Search,
+  ShoppingBag,
+  ArrowUpDown,
+  Tag,
 } from 'lucide-react'
 import ShopFilters from './ShopFilters'
 import ShopActiveFilters from './ShopActiveFilters'
@@ -13,50 +20,57 @@ import { getColorFamily } from './colorPalette'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 export interface Product {
-  _id:             string
-  name:            string
-  slug:            string
-  price:           number
-  originalPrice?:  number
-  images:          string[]
-  category:        string
-  colors?:         any[]
-  rating?:         number
-  reviewCount?:    number
-  stock:           number
-  isFeatured?:     boolean
-  isOnSale?:       boolean
+  _id: string
+  name: string
+  slug: string
+  price: number
+  originalPrice?: number
+  images: string[]
+  category: string
+  colors?: any[]
+  rating?: number
+  reviewCount?: number
+  stock: number
+  isFeatured?: boolean
+  isOnSale?: boolean
   discountPercent?: number
-  tags?:           string[]
-  createdAt:       string
+  tags?: string[]
+  createdAt: string
 }
 
 export interface FilterState {
-  categories:  string[]
-  priceMin:    number | null
-  priceMax:    number | null
-  colors:      string[]
-  onSaleOnly:  boolean
+  categories: string[]
+  priceMin: number | null
+  priceMax: number | null
+  colors: string[]
+  onSaleOnly: boolean
   inStockOnly: boolean
 }
 
 interface ApiResponse {
   products: any[]
-  total:    number
-  pages:    number
-  page:     number
+  total: number
+  pages: number
+  page: number
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Newest First'        },
-  { value: 'price_asc',  label: 'Price: Low to High'  },
-  { value: 'price_desc', label: 'Price: High to Low'  },
-  { value: 'popular',    label: 'Most Popular'         },
-  { value: 'rating',     label: 'Top Rated'            },
+  { value: 'newest', label: 'Newest First' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'popular', label: 'Most Popular' },
+  { value: 'rating', label: 'Top Rated' },
 ]
 
-const CATEGORIES = ['All', 'Mini Crossbody', 'Chain Strap', 'Leather', 'Canvas', 'Party & Evening']
+const CATEGORIES = [
+  'All',
+  'Mini Crossbody',
+  'Chain Strap',
+  'Leather',
+  'Canvas',
+  'Party & Evening',
+]
 
 const ITEMS_PER_PAGE = 12
 
@@ -84,38 +98,43 @@ function normalizeProduct(p: any): Product {
       : undefined)
 
   return {
-    _id:            String(p._id),
-    name:           p.name,
-    slug:           p.slug,
-    price:          p.price,
-    originalPrice:  p.originalPrice,
-    images:         p.images || [],
-    category:       normalizedCategory,
-    colors:         p.colors || [],
-    rating:         p.rating,
-    reviewCount:    p.reviewCount,
-    stock:          p.totalStock ?? p.stock ?? 0,
-    isFeatured:     p.isFeatured ?? false,
-    isOnSale:       p.isFlashSale ?? p.isOnSale ?? false,
+    _id: String(p._id),
+    name: p.name,
+    slug: p.slug,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    images: p.images || [],
+    category: normalizedCategory,
+    colors: p.colors || [],
+    rating: p.rating,
+    reviewCount: p.reviewCount,
+    stock: p.totalStock ?? p.stock ?? 0,
+    isFeatured: p.isFeatured ?? false,
+    isOnSale: p.isFlashSale ?? p.isOnSale ?? false,
     discountPercent,
-    tags:           p.tags || [],
-    createdAt:      p.createdAt,
+    tags: p.tags || [],
+    createdAt: p.createdAt,
   }
 }
 
 // ── Color matching helper ──────────────────────────────────────────────────
 function extractHex(c: unknown): string {
   if (c && typeof c === 'object') {
-    return (c as { hex?: unknown }).hex as string ?? ''
+    return ((c as { hex?: unknown }).hex as string) ?? ''
   }
   return c as string
 }
 
 function normalizeColorToken(c: unknown): string {
-  return String(extractHex(c) ?? '').trim().toLowerCase()
+  return String(extractHex(c) ?? '')
+    .trim()
+    .toLowerCase()
 }
 
-function productMatchesColors(product: Product, selectedColors: string[]): boolean {
+function productMatchesColors(
+  product: Product,
+  selectedColors: string[]
+): boolean {
   if (selectedColors.length === 0) return true
   if (!product.colors || product.colors.length === 0) return false
 
@@ -145,24 +164,26 @@ function buildApiUrl(
   page: number,
   sort: string,
   searchQuery: string,
-  filters: FilterState,
+  filters: FilterState
 ): string {
   const params = new URLSearchParams()
-  params.set('page',  String(page))
+  params.set('page', String(page))
   params.set('limit', String(ITEMS_PER_PAGE))
 
-  if (sort)               params.set('sort',      sort)
-  if (searchQuery.trim()) params.set('search',    searchQuery.trim())
+  if (sort) params.set('sort', sort)
+  if (searchQuery.trim()) params.set('search', searchQuery.trim())
 
   if (filters.categories.length === 1) {
     params.set('category', slugifyCategory(filters.categories[0]))
   }
 
-  if (filters.onSaleOnly)  params.set('flashSale', 'true')
-  if (filters.inStockOnly) params.set('inStock',   'true') // ✅ NEW — passed through if/when API supports it
+  if (filters.onSaleOnly) params.set('flashSale', 'true')
+  if (filters.inStockOnly) params.set('inStock', 'true') // ✅ NEW — passed through if/when API supports it
 
-  if (filters.priceMin !== null) params.set('priceMin', String(filters.priceMin))
-  if (filters.priceMax !== null) params.set('priceMax', String(filters.priceMax))
+  if (filters.priceMin !== null)
+    params.set('priceMin', String(filters.priceMin))
+  if (filters.priceMax !== null)
+    params.set('priceMax', String(filters.priceMax))
 
   // ⚠️ NOTE: intentionally NOT sending `colors` to the API — see
   // productMatchesColors() comment above. Same caution applies to
@@ -173,38 +194,48 @@ function buildApiUrl(
 }
 
 export default function ShopClient() {
-  const router       = useRouter()
+  const router = useRouter()
   const searchParams = useSearchParams()
 
   // ── State ──────────────────────────────────────────────────────────────
-  const [products,      setProducts]      = useState<Product[]>([])
-  const [totalCount,    setTotalCount]    = useState(0)
-  const [totalPages,    setTotalPages]    = useState(0)
-  const [isLoading,     setIsLoading]     = useState(true)
-  const [error,         setError]         = useState<string | null>(null)
+  const [products, setProducts] = useState<Product[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid')
-  const [isSortOpen,    setIsSortOpen]    = useState(false)
-  const [currentPage,   setCurrentPage]   = useState(1)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [isSortOpen, setIsSortOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const [sort,        setSort]        = useState('newest')
+  const [sort, setSort] = useState('newest')
   const [searchQuery, setSearchQuery] = useState('')
-  const [localSearch,  setLocalSearch] = useState('')
+  const [localSearch, setLocalSearch] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
-  const [onSaleOnly,  setOnSaleOnly]  = useState(false)
+  const [onSaleOnly, setOnSaleOnly] = useState(false)
   const [inStockOnly, setInStockOnly] = useState(false) // ✅ NEW
-  const [priceMin,    setPriceMin]    = useState<number | null>(null)
-  const [priceMax,    setPriceMax]    = useState<number | null>(null)
+  const [priceMin, setPriceMin] = useState<number | null>(null)
+  const [priceMax, setPriceMax] = useState<number | null>(null)
 
-  const filters = useMemo<FilterState>(() => ({
-    categories:  selectedCategories,
-    priceMin,
-    priceMax,
-    colors:      selectedColors,
-    onSaleOnly,
-    inStockOnly, // ✅ FIX: was hardcoded to false, so the checkbox always snapped back
-  }), [selectedCategories, priceMin, priceMax, selectedColors, onSaleOnly, inStockOnly])
+  const filters = useMemo<FilterState>(
+    () => ({
+      categories: selectedCategories,
+      priceMin,
+      priceMax,
+      colors: selectedColors,
+      onSaleOnly,
+      inStockOnly, // ✅ FIX: was hardcoded to false, so the checkbox always snapped back
+    }),
+    [
+      selectedCategories,
+      priceMin,
+      priceMax,
+      selectedColors,
+      onSaleOnly,
+      inStockOnly,
+    ]
+  )
 
   // ── On mount: wipe any stale query params left over from before a
   // refresh, so the address bar always matches the clean local state above.
@@ -220,8 +251,8 @@ export default function ShopClient() {
 
   useEffect(() => {
     abortRef.current?.abort()
-    const controller  = new AbortController()
-    abortRef.current  = controller
+    const controller = new AbortController()
+    abortRef.current = controller
 
     const fetchProducts = async () => {
       try {
@@ -240,7 +271,9 @@ export default function ShopClient() {
 
         // ✅ Client-side safety net for colors (unchanged)
         if (filters.colors.length > 0) {
-          normalized = normalized.filter((p) => productMatchesColors(p, filters.colors))
+          normalized = normalized.filter((p) =>
+            productMatchesColors(p, filters.colors)
+          )
           total = normalized.length
           pages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE))
         }
@@ -279,10 +312,11 @@ export default function ShopClient() {
       if (newFilters.categories.length === 1) {
         params.set('category', slugifyCategory(newFilters.categories[0]))
       }
-      if (newFilters.colors.length > 0) params.set('colors', newFilters.colors.join(','))
-      if (newFilters.onSaleOnly)  params.set('filter', 'flash-sale')
+      if (newFilters.colors.length > 0)
+        params.set('colors', newFilters.colors.join(','))
+      if (newFilters.onSaleOnly) params.set('filter', 'flash-sale')
       if (newFilters.inStockOnly) params.set('stock', 'in-stock') // ✅ NEW
-      if (newSearch.trim())       params.set('search', newSearch.trim())
+      if (newSearch.trim()) params.set('search', newSearch.trim())
       const query = params.toString()
       router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
     },
@@ -338,24 +372,25 @@ export default function ShopClient() {
 
   const hasActiveFilters =
     filters.categories.length > 0 ||
-    filters.priceMin    !== null   ||
-    filters.priceMax    !== null   ||
-    filters.colors.length > 0     ||
-    filters.onSaleOnly             ||
-    filters.inStockOnly            ||
+    filters.priceMin !== null ||
+    filters.priceMax !== null ||
+    filters.colors.length > 0 ||
+    filters.onSaleOnly ||
+    filters.inStockOnly ||
     searchQuery.trim() !== ''
 
-  const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Sort'
+  const currentSortLabel =
+    SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Sort'
 
   return (
     <div className="shop-page mobile-nav-spacing">
-
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <div
         className="shop-hero"
         style={{
           position: 'relative',
-          background: 'linear-gradient(135deg, #16151f 0%, #2c2118 55%, #6b3f28 100%)',
+          background:
+            'linear-gradient(135deg, #16151f 0%, #2c2118 55%, #6b3f28 100%)',
           padding: '4rem 1.5rem 3.5rem',
           overflow: 'hidden',
         }}
@@ -406,7 +441,10 @@ export default function ShopClient() {
             }}
           >
             Find your{' '}
-            <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>perfect</span> bag
+            <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>
+              perfect
+            </span>{' '}
+            bag
           </h1>
 
           <p
@@ -458,7 +496,13 @@ export default function ShopClient() {
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             className="shop-search-input"
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.95rem' }}
+            style={{
+              flex: 1,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: '0.95rem',
+            }}
             suppressHydrationWarning
           />
           {localSearch && (
@@ -527,7 +571,6 @@ export default function ShopClient() {
       </div>
 
       <div className="container-bagbliss">
-
         {/* ── Toolbar ───────────────────────────────────────────────── */}
         <div className="shop-toolbar">
           <div className="shop-toolbar-left">
@@ -544,18 +587,22 @@ export default function ShopClient() {
                   {[
                     filters.categories.length,
                     filters.colors.length,
-                    filters.priceMin    !== null ? 1 : 0,
-                    filters.priceMax    !== null ? 1 : 0,
-                    filters.onSaleOnly  ? 1 : 0,
+                    filters.priceMin !== null ? 1 : 0,
+                    filters.priceMax !== null ? 1 : 0,
+                    filters.onSaleOnly ? 1 : 0,
                     filters.inStockOnly ? 1 : 0,
                   ].reduce((a, b) => a + b, 0)}
                 </span>
               )}
             </button>
             <p className="shop-results-count">
-              {isLoading
-                ? <span>Loading...</span>
-                : <><strong>{totalCount}</strong> products found</>}
+              {isLoading ? (
+                <span>Loading...</span>
+              ) : (
+                <>
+                  <strong>{totalCount}</strong> products found
+                </>
+              )}
             </p>
           </div>
 
@@ -570,11 +617,17 @@ export default function ShopClient() {
               >
                 <ArrowUpDown size={15} />
                 {currentSortLabel}
-                <ChevronDown size={14} className={isSortOpen ? 'rotate-180' : ''} />
+                <ChevronDown
+                  size={14}
+                  className={isSortOpen ? 'rotate-180' : ''}
+                />
               </button>
               {isSortOpen && (
                 <>
-                  <div className="shop-sort-backdrop" onClick={() => setIsSortOpen(false)} />
+                  <div
+                    className="shop-sort-backdrop"
+                    onClick={() => setIsSortOpen(false)}
+                  />
                   <div className="shop-sort-dropdown">
                     {SORT_OPTIONS.map((opt) => (
                       <button
@@ -622,15 +675,30 @@ export default function ShopClient() {
             filters={filters}
             searchQuery={searchQuery}
             onRemoveCategory={(cat) =>
-              handleFilterChange({ ...filters, categories: filters.categories.filter((c) => c !== cat) })
+              handleFilterChange({
+                ...filters,
+                categories: filters.categories.filter((c) => c !== cat),
+              })
             }
             onRemoveColor={(color) =>
-              handleFilterChange({ ...filters, colors: filters.colors.filter((c) => c !== color) })
+              handleFilterChange({
+                ...filters,
+                colors: filters.colors.filter((c) => c !== color),
+              })
             }
-            onRemovePrice={()  => handleFilterChange({ ...filters, priceMin: null, priceMax: null })}
-            onRemoveSale={()   => handleFilterChange({ ...filters, onSaleOnly: false })}
-            onRemoveStock={()  => handleFilterChange({ ...filters, inStockOnly: false })}
-            onRemoveSearch={()  => { setLocalSearch(''); handleSearchClear() }}
+            onRemovePrice={() =>
+              handleFilterChange({ ...filters, priceMin: null, priceMax: null })
+            }
+            onRemoveSale={() =>
+              handleFilterChange({ ...filters, onSaleOnly: false })
+            }
+            onRemoveStock={() =>
+              handleFilterChange({ ...filters, inStockOnly: false })
+            }
+            onRemoveSearch={() => {
+              setLocalSearch('')
+              handleSearchClear()
+            }}
             onClearAll={clearAllFilters}
           />
         )}
@@ -646,11 +714,12 @@ export default function ShopClient() {
           </aside>
 
           <main className="shop-main">
-
             {/* Error */}
             {error && !isLoading && (
               <div className="shop-empty">
-                <div className="shop-empty-icon"><ShoppingBag size={40} strokeWidth={1.5} /></div>
+                <div className="shop-empty-icon">
+                  <ShoppingBag size={40} strokeWidth={1.5} />
+                </div>
                 <h3 className="shop-empty-title">Couldn't load the shop</h3>
                 <p className="shop-empty-subtitle">{error}</p>
                 <button
@@ -666,7 +735,9 @@ export default function ShopClient() {
 
             {/* Skeletons */}
             {isLoading && (
-              <div className={viewMode === 'grid' ? 'products-grid' : 'shop-list'}>
+              <div
+                className={viewMode === 'grid' ? 'products-grid' : 'shop-list'}
+              >
                 {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
                   <div
                     key={i}
@@ -680,9 +751,15 @@ export default function ShopClient() {
             {/* Empty */}
             {!isLoading && !error && products.length === 0 && (
               <div className="shop-empty">
-                <div className="shop-empty-icon"><ShoppingBag size={40} strokeWidth={1.5} /></div>
-                <h3 className="shop-empty-title">No bags match those filters</h3>
-                <p className="shop-empty-subtitle">Clear a filter or try a different search term.</p>
+                <div className="shop-empty-icon">
+                  <ShoppingBag size={40} strokeWidth={1.5} />
+                </div>
+                <h3 className="shop-empty-title">
+                  No bags match those filters
+                </h3>
+                <p className="shop-empty-subtitle">
+                  Clear a filter or try a different search term.
+                </p>
                 <button
                   type="button"
                   onClick={clearAllFilters}
@@ -697,7 +774,11 @@ export default function ShopClient() {
             {/* Products */}
             {!isLoading && !error && products.length > 0 && (
               <>
-                <div className={viewMode === 'grid' ? 'products-grid' : 'shop-list'}>
+                <div
+                  className={
+                    viewMode === 'grid' ? 'products-grid' : 'shop-list'
+                  }
+                >
                   {products.map((product, idx) => (
                     <ShopProductCard
                       key={product._id}
@@ -723,7 +804,11 @@ export default function ShopClient() {
                     <div className="shop-page-numbers">
                       {[...Array(totalPages)].map((_, i) => {
                         const page = i + 1
-                        if (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1) {
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - currentPage) <= 1
+                        ) {
                           return (
                             <button
                               key={page}
@@ -736,14 +821,20 @@ export default function ShopClient() {
                             </button>
                           )
                         } else if (Math.abs(page - currentPage) === 2) {
-                          return <span key={page} className="shop-page-ellipsis">…</span>
+                          return (
+                            <span key={page} className="shop-page-ellipsis">
+                              …
+                            </span>
+                          )
                         }
                         return null
                       })}
                     </div>
                     <button
                       type="button"
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={currentPage === totalPages}
                       className="shop-page-btn"
                       suppressHydrationWarning
@@ -761,7 +852,10 @@ export default function ShopClient() {
       {/* ── Mobile Filter Drawer ──────────────────────────────────────── */}
       {isSidebarOpen && (
         <>
-          <div className="shop-drawer-backdrop" onClick={() => setIsSidebarOpen(false)} />
+          <div
+            className="shop-drawer-backdrop"
+            onClick={() => setIsSidebarOpen(false)}
+          />
           <div className="shop-filter-drawer">
             <div className="shop-drawer-header">
               <h3 className="shop-drawer-title">
@@ -779,7 +873,10 @@ export default function ShopClient() {
             <div className="shop-drawer-body">
               <ShopFilters
                 filters={filters}
-                onChange={(f) => { handleFilterChange(f); setIsSidebarOpen(false) }}
+                onChange={(f) => {
+                  handleFilterChange(f)
+                  setIsSidebarOpen(false)
+                }}
                 totalCount={totalCount}
               />
             </div>
@@ -787,8 +884,7 @@ export default function ShopClient() {
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="btn-secondary"
-                style={{ flex: 1 }}
+                className="btn-secondary shop-drawer-btn-clear"
                 suppressHydrationWarning
               >
                 Clear All
@@ -796,8 +892,7 @@ export default function ShopClient() {
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(false)}
-                className="btn-primary"
-                style={{ flex: 1 }}
+                className="btn-primary shop-drawer-btn-show"
                 suppressHydrationWarning
               >
                 Show {totalCount} Results
