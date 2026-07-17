@@ -6104,6 +6104,16 @@ p {
   color: var(--color-accent);
 }
 
+@media (max-width: 1023px) {
+  .shop-layout {
+    padding-bottom: 1.5rem;
+  }
+
+  .shop-page {
+    min-height: auto;
+  }
+}
+
 /* Color dots */
 .shop-card-colors {
   display: flex;
