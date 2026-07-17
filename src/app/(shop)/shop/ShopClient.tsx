@@ -63,7 +63,9 @@ const SORT_OPTIONS = [
   { value: 'rating', label: 'Top Rated' },
 ]
 
-const CATEGORIES = [
+// Exported so /new-arrivals can reuse the same category list & slugging
+// instead of re-declaring it and risking drift between the two pages.
+export const CATEGORIES = [
   'All',
   'Mini Crossbody',
   'Chain Strap',
@@ -75,7 +77,7 @@ const CATEGORIES = [
 const ITEMS_PER_PAGE = 12
 
 // ── Helper: slugify a category label the same way pushUrl() does ──────────
-function slugifyCategory(label: string): string {
+export function slugifyCategory(label: string): string {
   return label
     .toLowerCase()
     .replace(/&/g, '')
