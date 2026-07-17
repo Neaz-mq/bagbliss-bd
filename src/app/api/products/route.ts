@@ -18,9 +18,10 @@ export async function GET(req: NextRequest) {
   const flashSale = sp.get('flashSale') ?? ''
   const priceMin  = sp.get('priceMin') ?? ''
   const priceMax  = sp.get('priceMax') ?? ''
+  const isNew     = sp.get('new')      ?? ''   // ✅ NEW — powers the "New Arrivals" page
 
   const cacheKey = CACHE_KEYS.shopProducts(
-    `p${page}-l${limit}-s${search}-c${category}-sort${sort}-f${featured}-fs${flashSale}-pmin${priceMin}-pmax${priceMax}`
+    `p${page}-l${limit}-s${search}-c${category}-sort${sort}-f${featured}-fs${flashSale}-pmin${priceMin}-pmax${priceMax}-new${isNew}`
   )
 
   const ttl = search ? 0 : 300
@@ -33,6 +34,15 @@ export async function GET(req: NextRequest) {
       if (category) q.category = category
       if (featured  === 'true') q.isFeatured  = true
       if (flashSale === 'true') q.isFlashSale = true
+
+      // ✅ NEW — "New Arrivals" only shows products added in the last 30 days.
+      // If your catalog has no recent createdAt dates yet, either bump up
+      // NEW_ARRIVAL_WINDOW_DAYS or update a few products' createdAt in MongoDB.
+      if (isNew === 'true') {
+        const NEW_ARRIVAL_WINDOW_DAYS = 30
+        const cutoff = new Date(Date.now() - NEW_ARRIVAL_WINDOW_DAYS * 24 * 60 * 60 * 1000)
+        q.createdAt = { $gte: cutoff }
+      }
 
       if (priceMin || priceMax) {
         const priceQuery: Record<string, number> = {}

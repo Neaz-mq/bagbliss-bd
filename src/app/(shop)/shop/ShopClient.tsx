@@ -152,8 +152,7 @@ function productMatchesColors(
 }
 
 // ── Stock matching helper ───────────────────────────────────────────────────
-// ✅ NEW: mirrors productMatchesColors() pattern — simple, explicit, and easy
-// to reason about. A product is "in stock" if its total stock count is > 0.
+// A product is "in stock" if its total stock count is > 0.
 function productMatchesStock(product: Product, inStockOnly: boolean): boolean {
   if (!inStockOnly) return true
   return product.stock > 0
@@ -164,7 +163,8 @@ function buildApiUrl(
   page: number,
   sort: string,
   searchQuery: string,
-  filters: FilterState
+  filters: FilterState,
+  newOnly: boolean // ✅ NEW — powers "New Arrivals"
 ): string {
   const params = new URLSearchParams()
   params.set('page', String(page))
@@ -178,7 +178,8 @@ function buildApiUrl(
   }
 
   if (filters.onSaleOnly) params.set('flashSale', 'true')
-  if (filters.inStockOnly) params.set('inStock', 'true') // ✅ NEW — passed through if/when API supports it
+  if (filters.inStockOnly) params.set('inStock', 'true') // ✅ passed through if/when API supports it
+  if (newOnly) params.set('new', 'true') // ✅ NEW — tells /api/products to only return recent products
 
   if (filters.priceMin !== null)
     params.set('priceMin', String(filters.priceMin))
@@ -214,9 +215,10 @@ export default function ShopClient() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [onSaleOnly, setOnSaleOnly] = useState(false)
-  const [inStockOnly, setInStockOnly] = useState(false) // ✅ NEW
+  const [inStockOnly, setInStockOnly] = useState(false)
   const [priceMin, setPriceMin] = useState<number | null>(null)
   const [priceMax, setPriceMax] = useState<number | null>(null)
+  const [newOnly, setNewOnly] = useState(false) // ✅ NEW — true when we arrived via ?new=true
 
   const filters = useMemo<FilterState>(
     () => ({
@@ -225,7 +227,7 @@ export default function ShopClient() {
       priceMax,
       colors: selectedColors,
       onSaleOnly,
-      inStockOnly, // ✅ FIX: was hardcoded to false, so the checkbox always snapped back
+      inStockOnly,
     }),
     [
       selectedCategories,
@@ -237,9 +239,16 @@ export default function ShopClient() {
     ]
   )
 
-  // ── On mount: wipe any stale query params left over from before a
-  // refresh, so the address bar always matches the clean local state above.
+  // ── On mount: read the incoming `?new=true` param (from the "New
+  // Arrivals" nav link) into state BEFORE clearing the URL. This fixes the
+  // bug where /shop and /shop?new=true rendered identically — previously
+  // the query string was wiped without ever being read.
   useEffect(() => {
+    const newParam = searchParams.get('new')
+    if (newParam === 'true') {
+      setNewOnly(true)
+    }
+
     if (searchParams.toString()) {
       router.replace('/shop', { scroll: false })
     }
@@ -259,7 +268,7 @@ export default function ShopClient() {
         setIsLoading(true)
         setError(null)
 
-        const url = buildApiUrl(currentPage, sort, searchQuery, filters)
+        const url = buildApiUrl(currentPage, sort, searchQuery, filters, newOnly)
         const res = await fetch(url, { signal: controller.signal })
 
         if (!res.ok) throw new Error(`Server error: ${res.status}`)
@@ -269,7 +278,7 @@ export default function ShopClient() {
         let total = data.total
         let pages = data.pages
 
-        // ✅ Client-side safety net for colors (unchanged)
+        // Client-side safety net for colors (unchanged)
         if (filters.colors.length > 0) {
           normalized = normalized.filter((p) =>
             productMatchesColors(p, filters.colors)
@@ -278,10 +287,7 @@ export default function ShopClient() {
           pages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE))
         }
 
-        // ✅ NEW: client-side safety net for "In Stock Only". Same reasoning
-        // as colors — if /api/products doesn't (yet) honor `inStock=true`,
-        // this filters the already-fetched page client-side so the
-        // checkbox visibly works immediately, no backend changes required.
+        // Client-side safety net for "In Stock Only".
         if (filters.inStockOnly) {
           normalized = normalized.filter((p) => productMatchesStock(p, true))
           total = normalized.length
@@ -302,7 +308,7 @@ export default function ShopClient() {
 
     fetchProducts()
     return () => controller.abort()
-  }, [currentPage, sort, searchQuery, filters])
+  }, [currentPage, sort, searchQuery, filters, newOnly]) // ✅ newOnly added
 
   // ── URL writer ─────────────────────────────────────────────────────────
   const syncUrl = useCallback(
@@ -315,7 +321,7 @@ export default function ShopClient() {
       if (newFilters.colors.length > 0)
         params.set('colors', newFilters.colors.join(','))
       if (newFilters.onSaleOnly) params.set('filter', 'flash-sale')
-      if (newFilters.inStockOnly) params.set('stock', 'in-stock') // ✅ NEW
+      if (newFilters.inStockOnly) params.set('stock', 'in-stock')
       if (newSearch.trim()) params.set('search', newSearch.trim())
       const query = params.toString()
       router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
@@ -324,13 +330,16 @@ export default function ShopClient() {
   )
 
   // ── Handlers ───────────────────────────────────────────────────────────
+  // ✅ NEW: once someone touches a filter/sort/search while viewing "New
+  // Arrivals", drop out of that mode — they're browsing the full shop now.
   const handleFilterChange = (newFilters: FilterState) => {
     setSelectedCategories(newFilters.categories)
     setPriceMin(newFilters.priceMin)
     setPriceMax(newFilters.priceMax)
     setSelectedColors(newFilters.colors)
     setOnSaleOnly(newFilters.onSaleOnly)
-    setInStockOnly(newFilters.inStockOnly) // ✅ FIX: was never persisted before
+    setInStockOnly(newFilters.inStockOnly)
+    setNewOnly(false)
     syncUrl(sort, newFilters, searchQuery)
     setCurrentPage(1)
   }
@@ -345,6 +354,7 @@ export default function ShopClient() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setSearchQuery(localSearch)
+    setNewOnly(false)
     syncUrl(sort, filters, localSearch)
     setCurrentPage(1)
   }
@@ -362,10 +372,11 @@ export default function ShopClient() {
     setSelectedCategories([])
     setSelectedColors([])
     setOnSaleOnly(false)
-    setInStockOnly(false) // ✅ NEW
+    setInStockOnly(false)
     setPriceMin(null)
     setPriceMax(null)
     setSort('newest')
+    setNewOnly(false) // ✅ NEW
     router.replace('/shop', { scroll: false })
     setCurrentPage(1)
   }
@@ -426,7 +437,7 @@ export default function ShopClient() {
             }}
           >
             <Tag size={12} />
-            Our Collection
+            {newOnly ? 'Just Landed' : 'Our Collection'}
           </div>
 
           <h1
@@ -440,11 +451,22 @@ export default function ShopClient() {
               letterSpacing: '-0.01em',
             }}
           >
-            Find your{' '}
-            <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>
-              perfect
-            </span>{' '}
-            bag
+            {newOnly ? (
+              <>
+                Fresh in — our{' '}
+                <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>
+                  new arrivals
+                </span>
+              </>
+            ) : (
+              <>
+                Find your{' '}
+                <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>
+                  perfect
+                </span>{' '}
+                bag
+              </>
+            )}
           </h1>
 
           <p
@@ -457,7 +479,9 @@ export default function ShopClient() {
           >
             {isLoading
               ? 'Counting the bags…'
-              : `${totalCount} styles in stock · delivered across Bangladesh in 2–4 days`}
+              : newOnly
+                ? `${totalCount} new styles added recently`
+                : `${totalCount} styles in stock · delivered across Bangladesh in 2–4 days`}
           </p>
         </div>
       </div>
@@ -755,10 +779,14 @@ export default function ShopClient() {
                   <ShoppingBag size={40} strokeWidth={1.5} />
                 </div>
                 <h3 className="shop-empty-title">
-                  No bags match those filters
+                  {newOnly
+                    ? 'No new arrivals just yet'
+                    : 'No bags match those filters'}
                 </h3>
                 <p className="shop-empty-subtitle">
-                  Clear a filter or try a different search term.
+                  {newOnly
+                    ? 'Check back soon, or browse the full collection.'
+                    : 'Clear a filter or try a different search term.'}
                 </p>
                 <button
                   type="button"
@@ -766,7 +794,7 @@ export default function ShopClient() {
                   className="btn-primary"
                   suppressHydrationWarning
                 >
-                  Clear All Filters
+                  {newOnly ? 'Browse All Bags' : 'Clear All Filters'}
                 </button>
               </div>
             )}

@@ -25,7 +25,7 @@ import { useWishlistStore } from '@/store/wishlistStore'
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Shop', href: '/shop' },
-  { label: 'New Arrivals', href: '/shop?sort=newest' },
+  { label: 'New Arrivals', href: '/shop?new=true' },
   { label: 'Flash Sale', href: '/shop?filter=flash-sale' },
 ] as const
 
