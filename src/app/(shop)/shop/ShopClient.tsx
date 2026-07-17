@@ -241,14 +241,53 @@ export default function ShopClient() {
     ]
   )
 
-  // ── On mount: read the incoming `?new=true` param (from the "New
-  // Arrivals" nav link) into state BEFORE clearing the URL. This fixes the
-  // bug where /shop and /shop?new=true rendered identically — previously
-  // the query string was wiped without ever being read.
+  // ── On mount: read EVERY incoming query param (from nav/footer links)
+  // into state BEFORE clearing the URL. Previously only `?new=true` was
+  // read here — `?filter=flash-sale` (Flash Sale nav link) and
+  // `?category=...` (Footer links) were silently dropped because the URL
+  // was wiped on the very next line before anything could apply them.
+  // That's why Shop / New Arrivals / Flash Sale all rendered identically.
   useEffect(() => {
-    const newParam = searchParams.get('new')
-    if (newParam === 'true') {
+    if (searchParams.get('new') === 'true') {
       setNewOnly(true)
+    }
+
+    // Flash Sale nav link → /shop?filter=flash-sale
+    if (searchParams.get('filter') === 'flash-sale') {
+      setOnSaleOnly(true)
+    }
+
+    // In-stock links → /shop?stock=in-stock
+    if (searchParams.get('stock') === 'in-stock') {
+      setInStockOnly(true)
+    }
+
+    // Footer category links → /shop?category=leather etc.
+    const categoryParam = searchParams.get('category')
+    if (categoryParam) {
+      const match = CATEGORIES.find(
+        (c) => c !== 'All' && slugifyCategory(c) === categoryParam
+      )
+      if (match) setSelectedCategories([match])
+    }
+
+    // Color filter links → /shop?colors=red,blue
+    const colorsParam = searchParams.get('colors')
+    if (colorsParam) {
+      setSelectedColors(colorsParam.split(',').filter(Boolean))
+    }
+
+    // Navbar search → /shop?search=...
+    const searchParam = searchParams.get('search')
+    if (searchParam) {
+      setSearchQuery(searchParam)
+      setLocalSearch(searchParam)
+    }
+
+    // Footer "New Arrivals" → /shop?sort=newest (and any other sort links)
+    const sortParam = searchParams.get('sort')
+    if (sortParam && SORT_OPTIONS.some((o) => o.value === sortParam)) {
+      setSort(sortParam)
     }
 
     if (searchParams.toString()) {
@@ -439,7 +478,7 @@ export default function ShopClient() {
             }}
           >
             <Tag size={12} />
-            {newOnly ? 'Just Landed' : 'Our Collection'}
+            {newOnly ? 'Just Landed' : filters.onSaleOnly ? 'Flash Sale' : 'Our Collection'}
           </div>
 
           <h1
@@ -458,6 +497,13 @@ export default function ShopClient() {
                 Fresh in — our{' '}
                 <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>
                   new arrivals
+                </span>
+              </>
+            ) : filters.onSaleOnly ? (
+              <>
+                Grab it before it's{' '}
+                <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>
+                  gone
                 </span>
               </>
             ) : (
@@ -483,7 +529,9 @@ export default function ShopClient() {
               ? 'Counting the bags…'
               : newOnly
                 ? `${totalCount} new styles added recently`
-                : `${totalCount} styles in stock · delivered across Bangladesh in 2–4 days`}
+                : filters.onSaleOnly
+                  ? `${totalCount} bags on flash sale right now`
+                  : `${totalCount} styles in stock · delivered across Bangladesh in 2–4 days`}
           </p>
         </div>
       </div>
