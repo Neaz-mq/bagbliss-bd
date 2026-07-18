@@ -9,6 +9,10 @@ interface Props {
   filters: FilterState
   onChange: (f: FilterState) => void
   totalCount: number
+  // ✅ NEW — on /flash-sale every product shown is already on sale, so the
+  // "On Sale Only" checkbox is redundant (and confusing if someone unchecks
+  // it expecting to see non-sale items). Hide it there.
+  hideOnSaleFilter?: boolean
 }
 
 const CATEGORIES = [
@@ -60,7 +64,11 @@ function FilterSection({
   )
 }
 
-export default function ShopFilters({ filters, onChange }: Props) {
+export default function ShopFilters({
+  filters,
+  onChange,
+  hideOnSaleFilter = false,
+}: Props) {
   // ✅ FIX: single-select category, matching ShopClient's URL/API which
   // only supports one active category (`?category=slug`). Previously this
   // pushed into an array, so selecting a 2nd category made
@@ -178,16 +186,18 @@ export default function ShopFilters({ filters, onChange }: Props) {
       {/* Availability */}
       <FilterSection title="Availability" defaultOpen={false}>
         <div className="shop-filter-list">
-          <label className="shop-filter-checkbox">
-            <input
-              type="checkbox"
-              checked={filters.onSaleOnly}
-              onChange={() => onChange({ ...filters, onSaleOnly: !filters.onSaleOnly })}
-              className="shop-filter-check-input"
-              suppressHydrationWarning
-            />
-            <span className="shop-filter-check-label">On Sale Only</span>
-          </label>
+          {!hideOnSaleFilter && (
+            <label className="shop-filter-checkbox">
+              <input
+                type="checkbox"
+                checked={filters.onSaleOnly}
+                onChange={() => onChange({ ...filters, onSaleOnly: !filters.onSaleOnly })}
+                className="shop-filter-check-input"
+                suppressHydrationWarning
+              />
+              <span className="shop-filter-check-label">On Sale Only</span>
+            </label>
+          )}
           <label className="shop-filter-checkbox">
             <input
               type="checkbox"

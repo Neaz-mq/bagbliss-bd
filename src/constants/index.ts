@@ -89,6 +89,8 @@ export const BD_CITIES = [
 export const ROUTES = {
   home: '/',
   shop: '/shop',
+  newArrivals: '/new-arrivals',
+  flashSale: '/flash-sale',
   product: (slug: string) => `/product/${slug}`,
   cart: '/cart',
   checkout: '/checkout',

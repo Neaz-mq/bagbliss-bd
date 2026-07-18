@@ -196,9 +196,27 @@ function buildApiUrl(
   return `/api/products?${params.toString()}`
 }
 
-export default function ShopClient() {
+// ✅ NEW — one component, three distinct pages. `mode` tells ShopClient which
+// route it's rendering as, so /new-arrivals and /flash-sale get their own
+// URL, hero copy, and default filter — instead of everything collapsing back
+// onto /shop?... query params (which is what caused Shop / New Arrivals /
+// Flash Sale to render identically before).
+export type ShopMode = 'shop' | 'new-arrivals' | 'flash-sale'
+
+interface ShopClientProps {
+  mode?: ShopMode
+}
+
+const BASE_PATH: Record<ShopMode, string> = {
+  shop: '/shop',
+  'new-arrivals': '/new-arrivals',
+  'flash-sale': '/flash-sale',
+}
+
+export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const basePath = BASE_PATH[mode]
 
   // ── State ──────────────────────────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([])
@@ -216,11 +234,13 @@ export default function ShopClient() {
   const [localSearch, setLocalSearch] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
-  const [onSaleOnly, setOnSaleOnly] = useState(false)
+  const [onSaleOnly, setOnSaleOnly] = useState(mode === 'flash-sale')
   const [inStockOnly, setInStockOnly] = useState(false)
   const [priceMin, setPriceMin] = useState<number | null>(null)
   const [priceMax, setPriceMax] = useState<number | null>(null)
-  const [newOnly, setNewOnly] = useState(false) // ✅ NEW — true when we arrived via ?new=true
+  // ✅ true whenever this instance IS the /new-arrivals page — no longer
+  // dependent on a ?new=true query param that could silently get dropped.
+  const [newOnly, setNewOnly] = useState(mode === 'new-arrivals')
 
   const filters = useMemo<FilterState>(
     () => ({
@@ -248,13 +268,22 @@ export default function ShopClient() {
   // was wiped on the very next line before anything could apply them.
   // That's why Shop / New Arrivals / Flash Sale all rendered identically.
   useEffect(() => {
-    if (searchParams.get('new') === 'true') {
-      setNewOnly(true)
-    }
+    // /new-arrivals and /flash-sale are dedicated routes now — they don't
+    // read filter state from query params at all, so there's nothing here
+    // for them to do. Running this only for 'shop' also means it can never
+    // stomp on the newOnly/onSaleOnly defaults those two modes are seeded
+    // with above.
+    if (mode !== 'shop') return
 
-    // Flash Sale nav link → /shop?filter=flash-sale
+    // Old bookmarked/shared links still using the query-param style —
+    // send them to the dedicated route instead of trying to fake it on /shop.
+    if (searchParams.get('new') === 'true') {
+      router.replace('/new-arrivals', { scroll: false })
+      return
+    }
     if (searchParams.get('filter') === 'flash-sale') {
-      setOnSaleOnly(true)
+      router.replace('/flash-sale', { scroll: false })
+      return
     }
 
     // In-stock links → /shop?stock=in-stock
@@ -284,7 +313,8 @@ export default function ShopClient() {
       setLocalSearch(searchParam)
     }
 
-    // Footer "New Arrivals" → /shop?sort=newest (and any other sort links)
+    // Any other ?sort=... links into /shop (Footer now links straight to
+    // /new-arrivals instead of /shop?sort=newest, but keep this generic)
     const sortParam = searchParams.get('sort')
     if (sortParam && SORT_OPTIONS.some((o) => o.value === sortParam)) {
       setSort(sortParam)
@@ -294,7 +324,7 @@ export default function ShopClient() {
       router.replace('/shop', { scroll: false })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [mode])
 
   // ── Fetch ──────────────────────────────────────────────────────────────
   const abortRef = useRef<AbortController | null>(null)
@@ -361,13 +391,14 @@ export default function ShopClient() {
       }
       if (newFilters.colors.length > 0)
         params.set('colors', newFilters.colors.join(','))
-      if (newFilters.onSaleOnly) params.set('filter', 'flash-sale')
+      if (newFilters.onSaleOnly && mode !== 'flash-sale')
+        params.set('filter', 'flash-sale')
       if (newFilters.inStockOnly) params.set('stock', 'in-stock')
       if (newSearch.trim()) params.set('search', newSearch.trim())
       const query = params.toString()
-      router.replace(`/shop${query ? `?${query}` : ''}`, { scroll: false })
+      router.replace(`${basePath}${query ? `?${query}` : ''}`, { scroll: false })
     },
-    [router]
+    [router, basePath]
   )
 
   // ── Handlers ───────────────────────────────────────────────────────────
@@ -378,9 +409,13 @@ export default function ShopClient() {
     setPriceMin(newFilters.priceMin)
     setPriceMax(newFilters.priceMax)
     setSelectedColors(newFilters.colors)
-    setOnSaleOnly(newFilters.onSaleOnly)
+    // On /flash-sale, "on sale" is the whole point of the page — never let
+    // the sidebar checkbox turn it off. Everywhere else, respect it normally.
+    setOnSaleOnly(mode === 'flash-sale' ? true : newFilters.onSaleOnly)
     setInStockOnly(newFilters.inStockOnly)
-    setNewOnly(false)
+    // Only /shop's generic filtering ever needs to "exit" new-arrivals mode —
+    // /new-arrivals itself keeps showing new stock even while narrowed further.
+    if (mode === 'shop') setNewOnly(false)
     syncUrl(sort, newFilters, searchQuery)
     setCurrentPage(1)
   }
@@ -395,7 +430,7 @@ export default function ShopClient() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setSearchQuery(localSearch)
-    setNewOnly(false)
+    if (mode === 'shop') setNewOnly(false)
     syncUrl(sort, filters, localSearch)
     setCurrentPage(1)
   }
@@ -412,13 +447,13 @@ export default function ShopClient() {
     setSearchQuery('')
     setSelectedCategories([])
     setSelectedColors([])
-    setOnSaleOnly(false)
+    setOnSaleOnly(mode === 'flash-sale')
     setInStockOnly(false)
     setPriceMin(null)
     setPriceMax(null)
     setSort('newest')
-    setNewOnly(false) // ✅ NEW
-    router.replace('/shop', { scroll: false })
+    setNewOnly(mode === 'new-arrivals')
+    router.replace(basePath, { scroll: false })
     setCurrentPage(1)
   }
 
@@ -784,6 +819,7 @@ export default function ShopClient() {
               filters={filters}
               onChange={handleFilterChange}
               totalCount={totalCount}
+              hideOnSaleFilter={mode === 'flash-sale'}
             />
           </aside>
 
@@ -831,20 +867,26 @@ export default function ShopClient() {
                 <h3 className="shop-empty-title">
                   {newOnly
                     ? 'No new arrivals just yet'
-                    : 'No bags match those filters'}
+                    : filters.onSaleOnly
+                      ? 'No flash sale items match those filters'
+                      : 'No bags match those filters'}
                 </h3>
                 <p className="shop-empty-subtitle">
                   {newOnly
                     ? 'Check back soon, or browse the full collection.'
-                    : 'Clear a filter or try a different search term.'}
+                    : filters.onSaleOnly
+                      ? 'Try loosening a filter, or browse the full collection.'
+                      : 'Clear a filter or try a different search term.'}
                 </p>
                 <button
                   type="button"
-                  onClick={clearAllFilters}
+                  onClick={
+                    mode === 'shop' ? clearAllFilters : () => router.push('/shop')
+                  }
                   className="btn-primary"
                   suppressHydrationWarning
                 >
-                  {newOnly ? 'Browse All Bags' : 'Clear All Filters'}
+                  {mode !== 'shop' ? 'Browse All Bags' : 'Clear All Filters'}
                 </button>
               </div>
             )}
@@ -956,6 +998,7 @@ export default function ShopClient() {
                   setIsSidebarOpen(false)
                 }}
                 totalCount={totalCount}
+                hideOnSaleFilter={mode === 'flash-sale'}
               />
             </div>
             <div className="shop-drawer-footer">

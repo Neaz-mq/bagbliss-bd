@@ -309,7 +309,7 @@ export default function CartPage() {
               Start Shopping
               <ArrowRight size={16} />
             </Link>
-            <Link href="/shop?filter=flash-sale" className="btn-secondary">
+            <Link href="/flash-sale" className="btn-secondary">
               ⚡ View Flash Sale
             </Link>
           </div>

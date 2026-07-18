@@ -25,7 +25,7 @@ const PRODUCT_LINKS = [
   { label: 'Mini Crossbody', href: '/shop?category=mini-crossbody' },
   { label: 'Chain Strap', href: '/shop?category=chain-strap' },
   { label: 'Leather Bags', href: '/shop?category=leather' },
-  { label: 'New Arrivals', href: '/shop?sort=newest' },
+  { label: 'New Arrivals', href: ROUTES.newArrivals },
 ]
 
 const COMPANY_LINKS = [
