@@ -323,8 +323,21 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
     if (searchParams.toString()) {
       router.replace('/shop', { scroll: false })
     }
+    // ✅ FIX: this effect must re-run whenever the incoming URL's query
+    // string changes — not just when `mode` changes. Previously it only
+    // depended on `mode`, so if the user was already sitting on /shop and
+    // triggered a new `?search=...` / `?category=...` / etc. navigation
+    // (e.g. from the navbar search modal), Next.js reused the already-
+    // mounted ShopClient instance instead of remounting it, this effect
+    // never re-ran, and the new query param was silently ignored until a
+    // full page refresh forced a fresh mount. Depending on the actual
+    // query string (not the searchParams object reference, which can
+    // change identity without the content changing) fixes that while
+    // still terminating safely: once the params are read into state, the
+    // router.replace('/shop') above strips them, searchParams becomes ''
+    // again, the effect re-runs once more, finds nothing to do, and stops.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode])
+  }, [mode, searchParams.toString()])
 
   // ── Fetch ──────────────────────────────────────────────────────────────
   const abortRef = useRef<AbortController | null>(null)
