@@ -17,6 +17,7 @@ import ShopFilters from './ShopFilters'
 import ShopActiveFilters from './ShopActiveFilters'
 import ShopProductCard from './ShopProductCard'
 import { getColorFamily } from './colorPalette'
+import { SHOP_CATEGORIES, categoryLabelToValue } from '@/constants/shopCategories'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 export interface Product {
@@ -63,27 +64,24 @@ const SORT_OPTIONS = [
   { value: 'rating', label: 'Top Rated' },
 ]
 
-// Exported so /new-arrivals can reuse the same category list & slugging
-// instead of re-declaring it and risking drift between the two pages.
-export const CATEGORIES = [
-  'All',
-  'Mini Crossbody',
-  'Chain Strap',
-  'Leather',
-  'Canvas',
-  'Party & Evening',
-]
+// Exported so /new-arrivals (and the navbar's popular searches) can reuse
+// the same category list & slugging instead of re-declaring it and risking
+// drift between pages/components.
+export const CATEGORIES = ['All', ...SHOP_CATEGORIES.map((c) => c.label)]
 
 const ITEMS_PER_PAGE = 12
 
-// ── Helper: slugify a category label the same way pushUrl() does ──────────
+// ── Helper: map a category label to its real DB category value ────────────
+// ✅ FIX: this used to derive the slug algorithmically from the label
+// (lowercase + strip "&" + dasherize), which produced "party-evening" for
+// "Party & Evening" — but every seeded product actually has
+// category: "party". That mismatch meant the "Party & Evening" pill (and
+// any /shop?category=... link pointing at it) always returned zero
+// results, because the API does an exact match on `category`. Delegating
+// to the shared SHOP_CATEGORIES map fixes that and keeps this page in
+// sync with the DB values used elsewhere (seed script, admin categories).
 export function slugifyCategory(label: string): string {
-  return label
-    .toLowerCase()
-    .replace(/&/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\s+/g, '-')
+  return categoryLabelToValue(label)
 }
 
 // ── Helper: normalize DB product → UI Product ─────────────────────────────

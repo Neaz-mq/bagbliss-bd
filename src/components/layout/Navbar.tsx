@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
+import { SHOP_CATEGORIES, categoryLabelToValue } from '@/constants/shopCategories'
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -37,11 +38,16 @@ const DARK = '#1a1a2e'
 const FONT = 'Inter, system-ui, sans-serif'
 const SERIF = '"Poppins", system-ui, sans-serif'
 const MENU_COLOR = '#333333'
-const POPULAR_SEARCHES = [
-  'Tote Bags',
-  'Backpacks',
-  'Sling Bags',
-  'Clutches',
+// ✅ FIX: these used to be made-up terms ('Tote Bags', 'Backpacks', 'Sling
+// Bags', 'Clutches') that don't match any product name, tag, or category in
+// the catalog (the store only sells Mini Crossbody, Chain Strap, Leather,
+// Canvas, and Party & Evening bags). Since /shop's `search` param only
+// regex-matches against `name`/`tags`, clicking any of those chips always
+// landed on an empty "No bags match those filters" page. Pulling the list
+// from SHOP_CATEGORIES (the same source ShopClient uses for its category
+// pills) guarantees every chip corresponds to real, in-stock products.
+const POPULAR_SEARCHES: string[] = [
+  ...SHOP_CATEGORIES.map((c) => c.label),
   'New Arrivals',
 ]
 
@@ -186,8 +192,18 @@ function NavbarInner() {
     }
   }
 
+  // ✅ FIX: quick-search chips now route through the same category
+  // filtering ShopClient's own category pills use, instead of a free-text
+  // `search` query that only matched a product's `name`/`tags`. A label
+  // like "Leather" filtered as text would still miss products whose name
+  // doesn't literally contain the word "Leather" — going straight to
+  // `?category=<value>` guarantees every product in that category shows up.
   const handleQuickSearch = (term: string) => {
-    router.push(`/shop?search=${encodeURIComponent(term)}`)
+    if (term === 'New Arrivals') {
+      router.push('/new-arrivals')
+    } else {
+      router.push(`/shop?category=${categoryLabelToValue(term)}`)
+    }
     setIsSearchOpen(false)
     setSearchQuery('')
   }
