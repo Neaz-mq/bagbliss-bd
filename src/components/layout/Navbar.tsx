@@ -18,6 +18,7 @@ import {
   ChevronDown,
   Home,
   Grid3X3,
+  ArrowRight,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
@@ -36,6 +37,18 @@ const DARK = '#1a1a2e'
 const FONT = 'Inter, system-ui, sans-serif'
 const SERIF = '"Poppins", system-ui, sans-serif'
 const MENU_COLOR = '#333333'
+const POPULAR_SEARCHES = [
+  'Tote Bags',
+  'Backpacks',
+  'Sling Bags',
+  'Clutches',
+  'New Arrivals',
+]
+
+// Height reserved for the fixed mobile bottom nav (used to pad page content
+// so it never hides behind the bar). Keep this in sync with the actual
+// rendered height of the <nav> below.
+const MOBILE_BOTTOM_NAV_SPACE = 74 // px
 
 function NavbarInner() {
   const pathname = usePathname()
@@ -48,9 +61,6 @@ function NavbarInner() {
   const openCart = useCartStore((s) => s.openCart)
 
   // ── Scroll-aware nav state ────────────────────────────────────────────
-  // 'top'     → user is at top of page, navbar sits normally
-  // 'hidden'  → user scrolled DOWN, navbar slides up out of view
-  // 'visible' → user scrolled UP, navbar slides back down into view
   const [navState, setNavState] = useState<'top' | 'hidden' | 'visible'>('top')
   const { scrollY } = useScroll()
   const lastScrollY = useRef(0)
@@ -59,20 +69,16 @@ function NavbarInner() {
     const diff = y - lastScrollY.current
 
     if (y < 60) {
-      // Near top — always show, no shadow
       setNavState('top')
     } else if (diff > 4) {
-      // Scrolling DOWN — hide navbar
       setNavState('hidden')
     } else if (diff < -4) {
-      // Scrolling UP — reveal navbar
       setNavState('visible')
     }
 
     lastScrollY.current = y
   })
 
-  // isScrolled drives the frosted-glass look when not at the very top
   const isScrolled = navState !== 'top'
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -81,9 +87,12 @@ function NavbarInner() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isMounted, setIsMounted] = useState(false)
   const [hovered, setHovered] = useState<string | null>(null)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const mobileSearchRef = useRef<HTMLInputElement>(null)
+  const searchModalRef = useRef<HTMLDivElement>(null)
 
   const safeCart = typeof cartCount === 'number' ? cartCount : 0
   const safeWishlist = typeof wishlistCount === 'number' ? wishlistCount : 0
@@ -117,8 +126,48 @@ function NavbarInner() {
   }, [])
 
   useEffect(() => {
-    if (isSearchOpen && searchRef.current) searchRef.current.focus()
+    if (!isSearchOpen) return
+    // Focus whichever input is actually mounted (desktop modal vs mobile sheet)
+    const t = setTimeout(() => {
+      ;(searchRef.current ?? mobileSearchRef.current)?.focus()
+    }, 50)
+    return () => clearTimeout(t)
   }, [isSearchOpen])
+
+  // Lock body scroll whenever EITHER the search overlay or the mobile
+  // dropdown menu is open — previously only search locked scroll, so the
+  // mobile menu could be open while the page behind it kept scrolling.
+  useEffect(() => {
+    const shouldLock = isSearchOpen || isMobileMenuOpen
+    if (!shouldLock) return
+
+    const handleClick = (e: MouseEvent) => {
+      if (
+        isSearchOpen &&
+        searchModalRef.current &&
+        !searchModalRef.current.contains(e.target as Node)
+      ) {
+        setIsSearchOpen(false)
+      }
+    }
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsSearchOpen(false)
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isSearchOpen, isMobileMenuOpen])
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -137,137 +186,166 @@ function NavbarInner() {
     }
   }
 
-  // ── Desktop auth widget ───────────────────────────────────────────────
-  const renderDesktopAuth = () => {
-  // ✅ Show avatar dropdown only after we're mounted AND confirmed authenticated
-  if (isMounted && status === 'authenticated' && session) {
-    return (
-      <div ref={userMenuRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setIsUserMenuOpen((v) => !v)}
-          className="flex cursor-pointer items-center gap-[6px] border-none bg-transparent p-0"
-        >
-          {session.user?.image ? (
-            <img
-              src={session.user.image}
-              alt=""
-              className="h-[30px] w-[30px] rounded-full object-cover"
-              style={{ border: `1.5px solid rgba(202,134,93,.35)` }}
-            />
-          ) : (
-            <div
-              className="flex h-[30px] w-[30px] items-center justify-center rounded-full text-[0.75rem] font-bold"
-              style={{
-                background: 'rgba(202,134,93,.12)',
-                color: C,
-                border: `1.5px solid rgba(202,134,93,.25)`,
-                fontFamily: FONT,
-              }}
-            >
-              {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
-            </div>
-          )}
-          <ChevronDown
-            size={12}
-            style={{
-              color: '#aaa',
-              transition: 'transform 150ms',
-              transform: isUserMenuOpen ? 'rotate(180deg)' : 'none',
-            }}
-          />
-        </button>
-
-        {isUserMenuOpen && (
-          <div className="absolute top-[calc(100%+12px)] right-0 z-[200] min-w-[215px] overflow-hidden rounded-[1.25rem] border border-[rgba(26,26,46,0.08)] bg-white shadow-[0_8px_32px_rgba(26,26,46,0.12)]">
-            <div className="px-4 py-[0.875rem]" style={{ background: BG }}>
-              <p
-                className="m-0 text-[0.9rem] font-bold"
-                style={{ color: DARK, fontFamily: FONT }}
-              >
-                {session.user?.name ?? ''}
-              </p>
-              <p
-                className="m-0 mt-[2px] overflow-hidden text-[0.75rem] text-ellipsis whitespace-nowrap text-[#9ca3af]"
-                style={{ fontFamily: FONT }}
-              >
-                {session.user?.email ?? ''}
-              </p>
-            </div>
-            <div className="h-px bg-[rgba(26,26,46,0.06)]" />
-            {[
-              { href: '/account', icon: <User size={15} />, label: 'My Account' },
-              { href: '/account/orders', icon: <Package size={15} />, label: 'My Orders' },
-              ...(session.user?.role === 'admin'
-                ? [{ href: '/admin', icon: <Settings size={15} />, label: 'Admin Panel' }]
-                : []),
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsUserMenuOpen(false)}
-                className="flex items-center gap-[10px] px-4 py-[0.7rem] text-[0.875rem] font-medium no-underline transition-[background,color] duration-150"
-                style={{ color: '#6b7280', fontFamily: FONT }}
-                onMouseEnter={(e) =>
-                  Object.assign((e.currentTarget as HTMLElement).style, {
-                    background: 'rgba(202,134,93,.06)',
-                    color: C,
-                  })
-                }
-                onMouseLeave={(e) =>
-                  Object.assign((e.currentTarget as HTMLElement).style, {
-                    background: '',
-                    color: '#6b7280',
-                  })
-                }
-              >
-                {item.icon} {item.label}
-              </Link>
-            ))}
-            <div className="h-px bg-[rgba(26,26,46,0.06)]" />
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="flex w-full cursor-pointer items-center gap-[10px] border-none bg-transparent px-4 py-[0.7rem] text-left text-[0.875rem] font-medium text-[#ef4444] transition-[background] duration-150"
-              style={{ fontFamily: FONT }}
-              onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,.06)'
-              }}
-              onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLElement).style.background = ''
-              }}
-            >
-              <LogOut size={15} /> Sign Out
-            </button>
-          </div>
-        )}
-      </div>
-    )
+  const handleQuickSearch = (term: string) => {
+    router.push(`/shop?search=${encodeURIComponent(term)}`)
+    setIsSearchOpen(false)
+    setSearchQuery('')
   }
 
-  // ✅ Default: Sign In renders immediately — no isMounted gate, no loading check
-  // Works on SSR too, so it appears at the same time as all other nav links
-  return (
-    <Link
-      href="/login"
-      className="flex items-center gap-[0.35rem] text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline transition-colors duration-150"
-      style={{
-        color: hovered === 'signin' ? C : MENU_COLOR,
-        fontFamily: FONT,
-      }}
-      onMouseEnter={() => setHovered('signin')}
-      onMouseLeave={() => setHovered(null)}
-    >
-      <User size={15} />
-      Sign In
-    </Link>
-  )
-}
+  // ── Desktop auth widget ───────────────────────────────────────────────
+  const renderDesktopAuth = () => {
+    if (isMounted && status === 'authenticated' && session) {
+      return (
+        <div ref={userMenuRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setIsUserMenuOpen((v) => !v)}
+            className="flex cursor-pointer items-center gap-[6px] border-none bg-transparent p-0"
+          >
+            {session.user?.image ? (
+              <img
+                src={session.user.image}
+                alt=""
+                className="h-[30px] w-[30px] rounded-full object-cover"
+                style={{ border: `1.5px solid rgba(202,134,93,.35)` }}
+              />
+            ) : (
+              <div
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-full text-[0.75rem] font-bold"
+                style={{
+                  background: 'rgba(202,134,93,.12)',
+                  color: C,
+                  border: `1.5px solid rgba(202,134,93,.25)`,
+                  fontFamily: FONT,
+                }}
+              >
+                {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
+              </div>
+            )}
+            <ChevronDown
+              size={12}
+              style={{
+                color: '#aaa',
+                transition: 'transform 150ms',
+                transform: isUserMenuOpen ? 'rotate(180deg)' : 'none',
+              }}
+            />
+          </button>
+
+          {isUserMenuOpen && (
+            <div className="absolute top-[calc(100%+12px)] right-0 z-[200] min-w-[215px] overflow-hidden rounded-[1.25rem] border border-[rgba(26,26,46,0.08)] bg-white shadow-[0_8px_32px_rgba(26,26,46,0.12)]">
+              <div className="px-4 py-[0.875rem]" style={{ background: BG }}>
+                <p
+                  className="m-0 text-[0.9rem] font-bold"
+                  style={{ color: DARK, fontFamily: FONT }}
+                >
+                  {session.user?.name ?? ''}
+                </p>
+                <p
+                  className="m-0 mt-[2px] overflow-hidden text-[0.75rem] text-ellipsis whitespace-nowrap text-[#9ca3af]"
+                  style={{ fontFamily: FONT }}
+                >
+                  {session.user?.email ?? ''}
+                </p>
+              </div>
+              <div className="h-px bg-[rgba(26,26,46,0.06)]" />
+              {[
+                {
+                  href: '/account',
+                  icon: <User size={15} />,
+                  label: 'My Account',
+                },
+                {
+                  href: '/account/orders',
+                  icon: <Package size={15} />,
+                  label: 'My Orders',
+                },
+                ...(session.user?.role === 'admin'
+                  ? [
+                      {
+                        href: '/admin',
+                        icon: <Settings size={15} />,
+                        label: 'Admin Panel',
+                      },
+                    ]
+                  : []),
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsUserMenuOpen(false)}
+                  className="flex items-center gap-[10px] px-4 py-[0.7rem] text-[0.875rem] font-medium no-underline transition-[background,color] duration-150"
+                  style={{ color: '#6b7280', fontFamily: FONT }}
+                  onMouseEnter={(e) =>
+                    Object.assign((e.currentTarget as HTMLElement).style, {
+                      background: 'rgba(202,134,93,.06)',
+                      color: C,
+                    })
+                  }
+                  onMouseLeave={(e) =>
+                    Object.assign((e.currentTarget as HTMLElement).style, {
+                      background: '',
+                      color: '#6b7280',
+                    })
+                  }
+                >
+                  {item.icon} {item.label}
+                </Link>
+              ))}
+              <div className="h-px bg-[rgba(26,26,46,0.06)]" />
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="flex w-full cursor-pointer items-center gap-[10px] border-none bg-transparent px-4 py-[0.7rem] text-left text-[0.875rem] font-medium text-[#ef4444] transition-[background] duration-150"
+                style={{ fontFamily: FONT }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.background =
+                    'rgba(239,68,68,.06)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.background = ''
+                }}
+              >
+                <LogOut size={15} /> Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <Link
+        href="/login"
+        className="flex items-center gap-[0.35rem] text-[0.775rem] font-medium tracking-[0.07em] uppercase no-underline transition-colors duration-150"
+        style={{
+          color: hovered === 'signin' ? C : MENU_COLOR,
+          fontFamily: FONT,
+        }}
+        onMouseEnter={() => setHovered('signin')}
+        onMouseLeave={() => setHovered(null)}
+      >
+        <User size={15} />
+        Sign In
+      </Link>
+    )
+  }
   return (
     <>
       <style>{`
+        /* ── Global page padding so content never hides under the fixed
+           mobile bottom nav. This was the root cause of the "padding
+           thik nai" issue: the bottom nav is position:fixed, so it is
+           removed from normal flow and simply floats on top of the last
+           bit of every page's content on mobile. ───────────────────── */
+        @media (max-width: 1023px) {
+          body {
+            padding-bottom: calc(${MOBILE_BOTTOM_NAV_SPACE}px + env(safe-area-inset-bottom, 0px));
+          }
+        }
+
         .nav-grid {
-          padding: 0 1rem;
+          padding: 0 clamp(0.85rem, 4vw, 1.25rem);
         }
         @media (min-width: 1024px) {
           .nav-grid {
@@ -288,6 +366,14 @@ function NavbarInner() {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0);    }
         }
+        @keyframes searchOverlayIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes searchModalIn {
+          from { opacity: 0; transform: translateY(-14px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)      scale(1);   }
+        }
         .mobile-menu-icon {
           display: flex;
           align-items: center;
@@ -306,20 +392,28 @@ function NavbarInner() {
         .mobile-dropdown-item:active {
           background: rgba(202,134,93,0.08) !important;
         }
+        .search-overlay {
+          animation: searchOverlayIn 180ms ease-out both;
+        }
+        .search-modal-card {
+          animation: searchModalIn 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .search-submit-btn:hover:not(:disabled) {
+          background: ${CD} !important;
+          transform: scale(1.04);
+        }
+        .search-submit-btn:active:not(:disabled) {
+          transform: scale(0.96);
+        }
+        .quick-search-chip:hover {
+          background: ${C} !important;
+          color: #fff !important;
+          border-color: ${C} !important;
+        }
       `}</style>
 
-      {/*
-        ── motion.div is the sticky container.
-           When navState === 'hidden' it slides up (-100%) off screen.
-           When navState === 'visible' or 'top' it springs back to y=0.
-           Spring physics give it the satisfying elastic snap.
-      */}
       <motion.div
-        animate={
-          navState === 'hidden'
-            ? { y: '-100%' }
-            : { y: 0 }
-        }
+        animate={navState === 'hidden' ? { y: '-100%' } : { y: 0 }}
         transition={{
           type: 'spring',
           stiffness: 300,
@@ -343,7 +437,6 @@ function NavbarInner() {
           }`}
         >
           <div className="nav-grid mx-auto box-border grid h-[58px] w-full grid-cols-[44px_1fr_44px] items-center lg:h-[68px] lg:grid-cols-[1fr_auto_1fr]">
-
             {/* ── LEFT ───────────────────────────────────────────────── */}
             <div className="flex items-center">
               <button
@@ -354,7 +447,7 @@ function NavbarInner() {
                 }}
                 aria-label="Menu"
                 suppressHydrationWarning
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border-none bg-transparent p-1 lg:hidden"
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border-none bg-transparent p-0 lg:hidden"
                 style={{ color: DARK }}
               >
                 <span
@@ -412,7 +505,9 @@ function NavbarInner() {
                 style={{ color: C }}
                 className="hidden lg:block"
               />
-              <span className="text-[1.2rem] lg:text-[1.4rem]">BagBliss BD</span>
+              <span className="xs:text-[1.2rem] text-[1.05rem] lg:text-[1.4rem]">
+                BagBliss BD
+              </span>
             </Link>
 
             {/* ── RIGHT ──────────────────────────────────────────────── */}
@@ -421,11 +516,16 @@ function NavbarInner() {
                 {/* Search */}
                 <button
                   type="button"
-                  onClick={() => setIsSearchOpen((v) => !v)}
+                  onClick={() => {
+                    setIsSearchOpen((v) => !v)
+                    setIsMobileMenuOpen(false)
+                  }}
                   aria-label="Search"
+                  aria-expanded={isSearchOpen}
                   className="flex cursor-pointer items-center gap-[0.35rem] border-none bg-transparent p-0 text-[0.775rem] font-medium tracking-[0.07em] whitespace-nowrap uppercase transition-colors duration-150"
                   style={{
-                    color: hovered === 'search' ? C : MENU_COLOR,
+                    color:
+                      isSearchOpen || hovered === 'search' ? C : MENU_COLOR,
                     fontFamily: FONT,
                   }}
                   onMouseEnter={() => setHovered('search')}
@@ -495,7 +595,7 @@ function NavbarInner() {
                     onClick={openCart}
                     aria-label="Cart"
                     suppressHydrationWarning
-                    className="relative flex cursor-pointer items-center justify-center rounded-lg border-none bg-transparent p-1"
+                    className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border-none bg-transparent p-0"
                   >
                     <ShoppingBag
                       size={22}
@@ -516,58 +616,11 @@ function NavbarInner() {
                     )}
                   </button>
                 ) : (
-                  <div className="h-[30px] w-[30px]" />
+                  <div className="h-9 w-9" />
                 )}
               </div>
             </div>
           </div>
-
-          {/* ── Desktop search bar ───────────────────────────────────── */}
-          {isSearchOpen && (
-            <div
-              className="hidden border-t border-[rgba(26,26,46,0.07)] px-4 py-3 lg:block"
-              style={{ background: BG }}
-            >
-              <form
-                onSubmit={handleSearch}
-                className="mx-auto flex max-w-[580px] items-center gap-2 rounded-full border-[1.5px] border-[rgba(26,26,46,0.1)] bg-white py-[0.4rem] pr-2 pl-4 transition-[border-color] duration-150"
-              >
-                <Search size={16} className="shrink-0 text-[#bbb]" />
-                <input
-                  ref={searchRef}
-                  type="text"
-                  placeholder="Search for bags, colors, styles…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  suppressHydrationWarning
-                  className="flex-1 border-none bg-transparent text-sm outline-none"
-                  style={{ color: DARK, fontFamily: FONT }}
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="flex cursor-pointer border-none bg-transparent p-0 text-[#bbb]"
-                  >
-                    <X size={15} />
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="cursor-pointer rounded-full border-none px-4 py-[0.35rem] text-[0.78rem] font-bold tracking-[0.05em] whitespace-nowrap text-white uppercase transition-colors duration-150"
-                  style={{ background: C, fontFamily: FONT }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLElement).style.background = CD
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLElement).style.background = C
-                  }}
-                >
-                  Search
-                </button>
-              </form>
-            </div>
-          )}
 
           {/* ── Mobile dropdown menu ─────────────────────────────────── */}
           {isMobileMenuOpen && (
@@ -579,35 +632,65 @@ function NavbarInner() {
               <div style={{ padding: '0.75rem 1rem 0' }}>
                 <form
                   onSubmit={handleSearch}
-                  className="flex items-center gap-2  bg-white"
+                  className="flex items-center gap-2 rounded-full bg-white py-[4px] pr-[4px] pl-4"
                   style={{
-                    border: '1.5px solid rgba(26,26,46,0.1)',
-                    padding: '0.4rem 0.5rem 0.4rem 1rem',
+                    border: isSearchFocused
+                      ? `1.5px solid ${C}`
+                      : '1.5px solid rgba(26,26,46,0.1)',
+                    boxShadow: '0 2px 8px rgba(26,26,46,0.04)',
+                    transition: 'border-color 150ms ease',
                   }}
                 >
-                  <Search size={15} className="shrink-0 text-[#bbb]" />
+                  <Search size={15} className="shrink-0 text-[#b0b0b0]" />
                   <input
+                    ref={mobileSearchRef}
                     type="text"
                     placeholder="Search bags…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
                     suppressHydrationWarning
-                    className="flex-1 border-none bg-transparent text-sm outline-none"
-                    style={{ color: DARK, fontFamily: FONT }}
+                    className="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-[#b0b0b0]"
+                    style={{
+                      color: DARK,
+                      fontFamily: FONT,
+                      outline: 'none',
+                      boxShadow: 'none',
+                    }}
                   />
                   <button
                     type="submit"
+                    aria-label="Submit search"
+                    disabled={!searchQuery.trim()}
                     suppressHydrationWarning
-                    className="cursor-pointer rounded-2xl  border-none text-[0.75rem] font-bold text-white"
-                    style={{
-                      background: C,
-                      fontFamily: FONT,
-                      padding: '0.3rem 0.875rem',
-                    }}
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none text-white transition-[background,transform] duration-150 disabled:cursor-default disabled:opacity-40"
+                    style={{ background: C }}
                   >
-                    Go
+                    <ArrowRight size={15} strokeWidth={2.4} />
                   </button>
                 </form>
+
+                {searchQuery.trim() === '' && (
+                  <div className="mt-3 flex flex-wrap gap-x-2 gap-y-2">
+                    {POPULAR_SEARCHES.map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => handleQuickSearch(term)}
+                        className="quick-search-chip cursor-pointer rounded-full border px-3 py-[0.4rem] text-[0.72rem] font-medium transition-colors duration-150"
+                        style={{
+                          borderColor: 'rgba(26,26,46,0.12)',
+                          color: MENU_COLOR,
+                          background: 'transparent',
+                          fontFamily: FONT,
+                        }}
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <nav style={{ padding: '0.5rem 0' }}>
@@ -629,6 +712,26 @@ function NavbarInner() {
                     {label}
                   </Link>
                 ))}
+                <Link
+                  href="/wishlist"
+                  className="mobile-dropdown-item flex items-center gap-2 text-[0.875rem] font-medium tracking-[0.04em] uppercase no-underline"
+                  style={{
+                    animationDelay: `${40 + NAV_LINKS.length * 45}ms`,
+                    padding: '0.8rem 1.25rem',
+                    color: pathname === '/wishlist' ? C : MENU_COLOR,
+                    borderLeft:
+                      pathname === '/wishlist'
+                        ? `3px solid ${C}`
+                        : '3px solid transparent',
+                    fontFamily: FONT,
+                  }}
+                >
+                  <Heart size={14} strokeWidth={2.2} />
+                  Wishlist
+                  {isMounted && safeWishlist > 0 && (
+                    <span>({safeWishlist})</span>
+                  )}
+                </Link>
               </nav>
 
               {isMounted && !session && (
@@ -638,7 +741,7 @@ function NavbarInner() {
                 >
                   <Link
                     href="/login"
-                    className="flex flex-1 items-center justify-center text-[0.8rem] font-medium tracking-[0.05em] text-white uppercase no-underline"
+                    className="flex flex-1 items-center justify-center rounded-lg text-[0.8rem] font-medium tracking-[0.05em] text-white uppercase no-underline"
                     style={{
                       background: C,
                       fontFamily: FONT,
@@ -649,7 +752,7 @@ function NavbarInner() {
                   </Link>
                   <Link
                     href="/register"
-                    className="flex flex-1 items-center justify-center  bg-transparent text-[0.8rem] font-medium tracking-[0.05em] uppercase no-underline"
+                    className="flex flex-1 items-center justify-center rounded-lg bg-transparent text-[0.8rem] font-medium tracking-[0.05em] uppercase no-underline"
                     style={{
                       color: DARK,
                       fontFamily: FONT,
@@ -665,6 +768,121 @@ function NavbarInner() {
           )}
         </header>
       </motion.div>
+
+      {/* ── Search Overlay + Modal (desktop nav-link AND mobile bottom-nav
+          both open this same overlay now, so search behaves identically
+          everywhere instead of mobile having a separate, cramped inline
+          field only reachable through the hamburger menu). ───────────── */}
+      {isMounted && isSearchOpen && (
+        <div
+          className="search-overlay fixed inset-0 z-[300] flex items-start justify-center"
+          style={{
+            background: 'rgba(26,26,46,0.45)',
+            backdropFilter: 'blur(4px)',
+            paddingTop: 'clamp(64px, 10vh, 140px)',
+            paddingLeft: '1.25rem',
+            paddingRight: '1.25rem',
+          }}
+        >
+          <div
+            ref={searchModalRef}
+            className="search-modal-card flex w-full max-w-[560px] flex-col gap-6 rounded-[1.25rem] bg-white shadow-[0_20px_60px_rgba(26,26,46,0.25)]"
+            style={{
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              padding: '1.5rem', // mobile
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <span
+                className="text-[0.8rem] font-bold tracking-[0.08em] uppercase"
+                style={{ color: DARK, fontFamily: FONT }}
+              >
+                Search Products
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(false)}
+                aria-label="Close search"
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-none bg-transparent"
+                style={{ color: '#9ca3af' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleSearch}
+              className="flex items-center gap-3 rounded-full py-[6px] pr-[6px] pl-5"
+              style={{
+                background: BG,
+                border: isSearchFocused
+                  ? `1.5px solid ${C}`
+                  : '1.5px solid rgba(26,26,46,0.1)',
+                transition: 'border-color 150ms ease',
+              }}
+            >
+              <Search
+                size={16}
+                style={{ color: isSearchFocused ? C : '#b0b0b0' }}
+              />
+              <input
+                ref={searchRef}
+                type="text"
+                placeholder="Search for bags, backpacks, clutches…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                className="flex-1 border-none bg-transparent py-[10px] text-sm outline-none placeholder:text-[#b0b0b0]"
+                style={{
+                  color: DARK,
+                  fontFamily: FONT,
+                  outline: 'none',
+                  boxShadow: 'none',
+                }}
+              />
+              <button
+                type="submit"
+                aria-label="Submit search"
+                disabled={!searchQuery.trim()}
+                className="search-submit-btn flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-none text-white transition-[background,transform] duration-150 disabled:cursor-default disabled:opacity-40"
+                style={{ background: C }}
+              >
+                <ArrowRight size={16} strokeWidth={2.4} />
+              </button>
+            </form>
+
+            <div className="flex flex-col gap-3">
+              <p
+                className="text-[0.7rem] font-bold tracking-[0.06em] text-[#9ca3af] uppercase"
+                style={{ fontFamily: FONT }}
+              >
+                Popular Searches
+              </p>
+              <div className="flex flex-wrap gap-x-2.5 gap-y-2.5">
+                {POPULAR_SEARCHES.map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => handleQuickSearch(term)}
+                    className="quick-search-chip cursor-pointer rounded-full border px-4 py-[0.5rem] text-[0.78rem] font-medium transition-colors duration-150"
+                    style={{
+                      borderColor: 'rgba(26,26,46,0.12)',
+                      color: MENU_COLOR,
+                      background: 'transparent',
+                      fontFamily: FONT,
+                    }}
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Mobile bottom nav ─────────────────────────────────────────── */}
       {isMounted && (
@@ -728,6 +946,39 @@ function NavbarInner() {
             <span>Shop</span>
           </Link>
 
+          {/* Search — was missing from the bottom nav on mobile, forcing
+              users to open the hamburger menu just to search. Now it opens
+              the same overlay used by desktop. */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen(false)
+              setIsSearchOpen(true)
+            }}
+            suppressHydrationWarning
+            className="flex min-w-[48px] flex-1 cursor-pointer flex-col items-center gap-[3px] border-none bg-transparent py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase"
+            style={{
+              color: isSearchOpen ? '#fff' : 'rgba(255,255,255,0.38)',
+              fontFamily: FONT,
+            }}
+          >
+            <div
+              className="flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
+              style={{
+                background: isSearchOpen
+                  ? 'rgba(202,134,93,0.22)'
+                  : 'transparent',
+              }}
+            >
+              <Search
+                size={20}
+                strokeWidth={isSearchOpen ? 2.5 : 1.8}
+                color={isSearchOpen ? C : 'rgba(255,255,255,0.38)'}
+              />
+            </div>
+            <span>Search</span>
+          </button>
+
           {/* Cart FAB */}
           <button
             type="button"
@@ -789,9 +1040,7 @@ function NavbarInner() {
               <Heart
                 size={20}
                 strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8}
-                color={
-                  pathname === '/wishlist' ? C : 'rgba(255,255,255,0.38)'
-                }
+                color={pathname === '/wishlist' ? C : 'rgba(255,255,255,0.38)'}
               />
               {safeWishlist > 0 && (
                 <span
@@ -848,9 +1097,7 @@ function NavbarInner() {
                 <User
                   size={20}
                   strokeWidth={
-                    pathname === '/account' || pathname === '/login'
-                      ? 2.5
-                      : 1.8
+                    pathname === '/account' || pathname === '/login' ? 2.5 : 1.8
                   }
                   color={
                     pathname === '/account' || pathname === '/login'
