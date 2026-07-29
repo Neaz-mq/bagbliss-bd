@@ -23,6 +23,7 @@ import {
 import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
 import { SHOP_CATEGORIES, categoryLabelToValue } from '@/constants/shopCategories'
+import { matchPaletteColor } from '@/app/(shop)/shop/colorPalette'
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
@@ -183,13 +184,24 @@ function NavbarInner() {
     return () => clearTimeout(t)
   }, [pathname])
 
+  // ✅ FIX: same "search pink" vs "Pink swatch" mismatch as on /shop — a
+  // color name typed into the navbar search used to be sent as
+  // `?search=pink`, which only literally-matches color names containing
+  // "pink". Routing it to `?colors=<hex>` instead reuses /shop's
+  // family-based color filter (the one the swatches use), so navbar
+  // search and the shop page's own filters always agree.
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`)
-      setIsSearchOpen(false)
-      setSearchQuery('')
+    const term = searchQuery.trim()
+    if (!term) return
+    const paletteMatch = matchPaletteColor(term)
+    if (paletteMatch) {
+      router.push(`/shop?colors=${encodeURIComponent(paletteMatch.hex)}`)
+    } else {
+      router.push(`/shop?search=${encodeURIComponent(term)}`)
     }
+    setIsSearchOpen(false)
+    setSearchQuery('')
   }
 
   // ✅ FIX: quick-search chips now route through the same category

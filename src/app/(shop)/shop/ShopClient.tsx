@@ -16,7 +16,7 @@ import {
 import ShopFilters from './ShopFilters'
 import ShopActiveFilters from './ShopActiveFilters'
 import ShopProductCard from './ShopProductCard'
-import { getColorFamily } from './colorPalette'
+import { getColorFamily, matchPaletteColor } from './colorPalette'
 import { SHOP_CATEGORIES, categoryLabelToValue } from '@/constants/shopCategories'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -440,6 +440,21 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
+    // ✅ FIX: if the typed term is literally a palette color name ("Pink",
+    // "Navy", ...), filter by that color family instead of running it as
+    // text search — this is exactly what clicking the matching swatch
+    // does, so "search pink" and "Pink swatch" now always return the same
+    // products instead of two different counts.
+    const paletteMatch = matchPaletteColor(localSearch)
+    if (paletteMatch) {
+      setLocalSearch('')
+      setSearchQuery('')
+      const newColors = filters.colors.includes(paletteMatch.hex)
+        ? filters.colors
+        : [...filters.colors, paletteMatch.hex]
+      handleFilterChange({ ...filters, colors: newColors })
+      return
+    }
     setSearchQuery(localSearch)
     if (mode === 'shop') setNewOnly(false)
     syncUrl(sort, filters, localSearch)

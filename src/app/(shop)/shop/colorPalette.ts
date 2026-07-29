@@ -19,6 +19,22 @@ export const COLOR_PALETTE: PaletteColor[] = [
   { hex: '#d2b48c', name: 'Beige'  },
 ]
 
+// ✅ NEW — lets the free-text search box and the Color swatch checkboxes
+// agree on results. Typing "pink" in search used to run a *literal*
+// substring match against each product's `colors.name` (e.g. "Baby Pink",
+// "Blush Pink"), so a product only in "Dusty Rose" was missed — even
+// though clicking the Pink swatch DOES include it, because that filter
+// works by nearest color *family* (HSL distance), not literal spelling.
+// Same term, two different algorithms, two different counts. When the
+// typed term matches a palette name exactly, callers should route it
+// through the swatch/family filter instead of plain text search so both
+// paths always produce the same result set.
+export function matchPaletteColor(term: string): PaletteColor | undefined {
+  const t = term.trim().toLowerCase()
+  if (!t) return undefined
+  return COLOR_PALETTE.find((c) => c.name.toLowerCase() === t)
+}
+
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const clean = hex.replace('#', '').trim()
   const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean
