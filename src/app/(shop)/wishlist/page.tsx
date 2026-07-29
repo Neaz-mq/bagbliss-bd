@@ -117,12 +117,12 @@ function WishlistCard({
       style={{
         background:     'white',
         borderRadius:   '20px',
-        border:         `1px solid ${hovered ? 'rgba(233,30,140,0.2)' : '#f1f5f9'}`,
+        border:         `1px solid ${hovered ? 'rgba(202,134,93,0.3)' : '#f1f5f9'}`,
         overflow:       'hidden',
         display:        'flex',
         flexDirection:  'column',
         transition:     'all 0.25s ease',
-        boxShadow:      hovered ? '0 12px 40px rgba(233,30,140,0.12)' : '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow:      hovered ? '0 12px 40px rgba(202,134,93,0.18)' : '0 1px 3px rgba(0,0,0,0.04)',
         transform:      removing ? 'scale(0.96)' : hovered ? 'translateY(-3px)' : 'none',
         opacity:        removing ? 0 : 1,
         animationDelay: `${index * 0.06}s`,
@@ -149,9 +149,9 @@ function WishlistCard({
             <div style={{
               width: '100%', height: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'linear-gradient(135deg, rgba(233,30,140,0.04), rgba(201,168,76,0.04))',
+              background: 'linear-gradient(135deg, rgba(202,134,93,0.06), rgba(201,168,76,0.06))',
             }}>
-              <Package size={48} color="#e91e8c" style={{ opacity: 0.2 }} />
+              <Package size={48} color="var(--color-accent)" style={{ opacity: 0.35 }} />
             </div>
           )}
         </Link>
@@ -159,9 +159,7 @@ function WishlistCard({
         {/* Badges */}
         <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 2 }}>
           {discountPct && (
-            <span style={{ background: '#e91e8c', color: 'white', fontSize: '0.68rem', fontWeight: 800, padding: '3px 8px', borderRadius: '7px', fontFamily: 'var(--font-mono)' }}>
-              -{discountPct}%
-            </span>
+            <span className="shop-card-badge-sale">-{discountPct}%</span>
           )}
           {product.isFlashSale && (
             <span style={{ background: '#f59e0b', color: 'white', fontSize: '0.65rem', fontWeight: 800, padding: '2px 7px', borderRadius: '6px' }}>
@@ -226,7 +224,7 @@ function WishlistCard({
       <div style={{ padding: '14px 14px 10px', flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
         <p style={{
           fontFamily:    'var(--font-mono)', fontSize: '0.68rem', fontWeight: 700,
-          color:         '#e91e8c', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0,
+          color:         'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0,
         }}>
           {CAT_LABELS[product.category] ?? product.category}
         </p>
@@ -235,7 +233,7 @@ function WishlistCard({
           href={`/product/${product.slug}`}
           style={{
             fontFamily:      'var(--font-body)', fontSize: '0.92rem', fontWeight: 700,
-            color:           hovered ? '#e91e8c' : '#1e293b', textDecoration: 'none',
+            color:           hovered ? 'var(--color-accent)' : '#1e293b', textDecoration: 'none',
             lineHeight:      1.35, transition: 'color 0.2s',
             display:         '-webkit-box', WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical', overflow: 'hidden',
@@ -255,7 +253,7 @@ function WishlistCard({
 
         {/* Price */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginTop: '2px', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 800, color: '#e91e8c' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 800, color: 'var(--color-primary)' }}>
             ৳{effectivePrice.toLocaleString('en-BD')}
           </span>
           {originalPrice && originalPrice > effectivePrice && (
@@ -293,7 +291,7 @@ function WishlistCard({
           }}
           onMouseEnter={e => {
             if (!isOutOfStock && !adding)
-              e.currentTarget.style.background = 'linear-gradient(135deg, #e91e8c, #f43f5e)'
+              e.currentTarget.style.background = 'linear-gradient(135deg, var(--color-accent), var(--color-accent-dark))'
           }}
           onMouseLeave={e => {
             if (!isOutOfStock && !adding)
@@ -323,11 +321,11 @@ function EmptyWishlist() {
     }}>
       <div style={{
         width: '100px', height: '100px', borderRadius: '50%',
-        background: 'rgba(233,30,140,0.07)',
+        background: 'rgba(202, 134, 93, 0.1)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: '1.5rem',
       }}>
-        <Heart size={44} color="#e91e8c" strokeWidth={1.5} />
+        <Heart size={44} color="var(--color-accent)" strokeWidth={1.5} />
       </div>
       <h2 style={{
         fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem,3vw,2rem)',
@@ -476,62 +474,71 @@ export default function WishlistPage() {
   return (
     <div style={{ paddingTop: '72px', minHeight: '100vh', background: 'var(--color-surface)' }}>
 
-      {/* ── Hero Header ───────────────────────────────────────────── */}
+      {/* ── Hero Header ───────────────────────────────────────────────────
+          ✅ REDESIGN: this used to run its own purple→violet gradient with
+          pink accents (var(--color-primary) → #2d1b4e, #e91e8c highlights)
+          that doesn't match any other page. Shop / New Arrivals / Flash
+          Sale all share one hero language — the warm charcoal→brown
+          gradient (#16151f → #2c2118 → #6b3f28), an uppercase accent pill,
+          a big display headline with one italic accent-colored word, and a
+          quiet subtitle line (see ShopClient.tsx's hero). Reusing that
+          exact language here — instead of a one-off — is what makes the
+          wishlist page feel like part of the same store rather than a
+          bolted-on screen. ─────────────────────────────────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg, var(--color-primary) 0%, #2d1b4e 100%)',
-        padding: '2.5rem 0 2rem', position: 'relative', overflow: 'hidden',
+        position: 'relative',
+        background: 'linear-gradient(135deg, #16151f 0%, #2c2118 55%, #6b3f28 100%)',
+        padding: '3.5rem 1.5rem 3.25rem',
+        overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', top: '-40%', right: '-5%', width: '350px', height: '350px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(233,30,140,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-30%', left: '-5%', width: '250px', height: '250px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
         <div className="container-bagbliss" style={{ position: 'relative', zIndex: 1 }}>
           <Link
             href="/shop"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
               color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', fontWeight: 600,
-              textDecoration: 'none', marginBottom: '1.25rem', fontFamily: 'var(--font-body)',
+              textDecoration: 'none', marginBottom: '1.75rem', fontFamily: 'var(--font-body)',
               transition: 'color 0.2s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#F3B98B')}
             onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
           >
             <ArrowLeft size={16} /> Back to Shop
           </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            textAlign: 'center', maxWidth: '760px', margin: '0 auto',
+          }}>
             <div style={{
-              width: '48px', height: '48px', borderRadius: '14px',
-              background: 'rgba(233,30,140,0.2)', border: '1px solid rgba(233,30,140,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.375rem 1rem',
+              background: 'rgba(202, 134, 93, 0.16)',
+              border: '1px solid rgba(202, 134, 93, 0.4)',
+              borderRadius: '9999px', color: '#EBC29F',
+              fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 700,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              marginBottom: '1.25rem',
             }}>
-              <Heart size={24} color="#e91e8c" fill="#e91e8c" />
+              <Heart size={12} fill="#EBC29F" /> Saved For Later
             </div>
-            <h1 style={{
-              fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem,4vw,2.75rem)',
-              fontWeight: 700, color: 'white', margin: 0,
-            }}>
-              My Wishlist
-            </h1>
-            {hasHydrated && items.length > 0 && (
-              <span style={{
-                background: 'rgba(233,30,140,0.25)', border: '1px solid rgba(233,30,140,0.4)',
-                color: '#f9a8d4', fontFamily: 'var(--font-mono)',
-                fontSize: '0.8rem', fontWeight: 700,
-                padding: '0.2rem 0.75rem', borderRadius: '9999px',
-              }}>
-                {items.length} saved
-              </span>
-            )}
-          </div>
 
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body)', fontSize: '0.95rem', margin: 0 }}>
-            {!hasHydrated
-              ? 'Loading your wishlist...'
-              : items.length === 0
-              ? 'No items saved yet — start browsing!'
-              : `${products.length} item${products.length !== 1 ? 's' : ''} you love`}
-          </p>
+            <h1 style={{
+              fontFamily: 'var(--font-display)', fontSize: 'clamp(2.25rem, 5vw, 3.75rem)',
+              fontWeight: 700, color: '#ffffff', lineHeight: 1.08,
+              margin: '0 0 0.75rem', letterSpacing: '-0.01em',
+            }}>
+              My <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>Wishlist</span>
+            </h1>
+
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'rgba(255,255,255,0.68)', margin: 0 }}>
+              {!hasHydrated
+                ? 'Loading your wishlist…'
+                : items.length === 0
+                ? 'No items saved yet — start browsing!'
+                : `${products.length} item${products.length !== 1 ? 's' : ''} you love`}
+            </p>
+          </div>
         </div>
       </div>
 
