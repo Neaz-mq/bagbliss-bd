@@ -30,7 +30,22 @@ export async function GET(req: NextRequest) {
     cacheKey,
     async () => {
       const q: Record<string, unknown> = { isActive: true }
-      if (search)   q.$or = [{ name: { $regex: search, $options: 'i' } }, { tags: { $in: [new RegExp(search, 'i')] } }]
+      // ✅ FIX: the search bar's placeholder reads "Search bags, colors,
+      // styles..." but this $or never actually looked at a product's
+      // `colors` array — only `name` and `tags`. So typing a color like
+      // "navy" always returned 0 results even though products have a
+      // color literally named "Navy" / "Navy Blue". Adding a
+      // `colors.name` regex match makes color search actually work, and
+      // it's dynamic — it matches whatever color names exist in the DB,
+      // no hardcoded list required.
+      if (search) {
+        const re = new RegExp(search, 'i')
+        q.$or = [
+          { name: { $regex: re } },
+          { tags: { $in: [re] } },
+          { 'colors.name': { $regex: re } },
+        ]
+      }
       if (category) q.category = category
       if (featured  === 'true') q.isFeatured  = true
       if (flashSale === 'true') q.isFlashSale = true
