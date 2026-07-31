@@ -9,6 +9,22 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+/* ============================================
+   BRAND COLOR TOKENS
+   Matches globals.css --color-accent family
+   (same tokens as the Orders admin page)
+   ============================================ */
+const ACCENT        = '#CA865D'
+const ACCENT_DARK    = '#b5724a'
+const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg contrast
+const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
+const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
+const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
+const ACCENT_BORDER  = 'rgba(202,134,93,0.2)'
+const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
+const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
+const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
+
 interface ColorVariant { name: string; hex: string; stock: number }
 interface Product {
   _id: string; name: string; slug: string
@@ -59,7 +75,7 @@ function FInput({ placeholder, value, onChange, type = 'text' }: {
       type={type} placeholder={placeholder} value={value}
       onChange={e => onChange(e.target.value)}
       style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#fafbfc', boxSizing: 'border-box' }}
-      onFocus={e => (e.target.style.borderColor = '#e91e8c')}
+      onFocus={e => (e.target.style.borderColor = ACCENT)}
       onBlur={e  => (e.target.style.borderColor = '#e8edf5')}
     />
   )
@@ -69,7 +85,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
       <button suppressHydrationWarning type="button" onClick={() => onChange(!checked)}
-        style={{ width: '44px', height: '24px', borderRadius: '12px', background: checked ? '#e91e8c' : '#e2e8f0', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+        style={{ width: '44px', height: '24px', borderRadius: '12px', background: checked ? ACCENT : '#e2e8f0', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
         <span style={{ position: 'absolute', top: '3px', left: checked ? '23px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
       </button>
       <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>{label}</span>
@@ -117,7 +133,7 @@ function ProductModal({ product, onClose, onSaved }: {
 
   const addUrl    = () => { const url = imgUrl.trim(); if (!url) return; set('images', [...form.images, url]); setImgUrl('') }
   const removeImg = (i: number) => set('images', form.images.filter((_, idx) => idx !== i))
-  const addColor  = () => set('colors', [...form.colors, { name: '', hex: '#e91e8c', stock: '0' }])
+  const addColor  = () => set('colors', [...form.colors, { name: '', hex: ACCENT, stock: '0' }])
   const rmColor   = (i: number) => set('colors', form.colors.filter((_, idx) => idx !== i))
   const updColor  = (i: number, f: string, v: string) => set('colors', form.colors.map((c, idx) => idx === i ? { ...c, [f]: v } : c))
 
@@ -157,8 +173,8 @@ function ProductModal({ product, onClose, onSaved }: {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(233,30,140,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Package size={18} color="#e91e8c" />
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: ACCENT_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Package size={18} color={ACCENT} />
             </div>
             <div>
               <p style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{product ? 'Edit Product' : 'Add New Product'}</p>
@@ -186,10 +202,10 @@ function ProductModal({ product, onClose, onSaved }: {
               </div>
               <input suppressHydrationWarning placeholder="Short description" value={form.shortDescription} onChange={e => set('shortDescription', e.target.value)}
                 style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#fafbfc', boxSizing: 'border-box' }}
-                onFocus={e => (e.target.style.borderColor = '#e91e8c')} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
+                onFocus={e => (e.target.style.borderColor = ACCENT)} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
               <textarea suppressHydrationWarning placeholder="Full description" value={form.description} onChange={e => set('description', e.target.value)} rows={3}
                 style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#fafbfc', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
-                onFocus={e => (e.target.style.borderColor = '#e91e8c')} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
+                onFocus={e => (e.target.style.borderColor = ACCENT)} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
             </div>
           </section>
 
@@ -213,18 +229,18 @@ function ProductModal({ product, onClose, onSaved }: {
               <div style={{ display: 'flex', gap: '6px', flex: '1 1 200px' }}>
                 <input suppressHydrationWarning type="url" placeholder="Or paste image URL" value={imgUrl} onChange={e => setImgUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addUrl())}
                   style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.82rem', color: '#1e293b', outline: 'none', background: '#fafbfc' }}
-                  onFocus={e => (e.target.style.borderColor = '#e91e8c')} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
-                <button suppressHydrationWarning onClick={addUrl} type="button" style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: '#e91e8c', color: 'white', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>Add</button>
+                  onFocus={e => (e.target.style.borderColor = ACCENT)} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
+                <button suppressHydrationWarning onClick={addUrl} type="button" style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: ACCENT, color: 'white', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>Add</button>
               </div>
             </div>
             {form.images.length > 0 ? (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: '8px' }}>
                   {form.images.map((url, i) => (
-                    <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: `2px solid ${i === 0 ? '#e91e8c' : '#f1f5f9'}` }}>
+                    <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: `2px solid ${i === 0 ? ACCENT : '#f1f5f9'}` }}>
                       <Image src={url} alt="" fill sizes="88px" style={{ objectFit: 'cover' }} />
                       {i === 0 && (
-                        <span style={{ position: 'absolute', top: '4px', left: '4px', background: '#e91e8c', color: 'white', fontSize: '0.52rem', fontWeight: 800, padding: '2px 5px', borderRadius: '4px', zIndex: 1 }}>MAIN</span>
+                        <span style={{ position: 'absolute', top: '4px', left: '4px', background: ACCENT, color: 'white', fontSize: '0.52rem', fontWeight: 800, padding: '2px 5px', borderRadius: '4px', zIndex: 1 }}>MAIN</span>
                       )}
                       <button suppressHydrationWarning onClick={() => removeImg(i)}
                         style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(15,23,42,0.75)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
@@ -246,7 +262,7 @@ function ProductModal({ product, onClose, onSaved }: {
           <section>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <SectionLabel>Color Variants & Stock</SectionLabel>
-              <button suppressHydrationWarning type="button" onClick={addColor} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '8px', border: '1.5px solid rgba(233,30,140,0.25)', background: 'rgba(233,30,140,0.06)', fontSize: '0.78rem', fontWeight: 700, color: '#e91e8c', cursor: 'pointer' }}>
+              <button suppressHydrationWarning type="button" onClick={addColor} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '8px', border: `1.5px solid ${ACCENT_BORDER2}`, background: ACCENT_SOFT3, fontSize: '0.78rem', fontWeight: 700, color: ACCENT_TEXT, cursor: 'pointer' }}>
                 <Plus size={13} /> Add Color
               </button>
             </div>
@@ -258,10 +274,10 @@ function ProductModal({ product, onClose, onSaved }: {
                       <input suppressHydrationWarning type="color" value={c.hex} onChange={e => updColor(i, 'hex', e.target.value)} style={{ width: '38px', height: '38px', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: '2px', flexShrink: 0 }} />
                       <input suppressHydrationWarning placeholder="Color name (e.g. Rose Pink)" value={c.name} onChange={e => updColor(i, 'name', e.target.value)}
                         style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.85rem', color: '#1e293b', outline: 'none', background: '#fafbfc' }}
-                        onFocus={e => (e.target.style.borderColor = '#e91e8c')} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
+                        onFocus={e => (e.target.style.borderColor = ACCENT)} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
                       <input suppressHydrationWarning type="number" placeholder="Stock" value={c.stock} min="0" onChange={e => updColor(i, 'stock', e.target.value)}
                         style={{ width: '80px', padding: '8px 10px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.85rem', color: '#1e293b', outline: 'none', background: '#fafbfc' }}
-                        onFocus={e => (e.target.style.borderColor = '#e91e8c')} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
+                        onFocus={e => (e.target.style.borderColor = ACCENT)} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
                       <button suppressHydrationWarning onClick={() => rmColor(i)} style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1.5px solid #fee2e2', background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ef4444', flexShrink: 0 }}><X size={14} /></button>
                     </div>
                   ))}
@@ -297,7 +313,7 @@ function ProductModal({ product, onClose, onSaved }: {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', padding: '16px 24px', borderTop: '1px solid #f1f5f9', flexShrink: 0, background: '#fafbfc' }}>
           <button suppressHydrationWarning onClick={onClose} style={{ padding: '9px 20px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#fff', fontSize: '0.875rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>Cancel</button>
           <button suppressHydrationWarning onClick={handleSave} disabled={saving}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 24px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.75 : 1, boxShadow: '0 4px 12px rgba(233,30,140,0.35)' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 24px', borderRadius: '10px', border: 'none', background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.75 : 1, boxShadow: `0 4px 12px ${ACCENT_SHADOW}` }}>
             {saving && <Loader2 size={14} style={{ animation: 'spin 0.7s linear infinite' }} />}
             {saving ? 'Saving…' : product ? 'Save Changes' : 'Create Product'}
           </button>
@@ -387,7 +403,7 @@ export default function ProductsClient() {
             <RefreshCw size={14} /> Refresh
           </button>
           <button suppressHydrationWarning onClick={openAdd}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(233,30,140,0.3)' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', boxShadow: `0 4px 14px ${ACCENT_SHADOW}` }}>
             <Plus size={15} strokeWidth={2.5} /> Add Product
           </button>
         </div>
@@ -406,7 +422,7 @@ export default function ProductsClient() {
                 border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
                 background: statFilter === t.value ? '#fff' : 'transparent',
                 color: statFilter === t.value ? '#0f172a' : '#64748b',
-                borderBottom: statFilter === t.value ? '2px solid #e91e8c' : '2px solid transparent',
+                borderBottom: statFilter === t.value ? `2px solid ${ACCENT}` : '2px solid transparent',
                 marginBottom: '-1px', transition: 'all 0.15s',
               }}>
               {t.color && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: t.color, flexShrink: 0 }} />}
@@ -440,22 +456,22 @@ export default function ProductsClient() {
 
         {loading && (
           <div style={{ padding: '60px', textAlign: 'center' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: '#e91e8c', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: ACCENT, animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
             <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading products…</p>
           </div>
         )}
 
         {!loading && products.length === 0 && (
           <div style={{ padding: '80px 20px', textAlign: 'center' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'rgba(233,30,140,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Package size={26} color="#e91e8c" style={{ opacity: 0.5 }} />
+            <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: ACCENT_SOFT3, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <Package size={26} color={ACCENT} style={{ opacity: 0.5 }} />
             </div>
             <p style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', margin: 0 }}>No products found</p>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '6px 0 20px' }}>
               {search || catFilter ? 'Try adjusting your filters' : 'Add your first bag to start selling'}
             </p>
             {!search && !catFilter && (
-              <button suppressHydrationWarning onClick={openAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '10px', border: 'none', background: '#e91e8c', color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer' }}>
+              <button suppressHydrationWarning onClick={openAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '10px', border: 'none', background: ACCENT, color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer' }}>
                 <Plus size={15} /> Add First Product
               </button>
             )}
@@ -475,7 +491,7 @@ export default function ProductsClient() {
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {p.images[0]
                   ? <Image src={p.images[0]} alt={p.name} width={40} height={40} style={{ objectFit: 'cover' }} />
-                  : <Package size={15} color="#e91e8c" style={{ opacity: 0.4 }} />}
+                  : <Package size={15} color={ACCENT} style={{ opacity: 0.4 }} />}
               </div>
 
               <div style={{ minWidth: 0, paddingRight: '12px' }}>
@@ -513,7 +529,7 @@ export default function ProductsClient() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <button suppressHydrationWarning onClick={() => toggleActive(p)}
-                  style={{ width: '40px', height: '22px', borderRadius: '11px', background: p.isActive ? '#e91e8c' : '#e2e8f0', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+                  style={{ width: '40px', height: '22px', borderRadius: '11px', background: p.isActive ? ACCENT : '#e2e8f0', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
                   <span style={{ position: 'absolute', top: '2px', left: p.isActive ? '20px' : '2px', width: '18px', height: '18px', borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
                 </button>
                 <span style={{ fontSize: '0.65rem', color: p.isActive ? '#16a34a' : '#94a3b8', fontWeight: 600 }}>
@@ -524,7 +540,7 @@ export default function ProductsClient() {
               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                 <button suppressHydrationWarning onClick={() => openEdit(p)}
                   style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.07)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.3)'; e.currentTarget.style.color = '#6366f1' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = ACCENT_SOFT2; e.currentTarget.style.borderColor = ACCENT_BORDER2; e.currentTarget.style.color = ACCENT }}
                   onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' }}>
                   <Edit2 size={13} />
                 </button>
@@ -554,7 +570,7 @@ export default function ProductsClient() {
                 if (pages>5) { if (page<=3) n=i+1; else if (page>=pages-2) n=pages-4+i; else n=page-2+i }
                 return (
                   <button suppressHydrationWarning key={n} onClick={() => setPage(n)}
-                    style={{ width: '34px', height: '34px', borderRadius: '8px', border: `1px solid ${page===n?'rgba(233,30,140,0.3)':'#e2e8f0'}`, background: page===n?'rgba(233,30,140,0.08)':'#fff', color: page===n?'#e91e8c':'#475569', fontWeight: page===n?700:500, fontSize: '0.82rem', cursor: 'pointer' }}>
+                    style={{ width: '34px', height: '34px', borderRadius: '8px', border: `1px solid ${page===n?ACCENT_BORDER3:'#e2e8f0'}`, background: page===n?ACCENT_SOFT:'#fff', color: page===n?ACCENT:'#475569', fontWeight: page===n?700:500, fontSize: '0.82rem', cursor: 'pointer' }}>
                     {n}
                   </button>
                 )
