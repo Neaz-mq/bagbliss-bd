@@ -64,7 +64,7 @@ export default function AdminTopbar({ onMenuClick }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
 
         <Link href="/" target="_blank" className="hidden md:flex"
-          style={{ alignItems: 'center', gap: '6px', padding: '0 14px', height: '36px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 600, color: '#e91e8c', textDecoration: 'none', border: '1.5px solid rgba(233,30,140,0.2)', background: 'rgba(233,30,140,0.05)' }}>
+          style={{ alignItems: 'center', gap: '6px', padding: '0 14px', height: '36px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-accent-dark)', textDecoration: 'none', border: '1.5px solid rgba(var(--color-accent-rgb),0.25)', background: 'rgba(var(--color-accent-rgb),0.06)' }}>
           <ExternalLink size={13} strokeWidth={2.5} />
           View Store
         </Link>
@@ -84,13 +84,13 @@ export default function AdminTopbar({ onMenuClick }: Props) {
             style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '5px 10px 5px 6px', borderRadius: '12px',
-              border: `1.5px solid ${dropdownOpen ? 'rgba(233,30,140,0.3)' : '#e8edf5'}`,
-              background: dropdownOpen ? 'rgba(233,30,140,0.04)' : '#f8fafc',
+              border: `1.5px solid ${dropdownOpen ? 'rgba(var(--color-accent-rgb),0.35)' : '#e8edf5'}`,
+              background: dropdownOpen ? 'rgba(var(--color-accent-rgb),0.05)' : '#f8fafc',
               cursor: 'pointer', transition: 'all 0.15s',
             }}
           >
             {/* ✅ suppressHydrationWarning on the avatar div since initials may differ */}
-            <div suppressHydrationWarning style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'linear-gradient(135deg, #e91e8c 0%, #f43f5e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.75rem', fontWeight: 800, flexShrink: 0, boxShadow: '0 2px 8px rgba(233,30,140,0.35)' }}>
+            <div suppressHydrationWarning style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.75rem', fontWeight: 800, flexShrink: 0, boxShadow: '0 2px 8px rgba(var(--color-accent-rgb),0.4)' }}>
               {initials}
             </div>
             <div className="hidden md:block" style={{ textAlign: 'left' }}>
@@ -104,9 +104,9 @@ export default function AdminTopbar({ onMenuClick }: Props) {
 
           {dropdownOpen && (
             <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: '220px', background: '#ffffff', borderRadius: '14px', border: '1px solid #f1f5f9', boxShadow: '0 8px 32px rgba(0,0,0,0.10)', overflow: 'hidden', zIndex: 50 }}>
-              <div style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc', background: 'linear-gradient(135deg, rgba(233,30,140,0.04), rgba(244,63,94,0.02))' }}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid #f8fafc', background: 'linear-gradient(135deg, rgba(var(--color-accent-rgb),0.05), rgba(var(--color-accent-dark-rgb),0.02))' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div suppressHydrationWarning style={{ width: '38px', height: '38px', borderRadius: '10px', flexShrink: 0, background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.85rem', fontWeight: 800 }}>
+                  <div suppressHydrationWarning style={{ width: '38px', height: '38px', borderRadius: '10px', flexShrink: 0, background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-dark))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.85rem', fontWeight: 800 }}>
                     {initials}
                   </div>
                   <div style={{ minWidth: 0 }}>

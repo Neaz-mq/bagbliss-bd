@@ -9,6 +9,18 @@ import {
 import { useAdminSocket, OrderNotification } from '@/hooks/useAdminSocket'
 import Link from 'next/link'
 
+/* ============================================
+   BRAND COLOR TOKENS
+   Matches globals.css --color-accent family
+   ============================================ */
+const ACCENT       = '#CA865D'
+const ACCENT_DARK  = '#b5724a'
+const ACCENT_LIGHT = '#e0a67d'
+const ACCENT_SOFT  = 'rgba(202,134,93,0.1)'   // for icon/badge backgrounds
+const ACCENT_FAINT = 'rgba(202,134,93,0.03)'  // for unread row tint
+const ACCENT_HOVER = 'rgba(202,134,93,0.05)'  // for open-state button bg
+const ACCENT_BORDER = 'rgba(202,134,93,0.3)'  // for open-state button border
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins  = Math.floor(diff / 60000)
@@ -31,8 +43,8 @@ function NotificationIcon({ type }: { type: string }) {
     </div>
   )
   return (
-    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(233,30,140,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <ShoppingBag size={16} color="#e91e8c" />
+    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ACCENT_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <ShoppingBag size={16} color={ACCENT} />
     </div>
   )
 }
@@ -52,13 +64,13 @@ function NotifItem({ notif, onRead }: { notif: OrderNotification; onRead: () => 
       style={{
         display: 'flex', alignItems: 'flex-start', gap: '10px',
         padding: '12px 16px',
-        background: notif.read ? 'transparent' : 'rgba(233,30,140,0.03)',
-        borderLeft: notif.read ? '3px solid transparent' : '3px solid #e91e8c',
+        background: notif.read ? 'transparent' : ACCENT_FAINT,
+        borderLeft: notif.read ? '3px solid transparent' : `3px solid ${ACCENT}`,
         cursor: 'pointer', transition: 'background 0.15s',
         borderBottom: '1px solid #f8fafc',
       }}
       onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-      onMouseLeave={e => (e.currentTarget.style.background = notif.read ? 'transparent' : 'rgba(233,30,140,0.03)')}
+      onMouseLeave={e => (e.currentTarget.style.background = notif.read ? 'transparent' : ACCENT_FAINT)}
     >
       <NotificationIcon type={notif.payment} />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -73,7 +85,7 @@ function NotifItem({ notif, onRead }: { notif: OrderNotification; onRead: () => 
         </p>
       </div>
       {!notif.read && (
-        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#e91e8c', flexShrink: 0, marginTop: '4px' }} />
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: ACCENT, flexShrink: 0, marginTop: '4px' }} />
       )}
     </div>
   )
@@ -115,8 +127,8 @@ export default function AdminNotifications() {
           position: 'relative', width: '40px', height: '40px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           borderRadius: '11px',
-          border: `1.5px solid ${open ? 'rgba(233,30,140,0.3)' : '#e8edf5'}`,
-          background: open ? 'rgba(233,30,140,0.05)' : '#f8fafc',
+          border: `1.5px solid ${open ? ACCENT_BORDER : '#e8edf5'}`,
+          background: open ? ACCENT_HOVER : '#f8fafc',
           color: '#475569', cursor: 'pointer', transition: 'all 0.15s',
         }}
       >
@@ -126,7 +138,7 @@ export default function AdminNotifications() {
           <span style={{
             position: 'absolute', top: '6px', right: '6px',
             minWidth: '16px', height: '16px', borderRadius: '8px',
-            background: 'linear-gradient(135deg, #e91e8c, #f43f5e)',
+            background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`,
             color: 'white', fontSize: '0.6rem', fontWeight: 800,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '0 4px', border: '2px solid white',
@@ -156,10 +168,10 @@ export default function AdminNotifications() {
 
           <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Bell size={15} color="#e91e8c" />
+              <Bell size={15} color={ACCENT} />
               <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Notifications</p>
               {unreadCount > 0 && (
-                <span style={{ background: '#e91e8c', color: 'white', fontSize: '0.65rem', fontWeight: 800, padding: '1px 7px', borderRadius: '99px' }}>
+                <span style={{ background: ACCENT, color: 'white', fontSize: '0.65rem', fontWeight: 800, padding: '1px 7px', borderRadius: '99px' }}>
                   {unreadCount} new
                 </span>
               )}
@@ -201,9 +213,9 @@ export default function AdminNotifications() {
           </div>
 
           {lastActivity && (
-            <div style={{ padding: '8px 16px', background: 'rgba(233,30,140,0.03)', borderBottom: '1px solid #f1f5f9' }}>
+            <div style={{ padding: '8px 16px', background: ACCENT_FAINT, borderBottom: '1px solid #f1f5f9' }}>
               <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#e91e8c', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ACCENT, display: 'inline-block', animation: 'pulse 2s infinite' }} />
                 {lastActivity}
               </p>
             </div>
@@ -212,8 +224,8 @@ export default function AdminNotifications() {
           <div style={{ maxHeight: '340px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
             {notifications.length === 0 ? (
               <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'rgba(233,30,140,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                  <Bell size={22} color="#e91e8c" style={{ opacity: 0.4 }} />
+                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: ACCENT_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                  <Bell size={22} color={ACCENT} style={{ opacity: 0.4 }} />
                 </div>
                 <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b', margin: 0 }}>No notifications yet</p>
                 <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '4px 0 0' }}>New orders will appear here in real-time</p>
@@ -229,7 +241,7 @@ export default function AdminNotifications() {
             <Link
               href="/admin/orders"
               onClick={() => setOpen(false)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '0.8rem', fontWeight: 700, color: '#e91e8c', textDecoration: 'none' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '0.8rem', fontWeight: 700, color: ACCENT, textDecoration: 'none' }}
             >
               View all orders →
             </Link>

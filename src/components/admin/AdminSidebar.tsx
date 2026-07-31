@@ -96,8 +96,8 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
             <div style={{
               width: '36px', height: '36px', minWidth: '36px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #e91e8c 0%, #f43f5e 100%)',
-              boxShadow: '0 4px 12px rgba(233,30,140,0.4)',
+              background: 'linear-gradient(135deg, #CA865D 0%, #c9a84c 100%)',
+              boxShadow: '0 4px 12px rgba(202,134,93,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <ShoppingCart size={17} color="white" strokeWidth={2.2} />
@@ -111,7 +111,7 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
                 BagBliss BD
               </p>
               <p style={{
-                color: 'rgba(244, 114, 182, 0.85)', fontWeight: 600,
+                color: 'rgba(224, 166, 125, 0.85)', fontWeight: 600,
                 fontSize: '0.62rem', margin: '3px 0 0',
                 letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>
@@ -174,7 +174,7 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
                         fontWeight: active ? 600 : 400,
                         textDecoration: 'none', position: 'relative',
                         color: active ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                        background: active ? 'rgba(233,30,140,0.15)' : 'transparent',
+                        background: active ? 'rgba(202,134,93,0.15)' : 'transparent',
                         transition: 'all 0.12s ease',
                       }}
                     >
@@ -184,14 +184,14 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
                           transform: 'translateY(-50%)',
                           width: '3px', height: '18px',
                           borderRadius: '0 3px 3px 0',
-                          background: 'linear-gradient(to bottom, #e91e8c, #f43f5e)',
+                          background: 'linear-gradient(to bottom, #CA865D, #c9a84c)',
                         }} />
                       )}
 
                       <Icon
                         size={17}
                         style={{
-                          color: active ? '#f472b6' : 'rgba(255,255,255,0.45)',
+                          color: active ? '#e8c96e' : 'rgba(255,255,255,0.45)',
                           flexShrink: 0,
                         }}
                       />
@@ -202,8 +202,8 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
                         <span style={{
                           fontSize: '0.6rem', fontWeight: 700,
                           padding: '2px 7px', borderRadius: '5px',
-                          background: 'rgba(233,30,140,0.25)',
-                          color: '#fb7185', letterSpacing: '0.04em', flexShrink: 0,
+                          background: 'rgba(202,134,93,0.25)',
+                          color: '#e8c96e', letterSpacing: '0.04em', flexShrink: 0,
                         }}>
                           {badge}
                         </span>
