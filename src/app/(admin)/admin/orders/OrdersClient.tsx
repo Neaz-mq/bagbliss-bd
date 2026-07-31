@@ -7,6 +7,21 @@ import {
   Phone, MapPin, CreditCard, StickyNote, ChevronDown,
 } from 'lucide-react'
 
+/* ============================================
+   BRAND COLOR TOKENS
+   Matches globals.css --color-accent family
+   ============================================ */
+const ACCENT       = '#CA865D'
+const ACCENT_DARK  = '#b5724a'
+const ACCENT_TEXT  = '#8a5a3a'          // darker accent for text-on-light-bg contrast
+const ACCENT_SOFT  = 'rgba(202,134,93,0.08)'
+const ACCENT_SOFT2 = 'rgba(202,134,93,0.07)'
+const ACCENT_SOFT3 = 'rgba(202,134,93,0.06)'
+const ACCENT_BORDER = 'rgba(202,134,93,0.2)'
+const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
+const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
+const ACCENT_SHADOW = 'rgba(202,134,93,0.35)'
+
 type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled'
 type PaymentMethod = 'bkash' | 'nagad' | 'cod'
 
@@ -29,7 +44,7 @@ interface Order {
 const STATUS_CONFIG: Record<OrderStatus, {
   label: string; bg: string; text: string; dot: string; border: string; icon: React.ElementType
 }> = {
-  processing: { label: 'Processing', bg: 'rgba(233,30,140,0.08)', text: '#be185d', dot: '#e91e8c', border: 'rgba(233,30,140,0.2)', icon: Clock },
+  processing: { label: 'Processing', bg: ACCENT_SOFT, text: ACCENT_TEXT, dot: ACCENT, border: ACCENT_BORDER, icon: Clock },
   shipped:    { label: 'Shipped',    bg: 'rgba(59,130,246,0.08)', text: '#1d4ed8', dot: '#3b82f6', border: 'rgba(59,130,246,0.2)', icon: Truck },
   delivered:  { label: 'Delivered',  bg: 'rgba(34,197,94,0.08)',  text: '#15803d', dot: '#22c55e', border: 'rgba(34,197,94,0.2)',  icon: CheckCircle },
   cancelled:  { label: 'Cancelled',  bg: 'rgba(239,68,68,0.08)',  text: '#b91c1c', dot: '#ef4444', border: 'rgba(239,68,68,0.2)',  icon: XCircle },
@@ -94,10 +109,10 @@ function OrderModal({ order, onClose, onStatusChange }: {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '42px', height: '42px', borderRadius: '12px', flexShrink: 0,
-              background: 'linear-gradient(135deg, rgba(233,30,140,0.1), rgba(244,63,94,0.05))',
+              background: `linear-gradient(135deg, ${ACCENT_SOFT}, rgba(202,134,93,0.05))`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <ShoppingBag size={18} color="#e91e8c" />
+              <ShoppingBag size={18} color={ACCENT} />
             </div>
             <div>
               <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
@@ -146,9 +161,9 @@ function OrderModal({ order, onClose, onStatusChange }: {
                   display: 'inline-flex', alignItems: 'center', gap: '6px',
                   padding: '8px 14px', borderRadius: '10px', cursor: 'pointer',
                   fontSize: '0.8rem', fontWeight: 700,
-                  background: 'linear-gradient(135deg, #e91e8c, #f43f5e)',
+                  background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`,
                   color: 'white', border: 'none',
-                  boxShadow: '0 4px 12px rgba(233,30,140,0.35)',
+                  boxShadow: `0 4px 12px ${ACCENT_SHADOW}`,
                   opacity: updating ? 0.7 : 1,
                 }}
               >
@@ -207,9 +222,9 @@ function OrderModal({ order, onClose, onStatusChange }: {
               }}>
                 <div style={{
                   width: '44px', height: '44px', borderRadius: '10px', flexShrink: 0,
-                  background: 'rgba(233,30,140,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: ACCENT_SOFT2, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Package size={16} color="#e91e8c" />
+                  <Package size={16} color={ACCENT} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1e293b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -271,7 +286,7 @@ function OrderModal({ order, onClose, onStatusChange }: {
                 <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>Total</span>
-                  <span style={{ fontSize: '1rem', fontWeight: 800, color: '#e91e8c' }}>৳{order.total.toLocaleString()}</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 800, color: ACCENT }}>৳{order.total.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -464,7 +479,7 @@ export default function OrdersPage() {
           <div style={{ padding: '60px 20px', textAlign: 'center' }}>
             <div style={{
               width: '36px', height: '36px', borderRadius: '50%',
-              border: '3px solid #f1f5f9', borderTopColor: '#e91e8c',
+              border: '3px solid #f1f5f9', borderTopColor: ACCENT,
               animation: 'spin 0.7s linear infinite', margin: '0 auto 12px',
             }} />
             <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading orders…</p>
@@ -475,9 +490,9 @@ export default function OrdersPage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', textAlign: 'center' }}>
             <div style={{
               width: '64px', height: '64px', borderRadius: '18px',
-              background: 'rgba(233,30,140,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
+              background: ACCENT_SOFT3, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
             }}>
-              <ShoppingBag size={26} color="#e91e8c" style={{ opacity: 0.5 }} />
+              <ShoppingBag size={26} color={ACCENT} style={{ opacity: 0.5 }} />
             </div>
             <p style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', margin: 0 }}>No orders found</p>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '6px 0 0' }}>
@@ -501,10 +516,10 @@ export default function OrdersPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: '38px', height: '38px', borderRadius: '11px', flexShrink: 0,
-                  background: 'linear-gradient(135deg, rgba(233,30,140,0.08), rgba(244,63,94,0.04))',
+                  background: `linear-gradient(135deg, ${ACCENT_SOFT}, rgba(202,134,93,0.04))`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <ShoppingBag size={14} color="#e91e8c" />
+                  <ShoppingBag size={14} color={ACCENT} />
                 </div>
                 <div>
                   <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
@@ -550,7 +565,7 @@ export default function OrdersPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer', color: '#64748b', transition: 'all 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(233,30,140,0.07)'; e.currentTarget.style.borderColor = 'rgba(233,30,140,0.25)'; e.currentTarget.style.color = '#e91e8c' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = ACCENT_SOFT2; e.currentTarget.style.borderColor = ACCENT_BORDER2; e.currentTarget.style.color = ACCENT }}
                   onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' }}
                 >
                   <Eye size={14} />
@@ -595,9 +610,9 @@ export default function OrdersPage() {
                   onClick={() => setPage(p)}
                   style={{
                     width: '36px', height: '36px', borderRadius: '10px',
-                    border: `1.5px solid ${page === p ? 'rgba(233,30,140,0.3)' : '#e2e8f0'}`,
-                    background: page === p ? 'rgba(233,30,140,0.08)' : '#fff',
-                    color: page === p ? '#e91e8c' : '#475569',
+                    border: `1.5px solid ${page === p ? ACCENT_BORDER3 : '#e2e8f0'}`,
+                    background: page === p ? ACCENT_SOFT : '#fff',
+                    color: page === p ? ACCENT : '#475569',
                     fontWeight: page === p ? 800 : 500, fontSize: '0.82rem', cursor: 'pointer',
                   }}
                 >
