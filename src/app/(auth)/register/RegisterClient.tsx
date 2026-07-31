@@ -7,7 +7,19 @@ import { signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, ShoppingBag, Mail, Lock, User } from 'lucide-react'
+import {
+  Eye,
+  EyeOff,
+  ShoppingBag,
+  Mail,
+  Lock,
+  User,
+  ArrowLeft,
+  Gift,
+  Package,
+  Heart,
+  Bell,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const registerSchema = z
@@ -80,6 +92,24 @@ function GoogleButton({
   )
 }
 
+// ── Feature chip — used in the left brand panel ──
+function FeatureChip({
+  icon,
+  label,
+}: {
+  icon: React.ReactNode
+  label: string
+}) {
+  return (
+    <div className="auth-feature">
+      <span className="auth-feature-icon" aria-hidden="true">
+        {icon}
+      </span>
+      {label}
+    </div>
+  )
+}
+
 // ── Register Page ─────────────────────────────
 export default function RegisterPage() {
   const router = useRouter()
@@ -149,29 +179,51 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page" suppressHydrationWarning>
-      {/* Left — Decorative Panel */}
+      {/* Left — Brand Panel */}
       <div className="auth-panel">
         <div className="auth-panel-content">
-          <ShoppingBag size={48} color="white" strokeWidth={1.5} />
-          <h1>Join BagBliss BD</h1>
+          {/* ✅ Logo/brand — hang-tag treatment, links back home */}
+          <Link
+            href="/"
+            className="auth-panel-logo-link"
+            aria-label="Go to BagBliss BD home page"
+          >
+            <ShoppingBag size={22} strokeWidth={1.6} aria-hidden="true" />
+            <h1>Join BagBliss BD</h1>
+          </Link>
+
           <p>
             Create your free account and start shopping Bangladesh&apos;s most
             trendy mini crossbody bags today.
           </p>
+
           <div className="auth-features">
-            <div className="auth-feature">🎁 Welcome discount on first order</div>
-            <div className="auth-feature">📦 Track all your orders</div>
-            <div className="auth-feature">💝 Save items to wishlist</div>
-            <div className="auth-feature">🔔 Get exclusive sale alerts</div>
+            <FeatureChip icon={<Gift size={14} />} label="Welcome discount on first order" />
+            <FeatureChip icon={<Package size={14} />} label="Track all your orders" />
+            <FeatureChip icon={<Heart size={14} />} label="Save items to wishlist" />
+            <FeatureChip icon={<Bell size={14} />} label="Get exclusive sale alerts" />
           </div>
+        </div>
+
+        {/* ✅ Fills the empty lower space and grounds the panel */}
+        <div className="auth-panel-footer">
+          Trusted by thousands of shoppers across Bangladesh
         </div>
       </div>
 
       {/* Right — Register Form */}
       <div className="auth-form-panel">
         <div className="auth-form-container">
+          {/* ✅ Pill-style "back to home" button */}
+          <Link href="/" className="auth-back-home" aria-label="Back to home page">
+            <span className="auth-back-home-icon" aria-hidden="true">
+              <ArrowLeft size={13} />
+            </span>
+            Back to home
+          </Link>
+
           <div className="auth-form-header">
-            <h2>Create Account</h2>
+            <h2>Create account</h2>
             <p>Join thousands of happy shoppers</p>
           </div>
 
@@ -186,7 +238,7 @@ export default function RegisterPage() {
             {/* Name */}
             <div className="form-group">
               <label className="form-label" htmlFor="register-name">
-                Full Name
+                Full name
               </label>
               <div className="input-wrapper" suppressHydrationWarning>
                 <User className="input-icon" size={18} aria-hidden="true" />
@@ -210,7 +262,7 @@ export default function RegisterPage() {
             {/* Email */}
             <div className="form-group">
               <label className="form-label" htmlFor="register-email">
-                Email Address
+                Email address
               </label>
               <div className="input-wrapper" suppressHydrationWarning>
                 <Mail className="input-icon" size={18} aria-hidden="true" />
@@ -271,7 +323,7 @@ export default function RegisterPage() {
             {/* Confirm Password */}
             <div className="form-group">
               <label className="form-label" htmlFor="register-confirm">
-                Confirm Password
+                Confirm password
               </label>
               <div
                 className="input-wrapper"
@@ -318,7 +370,7 @@ export default function RegisterPage() {
                   Creating account...
                 </>
               ) : (
-                'Create Free Account'
+                'Create free account'
               )}
             </button>
           </form>

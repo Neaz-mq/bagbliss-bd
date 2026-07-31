@@ -7,7 +7,18 @@ import { signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, ShoppingBag, Mail, Lock } from 'lucide-react'
+import {
+  Eye,
+  EyeOff,
+  ShoppingBag,
+  Mail,
+  Lock,
+  ArrowLeft,
+  Sparkles,
+  Truck,
+  CreditCard,
+  Undo2,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const loginSchema = z.object({
@@ -62,6 +73,24 @@ function GoogleButton({
   )
 }
 
+// ── Feature chip — used in the left brand panel ──
+function FeatureChip({
+  icon,
+  label,
+}: {
+  icon: React.ReactNode
+  label: string
+}) {
+  return (
+    <div className="auth-feature">
+      <span className="auth-feature-icon" aria-hidden="true">
+        {icon}
+      </span>
+      {label}
+    </div>
+  )
+}
+
 // ── Login Page ────────────────────────────────
 export default function LoginPage() {
   const router = useRouter()
@@ -111,29 +140,47 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page" suppressHydrationWarning>
-      {/* Left — Decorative Panel */}
+      {/* Left — Brand Panel */}
       <div className="auth-panel">
         <div className="auth-panel-content">
-          <ShoppingBag size={48} color="white" strokeWidth={1.5} />
-          <h1>BagBliss BD</h1>
+          {/* ✅ Hang-tag logo — doubles as brand mark and a link back home */}
+          <Link href="/" className="auth-panel-logo-link" aria-label="Go to BagBliss BD home page">
+            <ShoppingBag size={22} strokeWidth={1.6} aria-hidden="true" />
+            <h1>BagBliss BD</h1>
+          </Link>
+
           <p>
             Bangladesh&apos;s most trendy mini crossbody bag store. Discover
             premium imported bags at unbeatable prices.
           </p>
+
           <div className="auth-features">
-            <div className="auth-feature">✨ Premium Quality Bags</div>
-            <div className="auth-feature">🚚 Fast Delivery Across BD</div>
-            <div className="auth-feature">💳 Secure Online Payment</div>
-            <div className="auth-feature">↩️ Easy Returns</div>
+            <FeatureChip icon={<Sparkles size={14} />} label="Premium quality bags" />
+            <FeatureChip icon={<Truck size={14} />} label="Fast delivery across BD" />
+            <FeatureChip icon={<CreditCard size={14} />} label="Secure online payment" />
+            <FeatureChip icon={<Undo2 size={14} />} label="Easy returns" />
           </div>
+        </div>
+
+        {/* ✅ Fills the empty lower space and grounds the panel */}
+        <div className="auth-panel-footer">
+          Trusted by thousands of shoppers across Bangladesh
         </div>
       </div>
 
       {/* Right — Login Form */}
       <div className="auth-form-panel">
         <div className="auth-form-container">
+          {/* ✅ Explicit "back to home" link — visible even on mobile where the left panel is hidden */}
+          <Link href="/" className="auth-back-home" aria-label="Back to home page">
+            <span className="auth-back-home-icon" aria-hidden="true">
+              <ArrowLeft size={13} />
+            </span>
+            Back to home
+          </Link>
+
           <div className="auth-form-header">
-            <h2>Welcome Back</h2>
+            <h2>Welcome back</h2>
             <p>Sign in to your BagBliss account</p>
           </div>
 
@@ -147,10 +194,10 @@ export default function LoginPage() {
             {/* Email */}
             <div className="form-group">
               <label className="form-label" htmlFor="login-email">
-                Email Address
+                Email address
               </label>
               <div className="input-wrapper" suppressHydrationWarning>
-                <Mail className="input-icon" size={18} aria-hidden="true" />
+                <Mail className="input-icon" size={17} aria-hidden="true" />
                 {/* ✅ suppressHydrationWarning stops password manager extensions
                     (Chrome, LastPass, 1Password) injecting data-* attributes */}
                 <input
@@ -185,7 +232,7 @@ export default function LoginPage() {
                 style={{ position: 'relative' }}
                 suppressHydrationWarning
               >
-                <Lock className="input-icon" size={18} aria-hidden="true" />
+                <Lock className="input-icon" size={17} aria-hidden="true" />
                 <input
                   {...register('password')}
                   id="login-password"
@@ -202,7 +249,7 @@ export default function LoginPage() {
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   suppressHydrationWarning
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
               {errors.password && (
@@ -225,7 +272,7 @@ export default function LoginPage() {
                   Signing in...
                 </>
               ) : (
-                'Sign In'
+                'Sign in'
               )}
             </button>
           </form>
