@@ -22,6 +22,12 @@ const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
 const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
 const ACCENT_SHADOW = 'rgba(202,134,93,0.35)'
 
+// ✅ Shared grid template + gap for the orders table (header + rows).
+// Adding an explicit columnGap fixes the "Processing" / "COD" badges
+// sitting flush against each other with no breathing room.
+const TABLE_GRID_COLS = '1fr 160px 140px 110px 90px 56px'
+const TABLE_COL_GAP   = '16px'
+
 type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled'
 type PaymentMethod = 'bkash' | 'nagad' | 'cod'
 
@@ -64,6 +70,7 @@ function StatusBadge({ status }: { status: OrderStatus }) {
       fontSize: '0.72rem', fontWeight: 700, padding: '4px 10px',
       borderRadius: '8px', background: cfg.bg, color: cfg.text,
       border: `1px solid ${cfg.border}`, whiteSpace: 'nowrap',
+      width: 'fit-content',
     }}>
       <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
       {cfg.label}
@@ -465,8 +472,9 @@ export default function OrdersPage() {
         background: '#ffffff', borderRadius: '20px',
         border: '1px solid #f1f5f9', boxShadow: '0 1px 2px rgba(0,0,0,0.04)', overflow: 'hidden',
       }}>
+        {/* ✅ columnGap added — this is what fixes the "Processing"/"COD" badges touching */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 160px 140px 110px 90px 56px',
+          display: 'grid', gridTemplateColumns: TABLE_GRID_COLS, columnGap: TABLE_COL_GAP,
           padding: '11px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8',
           textTransform: 'uppercase', letterSpacing: '0.08em',
           background: '#fafbfc', borderBottom: '1px solid #f1f5f9',
@@ -506,14 +514,14 @@ export default function OrdersPage() {
           return (
             <div key={order._id}
               style={{
-                display: 'grid', gridTemplateColumns: '1fr 160px 140px 110px 90px 56px',
+                display: 'grid', gridTemplateColumns: TABLE_GRID_COLS, columnGap: TABLE_COL_GAP,
                 padding: '14px 20px', borderBottom: i < orders.length - 1 ? '1px solid #f8fafc' : 'none',
                 alignItems: 'center', transition: 'background 0.1s',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = '#fafbfc')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                 <div style={{
                   width: '38px', height: '38px', borderRadius: '11px', flexShrink: 0,
                   background: `linear-gradient(135deg, ${ACCENT_SOFT}, rgba(202,134,93,0.04))`,
@@ -521,7 +529,7 @@ export default function OrdersPage() {
                 }}>
                   <ShoppingBag size={14} color={ACCENT} />
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
                     #{order.orderNumber}
                   </p>
@@ -541,7 +549,10 @@ export default function OrdersPage() {
                 </p>
               </div>
 
-              <StatusBadge status={order.status} />
+              {/* ✅ min-width 0 + fit-content badge keeps this column from crowding the next one */}
+              <div style={{ minWidth: 0 }}>
+                <StatusBadge status={order.status} />
+              </div>
 
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '5px',
