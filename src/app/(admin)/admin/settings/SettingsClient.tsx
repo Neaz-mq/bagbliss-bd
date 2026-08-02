@@ -11,6 +11,26 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+/* ============================================
+   BRAND COLOR TOKENS
+   Matches globals.css --color-accent family
+   (same tokens as the Products / Customers / Categories / Flash Sale admin pages)
+   ============================================ */
+const ACCENT        = '#CA865D'
+const ACCENT_DARK    = '#b5724a'
+const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg contrast
+const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
+const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
+const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
+const ACCENT_SOFT4   = 'rgba(202,134,93,0.04)'
+const ACCENT_SOFT5   = 'rgba(202,134,93,0.03)'
+const ACCENT_BORDER  = 'rgba(202,134,93,0.12)'
+const ACCENT_BORDER2 = 'rgba(202,134,93,0.2)'
+const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
+const ACCENT_SHADOW  = 'rgba(202,134,93,0.3)'
+const ACCENT_SHADOW2 = 'rgba(202,134,93,0.35)'
+const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface StoreSettings {
@@ -61,9 +81,9 @@ function SectionTitle({ icon: Icon, title, desc }: {
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
       <div style={{
         width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0,
-        background: 'linear-gradient(135deg, #e91e8c, #f43f5e)',
+        background: ACCENT_GRADIENT,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 4px 12px rgba(233,30,140,0.3)',
+        boxShadow: `0 4px 12px ${ACCENT_SHADOW}`,
       }}>
         <Icon size={18} color="white" strokeWidth={2} />
       </div>
@@ -102,6 +122,7 @@ function Input({
         }}>{prefix}</span>
       )}
       <input
+        suppressHydrationWarning
         type={type} value={value} disabled={disabled}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
@@ -112,7 +133,7 @@ function Input({
           outline: 'none', background: disabled ? '#f8fafc' : 'white',
           boxSizing: 'border-box', cursor: disabled ? 'not-allowed' : 'text',
         }}
-        onFocus={e => { if (!disabled) e.target.style.borderColor = '#e91e8c' }}
+        onFocus={e => { if (!disabled) e.target.style.borderColor = ACCENT }}
         onBlur={e  => { e.target.style.borderColor = '#e8edf5' }}
       />
     </div>
@@ -139,11 +160,12 @@ function Toggle({
         {desc && <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>{desc}</p>}
       </div>
       <button
+        suppressHydrationWarning
         type="button"
         onClick={() => onChange(!checked)}
         style={{
           width: '46px', height: '25px', borderRadius: '12px', border: 'none',
-          background: checked ? (danger ? '#ef4444' : '#e91e8c') : '#e2e8f0',
+          background: checked ? (danger ? '#ef4444' : ACCENT) : '#e2e8f0',
           cursor: 'pointer', position: 'relative', flexShrink: 0,
           transition: 'background 0.2s',
         }}
@@ -205,11 +227,12 @@ function SaveBar({ saving, onSave, dirty }: {
         You have unsaved changes
       </p>
       <button
+        suppressHydrationWarning
         onClick={onSave} disabled={saving}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: '6px',
           padding: '8px 18px', borderRadius: '10px', border: 'none',
-          background: 'linear-gradient(135deg, #e91e8c, #f43f5e)',
+          background: ACCENT_GRADIENT,
           color: 'white', fontSize: '0.875rem', fontWeight: 700,
           cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.8 : 1,
         }}
@@ -301,7 +324,7 @@ export default function SettingsClient() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: '#e91e8c', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: ACCENT, animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
           <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading settings…</p>
         </div>
       </div>
@@ -327,12 +350,13 @@ export default function SettingsClient() {
               <CheckCircle size={14} /> Saved
             </div>
           )}
-          <button onClick={fetchSettings} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+          <button suppressHydrationWarning onClick={fetchSettings} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
             <RefreshCw size={14} /> Refresh
           </button>
           <button
+            suppressHydrationWarning
             onClick={handleSave} disabled={saving || !dirty}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: dirty ? 'linear-gradient(135deg, #e91e8c, #f43f5e)' : '#e2e8f0', color: dirty ? 'white' : '#94a3b8', fontSize: '0.875rem', fontWeight: 700, cursor: (saving || !dirty) ? 'not-allowed' : 'pointer', boxShadow: dirty ? '0 4px 14px rgba(233,30,140,0.35)' : 'none' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: dirty ? ACCENT_GRADIENT : '#e2e8f0', color: dirty ? 'white' : '#94a3b8', fontSize: '0.875rem', fontWeight: 700, cursor: (saving || !dirty) ? 'not-allowed' : 'pointer', boxShadow: dirty ? `0 4px 14px ${ACCENT_SHADOW2}` : 'none' }}
           >
             {saving
               ? <><Loader2 size={14} style={{ animation: 'spin 0.7s linear infinite' }} /> Saving…</>
@@ -347,6 +371,7 @@ export default function SettingsClient() {
           const active = activeTab === key
           return (
             <button
+              suppressHydrationWarning
               key={key}
               onClick={() => setActiveTab(key)}
               style={{
@@ -354,9 +379,9 @@ export default function SettingsClient() {
                 padding: '8px 16px', borderRadius: '10px', border: 'none',
                 cursor: 'pointer', fontSize: '0.82rem', fontWeight: active ? 700 : 500,
                 whiteSpace: 'nowrap', flexShrink: 0, transition: 'all 0.15s',
-                background: active ? 'linear-gradient(135deg, #e91e8c, #f43f5e)' : 'transparent',
+                background: active ? ACCENT_GRADIENT : 'transparent',
                 color: active ? 'white' : '#64748b',
-                boxShadow: active ? '0 2px 8px rgba(233,30,140,0.3)' : 'none',
+                boxShadow: active ? `0 2px 8px ${ACCENT_SHADOW}` : 'none',
               }}
             >
               <Icon size={14} />
@@ -431,7 +456,7 @@ export default function SettingsClient() {
                 ].map(({ label, value }) => (
                   <div key={label} style={{ padding: '10px 12px', borderRadius: '10px', background: 'white', border: '1px solid #f1f5f9' }}>
                     <p style={{ fontSize: '0.68rem', color: '#94a3b8', margin: '0 0 4px', fontWeight: 600 }}>{label}</p>
-                    <p style={{ fontSize: '1rem', fontWeight: 800, color: '#e91e8c', margin: 0 }}>{value}</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 800, color: ACCENT, margin: 0 }}>{value}</p>
                   </div>
                 ))}
               </div>
@@ -489,11 +514,12 @@ export default function SettingsClient() {
                     <Icon size={11} color="white" />
                   </div>
                   <input
+                    suppressHydrationWarning
                     type="url" value={settings.social[key as keyof SocialSettings]}
                     onChange={e => update('social', key as keyof SocialSettings, e.target.value)}
                     placeholder={placeholder}
                     style={{ width: '100%', padding: '9px 12px 9px 40px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: 'white', boxSizing: 'border-box' }}
-                    onFocus={e => (e.target.style.borderColor = '#e91e8c')}
+                    onFocus={e => (e.target.style.borderColor = ACCENT)}
                     onBlur={e  => (e.target.style.borderColor = '#e8edf5')}
                   />
                 </div>
@@ -544,8 +570,8 @@ export default function SettingsClient() {
       {/* ── Test Email ─────────────────────────────────────────── */}
       <div style={{
         marginTop: '8px', padding: '18px 16px',
-        background: 'rgba(233,30,140,0.03)',
-        border: '1.5px solid rgba(233,30,140,0.12)',
+        background: ACCENT_SOFT5,
+        border: `1.5px solid ${ACCENT_BORDER}`,
         borderRadius: '12px',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
@@ -559,6 +585,7 @@ export default function SettingsClient() {
             </p>
           </div>
           <button
+            suppressHydrationWarning
             onClick={async () => {
               toast.loading('Sending test emails…', { id: 'test-email' })
               try {
@@ -578,10 +605,10 @@ export default function SettingsClient() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '7px',
               padding: '10px 20px', borderRadius: '10px', border: 'none',
-              background: 'linear-gradient(135deg, #e91e8c, #f43f5e)',
+              background: ACCENT_GRADIENT,
               color: 'white', fontSize: '0.82rem', fontWeight: 700,
               cursor: 'pointer', flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(233,30,140,0.3)',
+              boxShadow: `0 4px 12px ${ACCENT_SHADOW}`,
             }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
@@ -602,7 +629,7 @@ export default function SettingsClient() {
             <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', margin: '0 0 1px' }}>
               Emails will be sent to
             </p>
-            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#e91e8c', margin: 0, fontFamily: 'monospace' }}>
+            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: ACCENT_TEXT, margin: 0, fontFamily: 'monospace' }}>
               {process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? 'your ADMIN_EMAIL in .env.local'}
             </p>
           </div>
@@ -627,12 +654,13 @@ export default function SettingsClient() {
 
               <Field label="Meta Description" hint="Shown in Google search results (160 chars max)">
                 <textarea
+                  suppressHydrationWarning
                   value={settings.seo.metaDescription}
                   onChange={e => update('seo', 'metaDescription', e.target.value)}
                   placeholder="Bangladesh's most trendy mini crossbody bag store. Shop premium imported bags."
                   rows={3}
                   style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: 'white', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
-                  onFocus={e => (e.target.style.borderColor = '#e91e8c')}
+                  onFocus={e => (e.target.style.borderColor = ACCENT)}
                   onBlur={e  => (e.target.style.borderColor = '#e8edf5')}
                 />
                 <p style={{ fontSize: '0.68rem', color: settings.seo.metaDescription.length > 160 ? '#ef4444' : '#94a3b8', margin: '4px 0 0', textAlign: 'right' }}>
@@ -680,6 +708,7 @@ export default function SettingsClient() {
                   </div>
                   <Field label="Maintenance Message">
                     <textarea
+                      suppressHydrationWarning
                       value={settings.maintenance.message}
                       onChange={e => update('maintenance', 'message', e.target.value)}
                       placeholder="We are updating the store. Back shortly!"

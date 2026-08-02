@@ -8,6 +8,27 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+/* ============================================
+   BRAND COLOR TOKENS
+   Matches globals.css --color-accent family
+   (same tokens as the Products / Customers / Categories admin pages)
+   ============================================ */
+const ACCENT        = '#CA865D'
+const ACCENT_DARK    = '#b5724a'
+const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg contrast
+const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
+const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
+const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
+const ACCENT_SOFT4   = 'rgba(202,134,93,0.05)'
+const ACCENT_SOFT5   = 'rgba(202,134,93,0.04)'
+const ACCENT_BORDER  = 'rgba(202,134,93,0.15)'
+const ACCENT_BORDER2 = 'rgba(202,134,93,0.2)'
+const ACCENT_BORDER3 = 'rgba(202,134,93,0.25)'
+const ACCENT_BORDER4 = 'rgba(202,134,93,0.3)'
+const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
+const ACCENT_SHADOW2 = 'rgba(202,134,93,0.4)'
+const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface Product {
@@ -51,7 +72,7 @@ function PriceInput({
         type="number" min="0" placeholder={placeholder} value={value}
         onChange={e => onChange(e.target.value)}
         style={{ width: '100%', padding: '8px 10px 8px 26px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#fafbfc', boxSizing: 'border-box' }}
-        onFocus={e => (e.target.style.borderColor = '#e91e8c')}
+        onFocus={e => (e.target.style.borderColor = ACCENT)}
         onBlur={e => (e.target.style.borderColor = '#e8edf5')}
       />
     </div>
@@ -93,12 +114,12 @@ function EditPriceModal({
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid #f1f5f9' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(233,30,140,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Tag size={16} color="#e91e8c" />
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ACCENT_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Tag size={16} color={ACCENT} />
             </div>
             <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Set Flash Price</p>
           </div>
-          <button onClick={onClose} style={{ width: '32px', height: '32px', borderRadius: '9px', border: '1.5px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+          <button suppressHydrationWarning onClick={onClose} style={{ width: '32px', height: '32px', borderRadius: '9px', border: '1.5px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
             <X size={14} />
           </button>
         </div>
@@ -107,10 +128,10 @@ function EditPriceModal({
         <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {/* Product info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '10px', overflow: 'hidden', background: 'rgba(233,30,140,0.05)', flexShrink: 0, border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '52px', height: '52px', borderRadius: '10px', overflow: 'hidden', background: ACCENT_SOFT4, flexShrink: 0, border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {product.images[0]
                 ? <Image src={product.images[0]} alt={product.name} width={52} height={52} style={{ objectFit: 'cover' }} />
-                : <Package size={18} color="#e91e8c" style={{ opacity: 0.4 }} />}
+                : <Package size={18} color={ACCENT} style={{ opacity: 0.4 }} />}
             </div>
             <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1e293b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</p>
@@ -131,15 +152,15 @@ function EditPriceModal({
 
           {/* Discount preview */}
           {Number(price) > 0 && Number(price) < product.price && (
-            <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(233,30,140,0.05)', border: '1px solid rgba(233,30,140,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '12px 14px', borderRadius: '10px', background: ACCENT_SOFT4, border: `1px solid ${ACCENT_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <TrendingDown size={15} color="#e91e8c" />
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#be185d' }}>Discount preview</span>
+                <TrendingDown size={15} color={ACCENT} />
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: ACCENT_TEXT }}>Discount preview</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '0.78rem', color: '#94a3b8', textDecoration: 'line-through' }}>৳{product.price.toLocaleString('en-US')}</span>
-                <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#e91e8c' }}>৳{Number(price).toLocaleString('en-US')}</span>
-                <span style={{ padding: '2px 8px', borderRadius: '6px', background: '#e91e8c', color: 'white', fontSize: '0.72rem', fontWeight: 800 }}>-{disc}%</span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 800, color: ACCENT }}>৳{Number(price).toLocaleString('en-US')}</span>
+                <span style={{ padding: '2px 8px', borderRadius: '6px', background: ACCENT, color: 'white', fontSize: '0.72rem', fontWeight: 800 }}>-{disc}%</span>
               </div>
             </div>
           )}
@@ -154,14 +175,14 @@ function EditPriceModal({
 
         {/* Footer */}
         <div style={{ display: 'flex', gap: '10px', padding: '16px 22px', borderTop: '1px solid #f1f5f9', background: '#fafbfc' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#fff', fontSize: '0.875rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
+          <button suppressHydrationWarning onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#fff', fontSize: '0.875rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
             Cancel
           </button>
           <button
             suppressHydrationWarning
             onClick={handleSave}
             disabled={saving || Number(price) >= product.price || !price}
-            style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving || Number(price) >= product.price || !price ? 0.6 : 1, boxShadow: '0 4px 12px rgba(233,30,140,0.3)' }}
+            style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: 'none', background: ACCENT_GRADIENT, color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving || Number(price) >= product.price || !price ? 0.6 : 1, boxShadow: `0 4px 12px ${ACCENT_SHADOW}` }}
           >
             {saving ? <><Loader2 size={14} style={{ animation: 'spin 0.7s linear infinite' }} /> Saving…</> : <><Save size={14} /> Save Price</>}
           </button>
@@ -236,15 +257,15 @@ function AddProductsModal({
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(233,30,140,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Plus size={16} color="#e91e8c" />
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ACCENT_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={16} color={ACCENT} />
             </div>
             <div>
               <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Add to Flash Sale</p>
               <p suppressHydrationWarning style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>{selected.size} selected</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ width: '32px', height: '32px', borderRadius: '9px', border: '1.5px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+          <button suppressHydrationWarning onClick={onClose} style={{ width: '32px', height: '32px', borderRadius: '9px', border: '1.5px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
             <X size={14} />
           </button>
         </div>
@@ -260,7 +281,7 @@ function AddProductsModal({
               style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
             />
             {search && (
-              <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}>
+              <button suppressHydrationWarning onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}>
                 <X size={13} />
               </button>
             )}
@@ -271,7 +292,7 @@ function AddProductsModal({
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
           {loading ? (
             <div style={{ padding: '40px', textAlign: 'center' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: '#e91e8c', animation: 'spin 0.7s linear infinite', margin: '0 auto 10px' }} />
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: ACCENT, animation: 'spin 0.7s linear infinite', margin: '0 auto 10px' }} />
               <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Loading products…</p>
             </div>
           ) : available.length === 0 ? (
@@ -286,11 +307,11 @@ function AddProductsModal({
               const sel = selected.has(p._id)
               return (
                 <div key={p._id}
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '12px', marginBottom: '4px', background: sel ? 'rgba(233,30,140,0.04)' : 'transparent', border: `1.5px solid ${sel ? 'rgba(233,30,140,0.2)' : 'transparent'}`, cursor: 'pointer', transition: 'all 0.12s' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '12px', marginBottom: '4px', background: sel ? ACCENT_SOFT5 : 'transparent', border: `1.5px solid ${sel ? ACCENT_BORDER2 : 'transparent'}`, cursor: 'pointer', transition: 'all 0.12s' }}
                   onClick={() => toggle(p._id)}
                 >
                   {/* Checkbox */}
-                  <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: `2px solid ${sel ? '#e91e8c' : '#e2e8f0'}`, background: sel ? '#e91e8c' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: `2px solid ${sel ? ACCENT : '#e2e8f0'}`, background: sel ? ACCENT : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {sel && <span style={{ color: 'white', fontSize: '12px', fontWeight: 900 }}>✓</span>}
                   </div>
 
@@ -298,7 +319,7 @@ function AddProductsModal({
                   <div style={{ width: '44px', height: '44px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, background: '#f8fafc', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {p.images[0]
                       ? <Image src={p.images[0]} alt={p.name} width={44} height={44} style={{ objectFit: 'cover' }} />
-                      : <Package size={16} color="#e91e8c" style={{ opacity: 0.4 }} />}
+                      : <Package size={16} color={ACCENT} style={{ opacity: 0.4 }} />}
                   </div>
 
                   {/* Info */}
@@ -327,14 +348,14 @@ function AddProductsModal({
 
         {/* Footer */}
         <div style={{ display: 'flex', gap: '10px', padding: '14px 22px', borderTop: '1px solid #f1f5f9', background: '#fafbfc', flexShrink: 0 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#fff', fontSize: '0.875rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
+          <button suppressHydrationWarning onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#fff', fontSize: '0.875rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
             Cancel
           </button>
           <button
             suppressHydrationWarning
             onClick={handleAdd}
             disabled={saving || selected.size === 0}
-            style={{ flex: 2, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: saving || selected.size === 0 ? 'not-allowed' : 'pointer', opacity: saving || selected.size === 0 ? 0.6 : 1, boxShadow: '0 4px 12px rgba(233,30,140,0.3)' }}
+            style={{ flex: 2, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', borderRadius: '10px', border: 'none', background: ACCENT_GRADIENT, color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: saving || selected.size === 0 ? 'not-allowed' : 'pointer', opacity: saving || selected.size === 0 ? 0.6 : 1, boxShadow: `0 4px 12px ${ACCENT_SHADOW}` }}
           >
             {saving
               ? <><Loader2 size={14} style={{ animation: 'spin 0.7s linear infinite' }} /> Adding…</>
@@ -409,7 +430,7 @@ export default function FlashSaleClient() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(233,30,140,0.4)' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ACCENT_GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 12px ${ACCENT_SHADOW2}` }}>
               <Zap size={18} color="white" strokeWidth={2.5} />
             </div>
             <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Flash Sale</h1>
@@ -430,7 +451,7 @@ export default function FlashSaleClient() {
           <button
             suppressHydrationWarning
             onClick={() => setAddModal(true)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(233,30,140,0.35)' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: ACCENT_GRADIENT, color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', boxShadow: `0 4px 14px ${ACCENT_SHADOW}` }}
           >
             <Plus size={15} strokeWidth={2.5} /> Add Products
           </button>
@@ -440,7 +461,7 @@ export default function FlashSaleClient() {
       {/* Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px' }}>
         {[
-          { label: 'On Sale',       value: products.length,                          icon: Zap,         gradient: 'linear-gradient(135deg, #e91e8c, #f43f5e)', bg: 'rgba(233,30,140,0.08)' },
+          { label: 'On Sale',       value: products.length,                          icon: Zap,         gradient: ACCENT_GRADIENT, bg: ACCENT_SOFT },
           { label: 'Avg Discount',  value: `${avgDiscount}%`,                        icon: TrendingDown, gradient: 'linear-gradient(135deg, #f59e0b, #f97316)', bg: 'rgba(245,158,11,0.08)' },
           { label: 'Total Savings', value: `৳${totalSavings.toLocaleString('en-US')}`, icon: Tag,      gradient: 'linear-gradient(135deg, #10b981, #059669)', bg: 'rgba(16,185,129,0.08)'  },
           { label: 'Items in Stock',value: products.reduce((a, p) => a + p.totalStock, 0), icon: ShoppingBag, gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)', bg: 'rgba(99,102,241,0.08)' },
@@ -459,7 +480,7 @@ export default function FlashSaleClient() {
 
       {/* Search + Sort */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 200px', background: '#fff', border: '1.5px solid #e8edf5', borderRadius: '12px', padding: '0 14px', height: '42px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 200px', background: '#f8fafc', border: '1.5px solid #f1f5f9', borderRadius: '12px', padding: '0 14px', height: '42px' }}>
           <Search size={15} style={{ color: '#94a3b8', flexShrink: 0 }} />
           {/* ✅ suppressHydrationWarning on controlled input */}
           <input
@@ -469,7 +490,7 @@ export default function FlashSaleClient() {
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
           />
           {search && (
-            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}>
+            <button suppressHydrationWarning onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}>
               <X size={14} />
             </button>
           )}
@@ -480,7 +501,7 @@ export default function FlashSaleClient() {
           <select
             suppressHydrationWarning
             value={sortBy} onChange={e => setSortBy(e.target.value)}
-            style={{ height: '42px', paddingLeft: '12px', paddingRight: '30px', border: '1.5px solid #e8edf5', borderRadius: '12px', background: '#fff', fontSize: '0.82rem', color: '#334155', outline: 'none', cursor: 'pointer', appearance: 'none' }}
+            style={{ height: '42px', paddingLeft: '12px', paddingRight: '30px', border: '1.5px solid #f1f5f9', borderRadius: '12px', background: '#f8fafc', fontSize: '0.82rem', color: '#334155', outline: 'none', cursor: 'pointer', appearance: 'none' }}
           >
             <option value="discount">Highest Discount</option>
             <option value="price">Lowest Price</option>
@@ -493,13 +514,13 @@ export default function FlashSaleClient() {
       {/* Products Grid */}
       {loading ? (
         <div style={{ padding: '60px', textAlign: 'center', background: '#fff', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: '#e91e8c', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
+          <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: ACCENT, animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
           <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading flash sale…</p>
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ padding: '80px 20px', textAlign: 'center', background: '#fff', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
-          <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'rgba(233,30,140,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <Zap size={30} color="#e91e8c" style={{ opacity: 0.4 }} />
+          <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: ACCENT_SOFT3, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Zap size={30} color={ACCENT} style={{ opacity: 0.4 }} />
           </div>
           <p style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', margin: 0 }}>
             {search ? 'No products match your search' : 'No products in flash sale yet'}
@@ -511,7 +532,7 @@ export default function FlashSaleClient() {
             <button
               suppressHydrationWarning
               onClick={() => setAddModal(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 24px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(233,30,140,0.35)' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 24px', borderRadius: '10px', border: 'none', background: ACCENT_GRADIENT, color: 'white', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', boxShadow: `0 4px 14px ${ACCENT_SHADOW}` }}
             >
               <Plus size={15} /> Add First Product
             </button>
@@ -529,11 +550,11 @@ export default function FlashSaleClient() {
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)')}
               >
                 {/* Image */}
-                <div style={{ position: 'relative', aspectRatio: '4/3', background: 'rgba(233,30,140,0.04)', overflow: 'hidden' }}>
+                <div style={{ position: 'relative', aspectRatio: '4/3', background: ACCENT_SOFT5, overflow: 'hidden' }}>
                   {p.images[0]
                     ? <Image src={p.images[0]} alt={p.name} fill sizes="(max-width: 768px) 100vw, 260px" style={{ objectFit: 'cover' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Package size={36} color="#e91e8c" style={{ opacity: 0.25 }} /></div>}
-                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', color: 'white', fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(233,30,140,0.4)' }}>
+                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Package size={36} color={ACCENT} style={{ opacity: 0.25 }} /></div>}
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: ACCENT_GRADIENT, color: 'white', fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: '8px', boxShadow: `0 2px 8px ${ACCENT_SHADOW2}` }}>
                     -{disc}%
                   </div>
                   <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(15,23,42,0.75)', color: 'white', fontSize: '0.68rem', fontWeight: 700, padding: '3px 9px', borderRadius: '7px', backdropFilter: 'blur(4px)' }}>
@@ -548,7 +569,7 @@ export default function FlashSaleClient() {
 
                   {/* Prices */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#e91e8c' }}>৳{p.flashSalePrice.toLocaleString('en-US')}</span>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: ACCENT }}>৳{p.flashSalePrice.toLocaleString('en-US')}</span>
                     <span style={{ fontSize: '0.82rem', color: '#94a3b8', textDecoration: 'line-through' }}>৳{p.price.toLocaleString('en-US')}</span>
                     <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', background: 'rgba(34,197,94,0.08)', color: '#15803d', border: '1px solid rgba(34,197,94,0.2)', marginLeft: 'auto' }}>
                       Save ৳{(p.price - p.flashSalePrice).toLocaleString('en-US')}
@@ -560,7 +581,7 @@ export default function FlashSaleClient() {
                     <button
                       suppressHydrationWarning
                       onClick={() => setEditProduct(p)}
-                      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '8px', borderRadius: '9px', border: '1.5px solid rgba(233,30,140,0.2)', background: 'rgba(233,30,140,0.05)', color: '#e91e8c', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '8px', borderRadius: '9px', border: `1.5px solid ${ACCENT_BORDER2}`, background: ACCENT_SOFT4, color: ACCENT_TEXT, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
                     >
                       <Tag size={13} /> Edit Price
                     </button>

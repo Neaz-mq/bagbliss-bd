@@ -8,6 +8,22 @@ import {
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
+/* ============================================
+   BRAND COLOR TOKENS
+   Matches globals.css --color-accent family
+   (same tokens as the Products / Customers admin pages)
+   ============================================ */
+const ACCENT        = '#CA865D'
+const ACCENT_DARK    = '#b5724a'
+const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg contrast
+const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
+const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
+const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
+const ACCENT_BORDER  = 'rgba(202,134,93,0.2)'
+const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
+const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
+const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface CategoryStats {
@@ -33,7 +49,7 @@ interface Category {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const CAT_GRADIENTS: Record<string, { from: string; to: string; light: string; border: string }> = {
-  'mini-crossbody': { from: '#e91e8c', to: '#f43f5e', light: 'rgba(233,30,140,0.07)', border: 'rgba(233,30,140,0.18)' },
+  'mini-crossbody': { from: ACCENT,     to: ACCENT_DARK, light: ACCENT_SOFT2,             border: ACCENT_BORDER  },
   'chain-strap':    { from: '#6366f1', to: '#8b5cf6', light: 'rgba(99,102,241,0.07)',  border: 'rgba(99,102,241,0.18)'  },
   'leather':        { from: '#b45309', to: '#d97706', light: 'rgba(180,83,9,0.07)',    border: 'rgba(180,83,9,0.18)'    },
   'canvas':         { from: '#059669', to: '#10b981', light: 'rgba(5,150,105,0.07)',   border: 'rgba(5,150,105,0.18)'   },
@@ -144,7 +160,7 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
           <StatPill icon={Package} label="Total"    value={cat.stats.total}      color={g.from}    />
           <StatPill icon={Tag}     label="Active"   value={cat.stats.active}     color="#10b981"   />
           <StatPill icon={Star}    label="Featured" value={cat.stats.featured}   color="#f59e0b"   />
-          <StatPill icon={Zap}     label="On Sale"  value={cat.stats.flashSale}  color="#e91e8c"   />
+          <StatPill icon={Zap}     label="On Sale"  value={cat.stats.flashSale}  color={ACCENT}    />
         </div>
 
         {/* Price range */}
@@ -216,12 +232,12 @@ function SummaryBar({ categories }: { categories: Category[] }) {
   }), { products: 0, active: 0, stock: 0, sold: 0, featured: 0, flashSale: 0 })
 
   const items = [
-    { label: 'Total Products', value: totals.products,  icon: Package,     gradient: 'linear-gradient(135deg, #e91e8c, #f43f5e)' },
+    { label: 'Total Products', value: totals.products,  icon: Package,     gradient: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})` },
     { label: 'Active',         value: totals.active,    icon: Tag,         gradient: 'linear-gradient(135deg, #10b981, #059669)' },
     { label: 'In Stock',       value: totals.stock,     icon: ShoppingBag, gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)' },
     { label: 'Total Sold',     value: totals.sold,      icon: TrendingUp,  gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
     { label: 'Featured',       value: totals.featured,  icon: Star,        gradient: 'linear-gradient(135deg, #3b82f6, #6366f1)' },
-    { label: 'Flash Sale',     value: totals.flashSale, icon: Zap,         gradient: 'linear-gradient(135deg, #ec4899, #e91e8c)' },
+    { label: 'Flash Sale',     value: totals.flashSale, icon: Zap,         gradient: `linear-gradient(135deg, ${ACCENT_DARK}, ${ACCENT})` },
   ]
 
   return (
@@ -311,7 +327,7 @@ export default function CategoriesClient() {
           </button>
           <Link
             href="/admin/products"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #e91e8c, #f43f5e)', color: 'white', fontSize: '0.875rem', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 14px rgba(233,30,140,0.35)' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, color: 'white', fontSize: '0.875rem', fontWeight: 700, textDecoration: 'none', boxShadow: `0 4px 14px ${ACCENT_SHADOW}` }}
           >
             <Package size={15} /> Manage Products
           </Link>
@@ -354,7 +370,7 @@ export default function CategoriesClient() {
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 200px', background: '#fff', border: '1.5px solid #e8edf5', borderRadius: '12px', padding: '0 14px', height: '42px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 200px', background: '#f8fafc', border: '1.5px solid #f1f5f9', borderRadius: '12px', padding: '0 14px', height: '42px' }}>
           <Search size={15} style={{ color: '#94a3b8', flexShrink: 0 }} />
           {/* ✅ Fix: suppressHydrationWarning on controlled input */}
           <input
@@ -367,7 +383,7 @@ export default function CategoriesClient() {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '4px', background: 'white', padding: '4px', borderRadius: '12px', border: '1.5px solid #e8edf5' }}>
+        <div style={{ display: 'flex', gap: '4px', background: 'white', padding: '4px', borderRadius: '12px', border: '1.5px solid #f1f5f9' }}>
           {([
             { key: 'products', label: 'By Products' },
             { key: 'sold',     label: 'By Sales'    },
@@ -382,7 +398,7 @@ export default function CategoriesClient() {
               style={{
                 padding: '6px 14px', borderRadius: '8px', border: 'none',
                 cursor: 'pointer', fontSize: '0.78rem', fontWeight: sortBy === key ? 700 : 500,
-                background: sortBy === key ? 'linear-gradient(135deg, #e91e8c, #f43f5e)' : 'transparent',
+                background: sortBy === key ? `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})` : 'transparent',
                 color: sortBy === key ? 'white' : '#64748b',
                 transition: 'all 0.15s', whiteSpace: 'nowrap',
               }}
@@ -396,7 +412,7 @@ export default function CategoriesClient() {
       {/* Loading */}
       {loading && (
         <div style={{ padding: '80px', textAlign: 'center', background: 'white', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: '#e91e8c', animation: 'spin 0.7s linear infinite', margin: '0 auto 14px' }} />
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #f1f5f9', borderTopColor: ACCENT, animation: 'spin 0.7s linear infinite', margin: '0 auto 14px' }} />
           <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading categories…</p>
         </div>
       )}
@@ -418,8 +434,8 @@ export default function CategoriesClient() {
         return (
           <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', padding: '24px', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(233,30,140,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BarChart3 size={17} color="#e91e8c" />
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ACCENT_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <BarChart3 size={17} color={ACCENT} />
               </div>
               <div>
                 <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Sales by Category</p>
@@ -463,7 +479,7 @@ export default function CategoriesClient() {
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', margin: '0 0 14px' }}>Quick Actions</p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {[
-              { label: '➕ Add New Product',   href: '/admin/products',   color: '#e91e8c' },
+              { label: '➕ Add New Product',   href: '/admin/products',   color: ACCENT },
               { label: '⚡ Manage Flash Sale', href: '/admin/flash-sale', color: '#f59e0b' },
               { label: '📊 View All Orders',   href: '/admin/orders',     color: '#6366f1' },
               { label: '👜 Visit Shop',         href: '/shop',            color: '#10b981' },

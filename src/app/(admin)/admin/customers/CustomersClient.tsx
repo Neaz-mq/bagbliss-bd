@@ -8,6 +8,22 @@ import {
   Mail, Calendar, Eye, Package, Clock,
 } from 'lucide-react'
 
+/* ============================================
+   BRAND COLOR TOKENS
+   Matches globals.css --color-accent family
+   (same tokens as the Products / Orders admin pages)
+   ============================================ */
+const ACCENT        = '#CA865D'
+const ACCENT_DARK    = '#b5724a'
+const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg contrast
+const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
+const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
+const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
+const ACCENT_BORDER  = 'rgba(202,134,93,0.2)'
+const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
+const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
+const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface Customer {
@@ -39,7 +55,7 @@ interface CustomerDetail {
 
 const STATUS_CFG: Record<string, { bg: string; text: string; dot: string }> = {
   pending:    { bg: 'rgba(234,179,8,0.08)',  text: '#b45309', dot: '#f59e0b' },
-  processing: { bg: 'rgba(233,30,140,0.08)', text: '#be185d', dot: '#e91e8c' },
+  processing: { bg: ACCENT_SOFT,             text: ACCENT_TEXT, dot: ACCENT },
   shipped:    { bg: 'rgba(59,130,246,0.08)', text: '#1d4ed8', dot: '#3b82f6' },
   delivered:  { bg: 'rgba(34,197,94,0.08)',  text: '#15803d', dot: '#22c55e' },
   cancelled:  { bg: 'rgba(239,68,68,0.08)',  text: '#b91c1c', dot: '#ef4444' },
@@ -62,7 +78,7 @@ function fmt(dateStr: string, opts: Intl.DateTimeFormatOptions) {
 
 function Avatar({ name, image, size = 40 }: { name: string; image?: string; size?: number }) {
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-  const colors   = ['#e91e8c', '#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6']
+  const colors   = [ACCENT, '#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6']
   const color    = colors[name.charCodeAt(0) % colors.length]
 
   if (image) return (
@@ -135,6 +151,7 @@ function CustomerModal({
             </div>
           </div>
           <button
+            suppressHydrationWarning
             onClick={onClose}
             style={{
               width: '36px', height: '36px', borderRadius: '10px',
@@ -153,7 +170,7 @@ function CustomerModal({
             <div style={{ padding: '60px', textAlign: 'center' }}>
               <div style={{
                 width: '36px', height: '36px', borderRadius: '50%',
-                border: '3px solid #f1f5f9', borderTopColor: '#e91e8c',
+                border: '3px solid #f1f5f9', borderTopColor: ACCENT,
                 animation: 'spin 0.7s linear infinite', margin: '0 auto 12px',
               }} />
               <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading customer data…</p>
@@ -185,7 +202,7 @@ function CustomerModal({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 {[
                   { label: 'Total Orders', value: detail.orders.length,          icon: ShoppingBag, color: '#6366f1', bg: 'rgba(99,102,241,0.08)'  },
-                  { label: 'Total Spent',  value: `৳${totalSpent.toLocaleString('en-US')}`, icon: TrendingUp,  color: '#e91e8c', bg: 'rgba(233,30,140,0.08)' },
+                  { label: 'Total Spent',  value: `৳${totalSpent.toLocaleString('en-US')}`, icon: TrendingUp,  color: ACCENT, bg: ACCENT_SOFT },
                   { label: 'Delivered',    value: delivered,                      icon: Package,     color: '#10b981', bg: 'rgba(16,185,129,0.08)'  },
                 ].map(({ label, value, icon: Icon, color, bg }) => (
                   <div key={label} style={{
@@ -198,7 +215,7 @@ function CustomerModal({
                     }}>
                       <Icon size={16} style={{ color }} />
                     </div>
-                    {/* ✅ span instead of p to avoid invalid nesting */}
+                    {/* ✅ div instead of p to avoid invalid nesting */}
                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{value}</div>
                     <div style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '3px 0 0' }}>{label}</div>
                   </div>
@@ -230,10 +247,10 @@ function CustomerModal({
                         }}>
                           <div style={{
                             width: '38px', height: '38px', borderRadius: '10px',
-                            background: 'rgba(233,30,140,0.07)',
+                            background: ACCENT_SOFT2,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                           }}>
-                            <ShoppingBag size={14} color="#e91e8c" />
+                            <ShoppingBag size={14} color={ACCENT} />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>
@@ -334,7 +351,7 @@ export default function CustomersClient() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
             padding: '9px 16px', borderRadius: '10px',
-            border: '1.5px solid #e2e8f0', background: '#f8fafc',
+            border: '1.5px solid #e2e8f0', background: '#fff',
             color: '#475569', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
           }}
         >
@@ -346,7 +363,7 @@ export default function CustomersClient() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px' }}>
         {[
           { label: 'Total Customers', value: total,                                    icon: Users,       gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)', bg: 'rgba(99,102,241,0.08)'  },
-          { label: 'With Orders',     value: withOrders,                               icon: ShoppingBag, gradient: 'linear-gradient(135deg, #e91e8c, #f43f5e)', bg: 'rgba(233,30,140,0.08)' },
+          { label: 'With Orders',     value: withOrders,                               icon: ShoppingBag, gradient: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, bg: ACCENT_SOFT },
           { label: 'Total Revenue',   value: `৳${totalSpent.toLocaleString('en-US')}`, icon: TrendingUp,  gradient: 'linear-gradient(135deg, #10b981, #059669)', bg: 'rgba(16,185,129,0.08)'  },
         ].map(({ label, value, icon: Icon, gradient, bg }) => (
           <div key={label} style={{
@@ -374,13 +391,13 @@ export default function CustomersClient() {
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          flex: '1 1 220px', background: '#fff',
-          border: '1.5px solid #e8edf5', borderRadius: '12px',
+          flex: '1 1 220px', background: '#f8fafc',
+          border: '1.5px solid #f1f5f9', borderRadius: '12px',
           padding: '0 14px', height: '42px',
         }}>
           <Search size={15} style={{ color: '#94a3b8', flexShrink: 0 }} />
           <input
-          suppressHydrationWarning
+            suppressHydrationWarning
             type="text"
             placeholder="Search by name or email…"
             value={search}
@@ -389,6 +406,7 @@ export default function CustomersClient() {
           />
           {search && (
             <button
+              suppressHydrationWarning
               onClick={() => setSearch('')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}
             >
@@ -399,13 +417,13 @@ export default function CustomersClient() {
 
         <div style={{ position: 'relative' }}>
           <select
-          suppressHydrationWarning
+            suppressHydrationWarning
             value={sort}
             onChange={e => setSort(e.target.value)}
             style={{
               height: '42px', paddingLeft: '12px', paddingRight: '32px',
-              border: '1.5px solid #e8edf5', borderRadius: '12px',
-              background: '#fff', fontSize: '0.82rem', color: '#334155',
+              border: '1.5px solid #f1f5f9', borderRadius: '12px',
+              background: '#f8fafc', fontSize: '0.82rem', color: '#334155',
               outline: 'none', cursor: 'pointer', appearance: 'none',
             }}
           >
@@ -417,8 +435,8 @@ export default function CustomersClient() {
 
       {/* Table */}
       <div style={{
-        background: '#fff', borderRadius: '20px',
-        border: '1px solid #f1f5f9', boxShadow: '0 1px 2px rgba(0,0,0,0.04)', overflow: 'hidden',
+        background: '#fff', borderRadius: '16px',
+        border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden',
       }}>
         {/* Head */}
         <div style={{
@@ -439,8 +457,8 @@ export default function CustomersClient() {
         {loading && (
           <div style={{ padding: '60px', textAlign: 'center' }}>
             <div style={{
-              width: '36px', height: '36px', borderRadius: '50%',
-              border: '3px solid #f1f5f9', borderTopColor: '#e91e8c',
+              width: '32px', height: '32px', borderRadius: '50%',
+              border: '3px solid #f1f5f9', borderTopColor: ACCENT,
               animation: 'spin 0.7s linear infinite', margin: '0 auto 12px',
             }} />
             <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading customers…</p>
@@ -452,10 +470,10 @@ export default function CustomersClient() {
           <div style={{ padding: '80px 20px', textAlign: 'center' }}>
             <div style={{
               width: '64px', height: '64px', borderRadius: '18px',
-              background: 'rgba(99,102,241,0.06)',
+              background: ACCENT_SOFT3,
               display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
             }}>
-              <Users size={26} color="#6366f1" style={{ opacity: 0.5 }} />
+              <Users size={26} color={ACCENT} style={{ opacity: 0.5 }} />
             </div>
             <p style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', margin: 0 }}>No customers found</p>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '6px 0 0' }}>
@@ -512,9 +530,9 @@ export default function CustomersClient() {
               <div style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 minWidth: '28px', height: '24px', borderRadius: '7px', padding: '0 7px',
-                background: c.orderCount > 0 ? 'rgba(233,30,140,0.08)' : '#f8fafc',
+                background: c.orderCount > 0 ? ACCENT_SOFT : '#f8fafc',
                 fontSize: '0.8rem', fontWeight: 800,
-                color: c.orderCount > 0 ? '#e91e8c' : '#94a3b8',
+                color: c.orderCount > 0 ? ACCENT_TEXT : '#94a3b8',
               }}>
                 {c.orderCount}
               </div>
@@ -534,6 +552,7 @@ export default function CustomersClient() {
             {/* View */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button
+                suppressHydrationWarning
                 onClick={() => openModal(c)}
                 style={{
                   width: '32px', height: '32px', borderRadius: '9px',
@@ -542,9 +561,9 @@ export default function CustomersClient() {
                   cursor: 'pointer', color: '#64748b',
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background     = 'rgba(99,102,241,0.07)'
-                  e.currentTarget.style.borderColor    = 'rgba(99,102,241,0.3)'
-                  e.currentTarget.style.color          = '#6366f1'
+                  e.currentTarget.style.background     = ACCENT_SOFT2
+                  e.currentTarget.style.borderColor    = ACCENT_BORDER2
+                  e.currentTarget.style.color          = ACCENT
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.background     = '#f8fafc'
@@ -570,6 +589,7 @@ export default function CustomersClient() {
           </p>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
+              suppressHydrationWarning
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
               style={{
@@ -592,13 +612,14 @@ export default function CustomersClient() {
               }
               return (
                 <button
+                  suppressHydrationWarning
                   key={n}
                   onClick={() => setPage(n)}
                   style={{
                     width: '36px', height: '36px', borderRadius: '10px',
-                    border: `1.5px solid ${page === n ? 'rgba(99,102,241,0.3)' : '#e2e8f0'}`,
-                    background: page === n ? 'rgba(99,102,241,0.08)' : '#fff',
-                    color: page === n ? '#6366f1' : '#475569',
+                    border: `1.5px solid ${page === n ? ACCENT_BORDER3 : '#e2e8f0'}`,
+                    background: page === n ? ACCENT_SOFT : '#fff',
+                    color: page === n ? ACCENT : '#475569',
                     fontWeight: page === n ? 800 : 500,
                     fontSize: '0.82rem', cursor: 'pointer',
                   }}
@@ -609,6 +630,7 @@ export default function CustomersClient() {
             })}
 
             <button
+              suppressHydrationWarning
               onClick={() => setPage(p => Math.min(pages, p + 1))}
               disabled={page === pages}
               style={{
