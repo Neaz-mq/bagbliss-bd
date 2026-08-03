@@ -912,108 +912,232 @@ function NavbarInner() {
         </div>
       )}
 
-      {/* ── Mobile bottom nav ─────────────────────────────────────────── */}
+      {/* ── Mobile bottom nav ─────────────────────────────────────────────
+          ✅ FIX: previously all 6 items (Home, Shop, Search, Cart, Wishlist,
+          Account) were siblings in one `flex justify-around` row, each
+          `flex-1`. With 6 equal items the "middle" falls on the boundary
+          between item 3 and item 4 — so Cart (item #4) always sat right of
+          true center, it was never actually in the middle of the bar.
+          Fix: pull Cart out of the flex flow entirely and pin it with
+          `absolute left-1/2 -translate-x-1/2` directly on the <nav> (which
+          is itself `fixed`, so it's already a positioning context). The
+          remaining 5 icons split into two independent flex groups that
+          just fill the space on either side — however many icons end up
+          left vs right, Cart stays locked to the exact horizontal center
+          of the screen. */}
       {isMounted && (
         <nav
           suppressHydrationWarning
-          className="fixed right-0 bottom-0 left-0 z-[100] flex items-center justify-around border-t border-[rgba(255,255,255,0.07)] shadow-[0_-4px_24px_rgba(26,26,46,0.25)] lg:hidden"
+          className="fixed right-0 bottom-0 left-0 z-[100] border-t border-[rgba(255,255,255,0.07)] shadow-[0_-4px_24px_rgba(26,26,46,0.25)] lg:hidden"
           style={{
             background: DARK,
             padding: `0.6rem 0.5rem calc(0.6rem + env(safe-area-inset-bottom, 0px))`,
           }}
         >
-          {/* Home */}
-          <Link
-            href="/"
-            className="flex min-w-[48px] flex-1 flex-col items-center gap-[3px] py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline transition-colors duration-200"
-            style={{
-              color: isActive('/') ? '#fff' : 'rgba(255,255,255,0.38)',
-              fontFamily: FONT,
-            }}
-          >
-            <div
-              className="relative flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
-              style={{
-                background: isActive('/')
-                  ? 'rgba(202,134,93,0.22)'
-                  : 'transparent',
-              }}
-            >
-              <Home
-                size={20}
-                strokeWidth={isActive('/') ? 2.5 : 1.8}
-                color={isActive('/') ? C : 'rgba(255,255,255,0.38)'}
-              />
-            </div>
-            <span>Home</span>
-          </Link>
+          <div className="flex items-center">
+            {/* Left group: Home, Shop, Search */}
+            <div className="flex flex-1 items-center justify-evenly">
+              {/* Home */}
+              <Link
+                href="/"
+                className="flex min-w-[48px] flex-col items-center gap-[3px] py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline transition-colors duration-200"
+                style={{
+                  color: isActive('/') ? '#fff' : 'rgba(255,255,255,0.38)',
+                  fontFamily: FONT,
+                }}
+              >
+                <div
+                  className="relative flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
+                  style={{
+                    background: isActive('/')
+                      ? 'rgba(202,134,93,0.22)'
+                      : 'transparent',
+                  }}
+                >
+                  <Home
+                    size={20}
+                    strokeWidth={isActive('/') ? 2.5 : 1.8}
+                    color={isActive('/') ? C : 'rgba(255,255,255,0.38)'}
+                  />
+                </div>
+                <span>Home</span>
+              </Link>
 
-          {/* Shop */}
-          <Link
-            href="/shop"
-            className="flex min-w-[48px] flex-1 flex-col items-center gap-[3px] py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline transition-colors duration-200"
-            style={{
-              color: isActive('/shop') ? '#fff' : 'rgba(255,255,255,0.38)',
-              fontFamily: FONT,
-            }}
-          >
-            <div
-              className="relative flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
-              style={{
-                background: isActive('/shop')
-                  ? 'rgba(202,134,93,0.22)'
-                  : 'transparent',
-              }}
-            >
-              <Grid3X3
-                size={20}
-                strokeWidth={isActive('/shop') ? 2.5 : 1.8}
-                color={isActive('/shop') ? C : 'rgba(255,255,255,0.38)'}
-              />
-            </div>
-            <span>Shop</span>
-          </Link>
+              {/* Shop */}
+              <Link
+                href="/shop"
+                className="flex min-w-[48px] flex-col items-center gap-[3px] py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline transition-colors duration-200"
+                style={{
+                  color: isActive('/shop') ? '#fff' : 'rgba(255,255,255,0.38)',
+                  fontFamily: FONT,
+                }}
+              >
+                <div
+                  className="relative flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
+                  style={{
+                    background: isActive('/shop')
+                      ? 'rgba(202,134,93,0.22)'
+                      : 'transparent',
+                  }}
+                >
+                  <Grid3X3
+                    size={20}
+                    strokeWidth={isActive('/shop') ? 2.5 : 1.8}
+                    color={isActive('/shop') ? C : 'rgba(255,255,255,0.38)'}
+                  />
+                </div>
+                <span>Shop</span>
+              </Link>
 
-          {/* Search — was missing from the bottom nav on mobile, forcing
-              users to open the hamburger menu just to search. Now it opens
-              the same overlay used by desktop. */}
-          <button
-            type="button"
-            onClick={() => {
-              setIsMobileMenuOpen(false)
-              setIsSearchOpen(true)
-            }}
-            suppressHydrationWarning
-            className="flex min-w-[48px] flex-1 cursor-pointer flex-col items-center gap-[3px] border-none bg-transparent py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase"
-            style={{
-              color: isSearchOpen ? '#fff' : 'rgba(255,255,255,0.38)',
-              fontFamily: FONT,
-            }}
-          >
-            <div
-              className="flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
-              style={{
-                background: isSearchOpen
-                  ? 'rgba(202,134,93,0.22)'
-                  : 'transparent',
-              }}
-            >
-              <Search
-                size={20}
-                strokeWidth={isSearchOpen ? 2.5 : 1.8}
-                color={isSearchOpen ? C : 'rgba(255,255,255,0.38)'}
-              />
+              {/* Search — was missing from the bottom nav on mobile, forcing
+                  users to open the hamburger menu just to search. Now it opens
+                  the same overlay used by desktop. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false)
+                  setIsSearchOpen(true)
+                }}
+                suppressHydrationWarning
+                className="flex min-w-[48px] cursor-pointer flex-col items-center gap-[3px] border-none bg-transparent py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase"
+                style={{
+                  color: isSearchOpen ? '#fff' : 'rgba(255,255,255,0.38)',
+                  fontFamily: FONT,
+                }}
+              >
+                <div
+                  className="flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
+                  style={{
+                    background: isSearchOpen
+                      ? 'rgba(202,134,93,0.22)'
+                      : 'transparent',
+                  }}
+                >
+                  <Search
+                    size={20}
+                    strokeWidth={isSearchOpen ? 2.5 : 1.8}
+                    color={isSearchOpen ? C : 'rgba(255,255,255,0.38)'}
+                  />
+                </div>
+                <span>Search</span>
+              </button>
             </div>
-            <span>Search</span>
-          </button>
 
-          {/* Cart FAB */}
+            {/* Spacer reserved for the absolutely-positioned Cart FAB so the
+                two side groups don't render underneath it. Width matches
+                the FAB's ~52px circle plus a little breathing room. */}
+            <div className="w-[64px] shrink-0" aria-hidden="true" />
+
+            {/* Right group: Wishlist, Account */}
+            <div className="flex flex-1 items-center justify-evenly">
+              {/* Wishlist */}
+              <Link
+                href="/wishlist"
+                className="flex min-w-[48px] flex-col items-center gap-[3px] py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline transition-colors duration-200"
+                style={{
+                  color:
+                    pathname === '/wishlist' ? '#fff' : 'rgba(255,255,255,0.38)',
+                  fontFamily: FONT,
+                }}
+              >
+                <div
+                  className="relative flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
+                  style={{
+                    background:
+                      pathname === '/wishlist'
+                        ? 'rgba(202,134,93,0.22)'
+                        : 'transparent',
+                  }}
+                >
+                  <Heart
+                    size={20}
+                    strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8}
+                    color={
+                      pathname === '/wishlist' ? C : 'rgba(255,255,255,0.38)'
+                    }
+                  />
+                  {safeWishlist > 0 && (
+                    <span
+                      className="absolute top-0 right-0 flex h-[14px] min-w-[14px] items-center justify-center rounded-full px-[2px] text-[0.5rem] font-extrabold text-white"
+                      style={{
+                        background: C,
+                        border: `2px solid ${DARK}`,
+                        fontFamily: FONT,
+                      }}
+                    >
+                      {safeWishlist}
+                    </span>
+                  )}
+                </div>
+                <span>Wishlist</span>
+              </Link>
+
+              {/* Account */}
+              <Link
+                href={session ? '/account' : '/login'}
+                suppressHydrationWarning
+                className="flex min-w-[48px] flex-col items-center gap-[3px] py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline transition-colors duration-200"
+                style={{
+                  color:
+                    pathname === '/account' || pathname === '/login'
+                      ? '#fff'
+                      : 'rgba(255,255,255,0.38)',
+                  fontFamily: FONT,
+                }}
+              >
+                <div
+                  className="flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
+                  style={{
+                    background:
+                      pathname === '/account' || pathname === '/login'
+                        ? 'rgba(202,134,93,0.22)'
+                        : 'transparent',
+                  }}
+                >
+                  {session?.user?.image ? (
+                    <img
+                      src={session.user.image}
+                      alt=""
+                      suppressHydrationWarning
+                      className="h-5 w-5 rounded-full object-cover"
+                      style={{
+                        border:
+                          pathname === '/account'
+                            ? `2px solid ${C}`
+                            : '2px solid rgba(255,255,255,0.2)',
+                      }}
+                    />
+                  ) : (
+                    <User
+                      size={20}
+                      strokeWidth={
+                        pathname === '/account' || pathname === '/login'
+                          ? 2.5
+                          : 1.8
+                      }
+                      color={
+                        pathname === '/account' || pathname === '/login'
+                          ? C
+                          : 'rgba(255,255,255,0.38)'
+                      }
+                    />
+                  )}
+                </div>
+                <span suppressHydrationWarning>
+                  {session ? 'Account' : 'Sign In'}
+                </span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Cart FAB — pinned to the exact horizontal center of the <nav>,
+              independent of how many icons are on either side. */}
           <button
             type="button"
             onClick={openCart}
             suppressHydrationWarning
-            className="flex min-w-[52px] flex-1 cursor-pointer flex-col items-center gap-[3px] border-none bg-transparent"
-            style={{ marginTop: '-1.5rem', padding: '0.2rem 0' }}
+            className="absolute left-1/2 flex -translate-x-1/2 cursor-pointer flex-col items-center gap-[3px] border-none bg-transparent"
+            style={{ top: '-1.5rem' }}
           >
             <div
               className="relative flex h-[52px] w-[52px] items-center justify-center rounded-full"
@@ -1045,100 +1169,6 @@ function NavbarInner() {
               Cart
             </span>
           </button>
-
-          {/* Wishlist */}
-          <Link
-            href="/wishlist"
-            className="flex min-w-[48px] flex-1 flex-col items-center gap-[3px] py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline transition-colors duration-200"
-            style={{
-              color:
-                pathname === '/wishlist' ? '#fff' : 'rgba(255,255,255,0.38)',
-              fontFamily: FONT,
-            }}
-          >
-            <div
-              className="relative flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
-              style={{
-                background:
-                  pathname === '/wishlist'
-                    ? 'rgba(202,134,93,0.22)'
-                    : 'transparent',
-              }}
-            >
-              <Heart
-                size={20}
-                strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8}
-                color={pathname === '/wishlist' ? C : 'rgba(255,255,255,0.38)'}
-              />
-              {safeWishlist > 0 && (
-                <span
-                  className="absolute top-0 right-0 flex h-[14px] min-w-[14px] items-center justify-center rounded-full px-[2px] text-[0.5rem] font-extrabold text-white"
-                  style={{
-                    background: C,
-                    border: `2px solid ${DARK}`,
-                    fontFamily: FONT,
-                  }}
-                >
-                  {safeWishlist}
-                </span>
-              )}
-            </div>
-            <span>Wishlist</span>
-          </Link>
-
-          {/* Account */}
-          <Link
-            href={session ? '/account' : '/login'}
-            suppressHydrationWarning
-            className="flex min-w-[48px] flex-1 flex-col items-center gap-[3px] py-[0.3rem] text-[0.57rem] font-bold tracking-[0.05em] uppercase no-underline transition-colors duration-200"
-            style={{
-              color:
-                pathname === '/account' || pathname === '/login'
-                  ? '#fff'
-                  : 'rgba(255,255,255,0.38)',
-              fontFamily: FONT,
-            }}
-          >
-            <div
-              className="flex items-center justify-center rounded-xl p-[6px] transition-[background] duration-200"
-              style={{
-                background:
-                  pathname === '/account' || pathname === '/login'
-                    ? 'rgba(202,134,93,0.22)'
-                    : 'transparent',
-              }}
-            >
-              {session?.user?.image ? (
-                <img
-                  src={session.user.image}
-                  alt=""
-                  suppressHydrationWarning
-                  className="h-5 w-5 rounded-full object-cover"
-                  style={{
-                    border:
-                      pathname === '/account'
-                        ? `2px solid ${C}`
-                        : '2px solid rgba(255,255,255,0.2)',
-                  }}
-                />
-              ) : (
-                <User
-                  size={20}
-                  strokeWidth={
-                    pathname === '/account' || pathname === '/login' ? 2.5 : 1.8
-                  }
-                  color={
-                    pathname === '/account' || pathname === '/login'
-                      ? C
-                      : 'rgba(255,255,255,0.38)'
-                  }
-                />
-              )}
-            </div>
-            <span suppressHydrationWarning>
-              {session ? 'Account' : 'Sign In'}
-            </span>
-          </Link>
         </nav>
       )}
     </>
