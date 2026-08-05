@@ -14,6 +14,11 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  // ✅ Local avatar preview — shows instantly after upload without
+  //    waiting for the session to re-fetch from the server.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+
   // ✅ FIX 1: Initialize form with empty strings — never use session data
   //    directly in useState() as session is null on server but populated
   //    on client, causing hydration mismatch
@@ -37,8 +42,15 @@ export default function ProfilePage() {
         name: session.user.name || '',
         email: session.user.email || '',
       }))
+      setAvatarUrl((prev) => prev ?? session.user.image ?? null)
     }
   }, [session])
+
+  // ✅ FIX 5: Read the real role from the session instead of hardcoding
+  //    'Customer' — session.user.role is set in the JWT/session callbacks
+  //    in src/lib/auth.ts, so this now matches the "ADMIN" badge shown
+  //    in the account dropdown / My Account page.
+  const isAdmin = session?.user?.role === 'admin'
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -46,6 +58,51 @@ export default function ProfilePage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  // ✅ FIX 6: Upload a real file to Cloudinary via /api/account/upload-avatar
+  //    (any logged-in user, not just admin), persist it on User.avatar,
+  //    then refresh the session so the navbar dropdown updates too —
+  //    no re-login required.
+  const handleAvatarChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file later
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/account/upload-avatar', {
+        method: 'POST',
+        body: fd,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
+
+      setAvatarUrl(data.url)
+      await update({ image: data.url })
+      toast.success('✅ Profile photo updated!')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
+  // ✅ FIX 7: Actually persist name/phone to MongoDB via
+  //    /api/account/update — previously this only called next-auth's
+  //    client-side update(), which never reached the database, so the
+  //    name reverted on the next page load / login.
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) {
@@ -53,12 +110,24 @@ export default function ProfilePage() {
       return
     }
     setIsSaving(true)
-    await new Promise((r) => setTimeout(r, 800))
-    await update({ name: form.name })
-    setSaved(true)
-    toast.success('✅ Profile updated!')
-    setIsSaving(false)
-    setTimeout(() => setSaved(false), 3000)
+    try {
+      const res = await fetch('/api/account/update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name, phone: form.phone }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Update failed')
+
+      await update({ name: data.name })
+      setSaved(true)
+      toast.success('✅ Profile updated!')
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // ✅ FIX 3: Don't render session-dependent content until mounted
@@ -159,10 +228,10 @@ export default function ProfilePage() {
             >
               {/* ✅ FIX 4: session?.user?.image now only renders after mount
                   so server always renders the fallback div — no mismatch */}
-              {session?.user?.image ? (
+              {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={session.user.image}
+                  src={avatarUrl}
                   alt=""
                   style={{
                     width: '96px',
@@ -170,6 +239,7 @@ export default function ProfilePage() {
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: '3px solid rgba(233,30,140,0.2)',
+                    opacity: isUploadingAvatar ? 0.5 : 1,
                   }}
                 />
               ) : (
@@ -188,13 +258,23 @@ export default function ProfilePage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     border: '3px solid rgba(233,30,140,0.2)',
+                    opacity: isUploadingAvatar ? 0.5 : 1,
                   }}
                 >
                   {(form.name || 'U')[0].toUpperCase()}
                 </div>
               )}
-              <button
-                type="button"
+              {/* ✅ FIX 6: hidden file input triggered by the camera button */}
+              <input
+                id="avatar-file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                disabled={isUploadingAvatar}
+                style={{ display: 'none' }}
+              />
+              <label
+                htmlFor="avatar-file-input"
                 style={{
                   position: 'absolute',
                   bottom: 0,
@@ -205,14 +285,18 @@ export default function ProfilePage() {
                   background: 'var(--color-accent)',
                   color: 'white',
                   border: '2px solid white',
-                  cursor: 'pointer',
+                  cursor: isUploadingAvatar ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Camera size={14} />
-              </button>
+                {isUploadingAvatar ? (
+                  <span className="spinner" style={{ width: 12, height: 12 }} />
+                ) : (
+                  <Camera size={14} />
+                )}
+              </label>
             </div>
             <h3
               style={{
@@ -240,16 +324,20 @@ export default function ProfilePage() {
               style={{
                 display: 'inline-flex',
                 padding: '0.2rem 0.75rem',
-                background: 'rgba(233,30,140,0.08)',
-                color: 'var(--color-accent)',
+                background: isAdmin
+                  ? 'rgba(217,119,6,0.1)'
+                  : 'rgba(233,30,140,0.08)',
+                color: isAdmin ? '#b45309' : 'var(--color-accent)',
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.72rem',
                 fontWeight: 700,
                 borderRadius: '9999px',
-                border: '1px solid rgba(233,30,140,0.2)',
+                border: isAdmin
+                  ? '1px solid rgba(217,119,6,0.25)'
+                  : '1px solid rgba(233,30,140,0.2)',
               }}
             >
-              Customer
+              {isAdmin ? 'Admin' : 'Customer'}
             </span>
           </div>
 

@@ -147,7 +147,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
       // On initial sign-in, attach user fields to the token
       if (user) {
         token.id   = user.id
@@ -166,6 +166,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.id   = dbUser._id.toString()
           token.role = dbUser.role
         }
+      }
+
+      // ✅ FIX: handle client-side `update()` calls (e.g. from the profile
+      //    page after saving a name change or uploading a new avatar) —
+      //    without this, `update()` only mutated the in-memory token and
+      //    was lost on the next request/refresh.
+      if (trigger === 'update' && session) {
+        if (typeof session.name === 'string')  token.name    = session.name
+        if (typeof session.image === 'string') token.picture = session.image
       }
 
       return token
