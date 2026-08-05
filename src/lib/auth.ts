@@ -152,26 +152,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id   = user.id
         token.role = (user as { role?: string }).role ?? 'user'
+        token.picture = user.image
       }
 
-      // For OAuth providers (Google / Facebook), sync role from DB
-      // (google-one-tap uses Credentials so account?.provider = 'google-one-tap')
-      if (
-        account?.provider === 'google' ||
-        account?.provider === 'facebook'
-      ) {
+      // For OAuth providers (Google / Facebook), fetch user avatar from DB
+      // (our custom User.avatar field — set when user uploads a new profile pic)
+      if (account?.provider === 'google' || account?.provider === 'facebook') {
         await connectDB()
         const dbUser = await User.findOne({ email: token.email })
         if (dbUser) {
           token.id   = dbUser._id.toString()
           token.role = dbUser.role
+          // ✅ FIX 1: Use our custom avatar if it exists (uploaded by user)
+          //    Otherwise fall back to the OAuth provider's picture
+          token.picture = dbUser.avatar || user?.image
         }
       }
 
-      // ✅ FIX: handle client-side `update()` calls (e.g. from the profile
-      //    page after saving a name change or uploading a new avatar) —
-      //    without this, `update()` only mutated the in-memory token and
-      //    was lost on the next request/refresh.
+      // ✅ FIX 2: Handle client-side `update()` calls (e.g. from the profile
+      //    page after uploading a new avatar) — this merges the update session
+      //    into the token
       if (trigger === 'update' && session) {
         if (typeof session.name === 'string')  token.name    = session.name
         if (typeof session.image === 'string') token.picture = session.image
@@ -184,6 +184,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token && session.user) {
         session.user.id   = token.id as string
         session.user.role = token.role as string
+        // ✅ FIX 3: CRITICAL — sync token.picture → session.user.image
+        //    Without this, all session updates are lost and you get the
+        //    old picture on every refresh/logout-login
+        session.user.image = token.picture as string
       }
       return session
     },
