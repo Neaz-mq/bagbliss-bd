@@ -37,6 +37,8 @@ const DIVISIONS = [
   'Khulna', 'Barisal', 'Rangpur', 'Mymensingh',
 ]
 
+// ⚠️ এগুলো শুধু UI প্রিভিউয়ের জন্য। আসল হিসাব হয় সার্ভারে
+// (src/features/orders/buildOrder.ts) — দুই জায়গা মিলিয়ে রাখতে হবে।
 const DELIVERY_OPTIONS = [
   { id: 'standard', label: 'Standard Delivery', time: '3–5 business days', fee: 60,  icon: Truck },
   { id: 'express',  label: 'Express Delivery',  time: '1–2 business days', fee: 120, icon: Zap   },
@@ -69,7 +71,6 @@ const FREE_SHIPPING_THRESHOLD = 1500
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-// ✅ Fix: helper to safely get color name whether selectedColor is string or object
 function getColorName(selectedColor: unknown): string {
   if (!selectedColor) return ''
   if (typeof selectedColor === 'string') return selectedColor
@@ -147,6 +148,7 @@ export default function CheckoutPage() {
   const [orderId,     setOrderId]     = useState('')
   const [redirecting, setRedirecting] = useState(false)
 
+  // ── UI প্রিভিউ হিসাব (সার্ভারের সিদ্ধান্তই চূড়ান্ত) ──────────────────
   const deliveryFee  = DELIVERY_OPTIONS.find(d => d.id === delivery)?.fee ?? 60
   const subtotal     = items.reduce((acc, item) => acc + item.price * item.quantity, 0)
   const freeShipping = subtotal >= FREE_SHIPPING_THRESHOLD
@@ -174,14 +176,15 @@ export default function CheckoutPage() {
     if (items.length === 0 && !placed && !redirecting) router.replace('/shop')
   }, [items, placed, redirecting, router])
 
+  // ✅ SECURITY: শুধু productId + quantity + color পাঠানো হয়।
+  // দাম, subtotal, deliveryFee, total — কিছুই ক্লায়েন্ট থেকে যায় না।
+  // আগে price/total পাঠানো হত, ফলে DevTools দিয়ে যেকোনো ব্যাগ
+  // ৳১ টাকায় অর্ডার করা যেত। সার্ভার এখন DB থেকে দাম এনে হিসাব করে।
   const buildOrderPayload = (data: CheckoutForm) => ({
     items: items.map(item => ({
       productId: item.product._id,
-      name:      item.product.name,
-      price:     item.price,
       quantity:  item.quantity,
-      color:     getColorName(item.selectedColor), // ✅ Fix: send string not object
-      image:     item.product.mainImage?.url ?? '',
+      color:     getColorName(item.selectedColor),
     })),
     shipping: {
       fullName:   data.fullName,
@@ -194,9 +197,6 @@ export default function CheckoutPage() {
       postalCode: data.postalCode ?? '',
     },
     delivery,
-    deliveryFee: freeShipping ? 0 : deliveryFee,
-    subtotal,
-    total,
     orderNote: data.orderNote ?? '',
   })
 
@@ -216,7 +216,9 @@ export default function CheckoutPage() {
         const json = await res.json()
         if (!json.success) throw new Error(json.error ?? 'Order failed')
 
-        setOrderTotal(total)
+        // ✅ সার্ভারের হিসাব করা total দেখানো হয়, ক্লায়েন্টের নয়।
+        // স্টক শেষ বা দাম বদলে গেলে দুটোর মধ্যে পার্থক্য হতে পারে।
+        setOrderTotal(json.order.total)
         setOrderId(json.order.orderNumber)
         clearCart()
         setPlaced(true)
@@ -554,7 +556,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="co-review-items">
                       {items.map(item => (
-                        <div key={item.product._id + getColorName(item.selectedColor)} className="co-review-item"> {/* ✅ Fix */}
+                        <div key={item.product._id + getColorName(item.selectedColor)} className="co-review-item">
                           <div className="co-review-item-img">
                             {item.product.mainImage?.url ? (
                               <Image src={item.product.mainImage.url} alt={item.product.name} fill sizes="72px" className="co-review-item-photo" />
@@ -562,7 +564,7 @@ export default function CheckoutPage() {
                           </div>
                           <div className="co-review-item-info">
                             <p className="co-review-item-name">{item.product.name}</p>
-                            <p className="co-review-item-color">Color: {getColorName(item.selectedColor)}</p> {/* ✅ Fix */}
+                            <p className="co-review-item-color">Color: {getColorName(item.selectedColor)}</p>
                             <p className="co-review-item-qty">Qty: {item.quantity}</p>
                           </div>
                           <span className="co-review-item-price">
@@ -576,7 +578,7 @@ export default function CheckoutPage() {
                   <div className="co-card">
                     <div className="co-card-header">
                       <CreditCard size={20} className="co-card-icon" />
-                      <h2 className="co-card-title">Payment & Delivery</h2>
+                      <h2 className="co-card-title">Payment &amp; Delivery</h2>
                       <button type="button" onClick={() => setStep(1)} className="co-edit-btn" suppressHydrationWarning>Edit</button>
                     </div>
                     <div className="co-review-pd">
@@ -645,7 +647,7 @@ export default function CheckoutPage() {
                 <h3 className="co-summary-title">Order Summary</h3>
                 <div className="co-summary-items">
                   {items.map(item => (
-                    <div key={item.product._id + getColorName(item.selectedColor)} className="co-summary-item"> {/* ✅ Fix */}
+                    <div key={item.product._id + getColorName(item.selectedColor)} className="co-summary-item">
                       <div className="co-summary-item-img">
                         {item.product.mainImage?.url ? (
                           <Image src={item.product.mainImage.url} alt={item.product.name} fill sizes="56px" className="co-summary-item-photo" />
@@ -654,7 +656,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="co-summary-item-info">
                         <p className="co-summary-item-name">{item.product.name}</p>
-                        <p className="co-summary-item-variant">{getColorName(item.selectedColor)}</p> {/* ✅ Fix */}
+                        <p className="co-summary-item-variant">{getColorName(item.selectedColor)}</p>
                       </div>
                       <span className="co-summary-item-price">
                         ৳{(item.price * item.quantity).toLocaleString('en-BD')}

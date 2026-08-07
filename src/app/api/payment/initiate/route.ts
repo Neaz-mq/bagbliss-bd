@@ -5,90 +5,127 @@ import connectDB from '@/lib/mongodb'
 import Order from '@/models/Order'
 import { initiateSSLPayment } from '@/lib/sslcommerz'
 import { auth } from '@/lib/auth'
+import {
+  OrderInputSchema,
+  priceOrder,
+  reserveStock,
+  releaseStock,
+  OrderError,
+  type Reserved,
+} from '@/features/orders/buildOrder'
 
 export async function POST(req: NextRequest) {
+  let reserved: Reserved[] = []
+  let createdOrderId: string | null = null
+
   try {
     await connectDB()
     const session = await auth()
-    const body    = await req.json()
 
-    const {
-      items, shipping, delivery, deliveryFee,
-      subtotal, total, discount = 0, orderNote = '',
-    } = body
-
-    if (!items?.length || !shipping || !total) {
-      return NextResponse.json({ error: 'Invalid order data' }, { status: 400 })
+    // ── ১. ইনপুট যাচাই ────────────────────────────────────────────────
+    const parsed = OrderInputSchema.safeParse(await req.json())
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid order data',
+          details: parsed.error.issues.map((i) => ({
+            field: i.path.join('.'),
+            message: i.message,
+          })),
+        },
+        { status: 400 }
+      )
     }
+    const input = parsed.data
 
-    // Generate unique transaction ID
+    // ── ২. সার্ভারে দাম হিসাব ─────────────────────────────────────────
+    // ⚠️ এটাই মূল নিরাপত্তা। আগে total ক্লায়েন্ট থেকে আসত, ফলে
+    // যেকোনো ব্যাগ ৳১ টাকায় কেনা যেত।
+    const priced = await priceOrder(input)
+
+    // ── ৩. স্টক রিজার্ভ ───────────────────────────────────────────────
+    reserved = await reserveStock(priced.items)
+
+    // ── ৪. Pending অর্ডার ─────────────────────────────────────────────
     const tranId = `BB-${nanoid(10).toUpperCase()}`
 
-    // Create order with pending payment status
     const order = await Order.create({
-      userId:        session?.user?.id ?? null,
-      guestEmail:    shipping.email    ?? null,
-      items,
-      shipping,
-      delivery,
-      deliveryFee,
-      payment:       'sslcommerz',
-      subtotal,
-      discount,
-      total,
-      status:        'pending',
+      userId: session?.user?.id ?? null,
+      guestEmail: input.shipping.email || null,
+      orderNumber: `BB${nanoid(8).toUpperCase()}`,
+      items: priced.items,
+      shipping: input.shipping,
+      delivery: input.delivery,
+      deliveryFee: priced.deliveryFee,
+      payment: 'sslcommerz',
+      subtotal: priced.subtotal,
+      discount: 0,
+      total: priced.total,
+      status: 'pending',
       paymentStatus: 'unpaid',
-      orderNote,
+      orderNote: input.orderNote,
       tranId,
     })
+    createdOrderId = order._id.toString()
 
     const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
 
-    // Build SSL payload
     const sslPayload = {
-      tran_id:          tranId,
-      total_amount:     total,
-      currency:         'BDT',
-      success_url:      `${baseUrl}/api/payment/success`,
-      fail_url:         `${baseUrl}/api/payment/fail`,
-      cancel_url:       `${baseUrl}/api/payment/cancel`,
-      ipn_url:          `${baseUrl}/api/payment/ipn`,
-      product_name:     items.map((i: { name: string }) => i.name).join(', ').slice(0, 200),
+      tran_id: tranId,
+      total_amount: priced.total,          // ✅ সার্ভারের হিসাব
+      currency: 'BDT',
+      success_url: `${baseUrl}/api/payment/success`,
+      fail_url: `${baseUrl}/api/payment/fail`,
+      cancel_url: `${baseUrl}/api/payment/cancel`,
+      ipn_url: `${baseUrl}/api/payment/ipn`,
+      product_name: priced.items.map((i) => i.name).join(', ').slice(0, 200),
       product_category: 'Bags',
-      product_profile:  'general',
-      cus_name:         shipping.fullName,
-      cus_email:        shipping.email || 'customer@bagbliss.com.bd',
-      cus_phone:        shipping.phone,
-      cus_add1:         shipping.address,
-      cus_city:         shipping.district,
-      cus_country:      'Bangladesh',
-      ship_name:        shipping.fullName,
-      ship_add1:        shipping.address,
-      ship_city:        shipping.district,
-      ship_country:     'Bangladesh',
-      shipping_method:  'Courier',
-      num_of_item:      items.reduce((a: number, i: { quantity: number }) => a + i.quantity, 0),
-      value_a:          String(order._id),   // pass orderId through payment
+      product_profile: 'general',
+      cus_name: input.shipping.fullName,
+      cus_email: input.shipping.email || 'customer@bagbliss.com.bd',
+      cus_phone: input.shipping.phone,
+      cus_add1: input.shipping.address,
+      cus_city: input.shipping.district,
+      cus_country: 'Bangladesh',
+      ship_name: input.shipping.fullName,
+      ship_add1: input.shipping.address,
+      ship_city: input.shipping.district,
+      ship_country: 'Bangladesh',
+      shipping_method: 'Courier',
+      num_of_item: priced.items.reduce((a, i) => a + i.quantity, 0),
+      value_a: createdOrderId,
     }
 
     const sslResponse = await initiateSSLPayment(sslPayload)
 
     if (sslResponse.status !== 'SUCCESS' || !sslResponse.GatewayPageURL) {
-      // Delete the pending order if SSL init fails
       await Order.findByIdAndDelete(order._id)
+      await releaseStock(reserved)
       return NextResponse.json(
         { error: sslResponse.failedreason ?? 'Payment gateway error' },
-        { status: 500 }
+        { status: 502 }
       )
     }
 
+    reserved = [] // অর্ডার তৈরি হয়ে গেছে — স্টক ওই অর্ডারের সাথে যুক্ত
+
     return NextResponse.json({
-      success:        true,
-      orderId:        order._id,
-      orderNumber:    order.orderNumber,
-      gatewayUrl:     sslResponse.GatewayPageURL,
+      success: true,
+      orderId: createdOrderId,
+      orderNumber: order.orderNumber,
+      total: priced.total,
+      gatewayUrl: sslResponse.GatewayPageURL,
     })
   } catch (err) {
+    await releaseStock(reserved)
+    if (createdOrderId) {
+      await Order.findByIdAndDelete(createdOrderId).catch(() => {})
+    }
+
+    if (err instanceof OrderError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+
     console.error('[PAYMENT INITIATE]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
