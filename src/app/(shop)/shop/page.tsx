@@ -20,16 +20,17 @@ export default async function ShopPage({ searchParams }: Props) {
   const one = (v: string | string[] | undefined) =>
     Array.isArray(v) ? v[0] : v
 
-  const products = await getProducts({
+  const { products, total } = await getProducts({
     category: one(sp.category),
     filter: one(sp.filter),
     sort: one(sp.sort),
     search: one(sp.search),
+    limit: 12,
   })
 
   return (
     <Suspense fallback={<ShopSkeleton />}>
-      <ShopClient initialProducts={products} initialTotal={products.length} />
+      <ShopClient initialProducts={products} initialTotal={total} />
     </Suspense>
   )
 }

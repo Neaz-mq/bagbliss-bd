@@ -64,6 +64,7 @@ export type ProductQuery = {
   search?: string
   minPrice?: number
   maxPrice?: number
+  page?: number
   limit?: number
 }
 
@@ -76,9 +77,7 @@ const SORT_MAP: Record<string, Record<string, 1 | -1>> = {
   rating: { rating: -1 },
 }
 
-export async function getProducts(q: ProductQuery = {}) {
-  await connectDB()
-
+function buildFilter(q: ProductQuery): Record<string, unknown> {
   const filter: Record<string, unknown> = { isActive: true }
 
   if (q.category) filter.category = q.category
@@ -100,14 +99,35 @@ export async function getProducts(q: ProductQuery = {}) {
     filter.createdAt = { $gte: cutoff }
   }
 
-  let query = Product.find(filter)
-    .select(PUBLIC_FIELDS)
-    .sort(SORT_MAP[q.sort ?? 'newest'] ?? SORT_MAP.newest)
+  return filter
+}
 
-  if (q.limit) query = query.limit(q.limit)
+/** পেজিনেশন সহ প্রোডাক্ট লিস্ট — products + মোট সংখ্যা */
+export async function getProducts(q: ProductQuery = {}) {
+  await connectDB()
 
-  const docs = await query.lean()
-  return serializeMany(docs)
+  const filter = buildFilter(q)
+  const limit = q.limit ?? 12
+  const page = Math.max(1, q.page ?? 1)
+  const skip = (page - 1) * limit
+
+  // দুটো query একসাথে — একটা রাউন্ড ট্রিপে
+  const [docs, total] = await Promise.all([
+    Product.find(filter)
+      .select(PUBLIC_FIELDS)
+      .sort(SORT_MAP[q.sort ?? 'newest'] ?? SORT_MAP.newest)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Product.countDocuments(filter),
+  ])
+
+  return {
+    products: serializeMany(docs),
+    total,
+    page,
+    pages: Math.max(1, Math.ceil(total / limit)),
+  }
 }
 
 /** ফিল্টার UI এর জন্য — প্রতি category তে কয়টা প্রোডাক্ট */
