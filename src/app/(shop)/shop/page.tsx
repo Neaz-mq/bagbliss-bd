@@ -1,6 +1,9 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
+import { getProducts } from '@/features/products/api/getProductBySlug'
 import ShopClient from './ShopClient'
+
+export const revalidate = 300
 
 export const metadata: Metadata = {
   title: 'Shop — All Bags',
@@ -8,10 +11,25 @@ export const metadata: Metadata = {
     'Browse our full collection of premium mini crossbody bags. Filter by category, price, and style.',
 }
 
-export default function ShopPage() {
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function ShopPage({ searchParams }: Props) {
+  const sp = await searchParams
+  const one = (v: string | string[] | undefined) =>
+    Array.isArray(v) ? v[0] : v
+
+  const products = await getProducts({
+    category: one(sp.category),
+    filter: one(sp.filter),
+    sort: one(sp.sort),
+    search: one(sp.search),
+  })
+
   return (
     <Suspense fallback={<ShopSkeleton />}>
-      <ShopClient />
+      <ShopClient initialProducts={products} initialTotal={products.length} />
     </Suspense>
   )
 }

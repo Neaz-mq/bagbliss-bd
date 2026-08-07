@@ -72,37 +72,38 @@ export const CATEGORIES = ['All', ...SHOP_CATEGORIES.map((c) => c.label)]
 const ITEMS_PER_PAGE = 12
 
 // ── Helper: map a category label to its real DB category value ────────────
-// ✅ FIX: this used to derive the slug algorithmically from the label
-// (lowercase + strip "&" + dasherize), which produced "party-evening" for
-// "Party & Evening" — but every seeded product actually has
-// category: "party". That mismatch meant the "Party & Evening" pill (and
-// any /shop?category=... link pointing at it) always returned zero
-// results, because the API does an exact match on `category`. Delegating
-// to the shared SHOP_CATEGORIES map fixes that and keeps this page in
-// sync with the DB values used elsewhere (seed script, admin categories).
 export function slugifyCategory(label: string): string {
   return categoryLabelToValue(label)
 }
 
 // ── Helper: normalize DB product → UI Product ─────────────────────────────
+// ✅ FIX: flash sale price was being ignored here. A product with
+// isFlashSale + flashSalePrice showed its regular `price` on /shop while
+// the product detail page and ProductCard showed the (lower) flash price —
+// two different numbers for the same bag. Now mirrors getPricing().
 function normalizeProduct(p: any): Product {
   const normalizedCategory = (p.category || '')
     .split('-')
     .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
 
+  const isOnSale = p.isFlashSale ?? p.isOnSale ?? false
+
+  const listPrice =
+    p.originalPrice && p.originalPrice > p.price ? p.originalPrice : p.price
+  const currentPrice = isOnSale && p.flashSalePrice ? p.flashSalePrice : p.price
+
   const discountPercent =
-    p.discountPercent ??
-    (p.originalPrice && p.price
-      ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
-      : undefined)
+    listPrice > currentPrice
+      ? Math.round(((listPrice - currentPrice) / listPrice) * 100)
+      : undefined
 
   return {
     _id: String(p._id),
     name: p.name,
     slug: p.slug,
-    price: p.price,
-    originalPrice: p.originalPrice,
+    price: currentPrice,
+    originalPrice: listPrice > currentPrice ? listPrice : undefined,
     images: p.images || [],
     category: normalizedCategory,
     colors: p.colors || [],
@@ -110,7 +111,7 @@ function normalizeProduct(p: any): Product {
     reviewCount: p.reviewCount,
     stock: p.totalStock ?? p.stock ?? 0,
     isFeatured: p.isFeatured ?? false,
-    isOnSale: p.isFlashSale ?? p.isOnSale ?? false,
+    isOnSale,
     discountPercent,
     tags: p.tags || [],
     createdAt: p.createdAt,
@@ -152,7 +153,6 @@ function productMatchesColors(
 }
 
 // ── Stock matching helper ───────────────────────────────────────────────────
-// A product is "in stock" if its total stock count is > 0.
 function productMatchesStock(product: Product, inStockOnly: boolean): boolean {
   if (!inStockOnly) return true
   return product.stock > 0
@@ -164,7 +164,7 @@ function buildApiUrl(
   sort: string,
   searchQuery: string,
   filters: FilterState,
-  newOnly: boolean // ✅ NEW — powers "New Arrivals"
+  newOnly: boolean
 ): string {
   const params = new URLSearchParams()
   params.set('page', String(page))
@@ -178,31 +178,24 @@ function buildApiUrl(
   }
 
   if (filters.onSaleOnly) params.set('flashSale', 'true')
-  if (filters.inStockOnly) params.set('inStock', 'true') // ✅ passed through if/when API supports it
-  if (newOnly) params.set('new', 'true') // ✅ NEW — tells /api/products to only return recent products
+  if (filters.inStockOnly) params.set('inStock', 'true')
+  if (newOnly) params.set('new', 'true')
 
   if (filters.priceMin !== null)
     params.set('priceMin', String(filters.priceMin))
   if (filters.priceMax !== null)
     params.set('priceMax', String(filters.priceMax))
 
-  // ⚠️ NOTE: intentionally NOT sending `colors` to the API — see
-  // productMatchesColors() comment above. Same caution applies to
-  // `inStock`: if the API route doesn't understand it yet, the client-side
-  // filter below (productMatchesStock) still makes it work correctly.
-
   return `/api/products?${params.toString()}`
 }
 
-// ✅ NEW — one component, three distinct pages. `mode` tells ShopClient which
-// route it's rendering as, so /new-arrivals and /flash-sale get their own
-// URL, hero copy, and default filter — instead of everything collapsing back
-// onto /shop?... query params (which is what caused Shop / New Arrivals /
-// Flash Sale to render identically before).
 export type ShopMode = 'shop' | 'new-arrivals' | 'flash-sale'
 
 interface ShopClientProps {
   mode?: ShopMode
+  /** Server-rendered first page — makes /shop indexable by Google. */
+  initialProducts?: any[]
+  initialTotal?: number
 }
 
 const BASE_PATH: Record<ShopMode, string> = {
@@ -211,16 +204,28 @@ const BASE_PATH: Record<ShopMode, string> = {
   'flash-sale': '/flash-sale',
 }
 
-export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
+export default function ShopClient({
+  mode = 'shop',
+  initialProducts,
+  initialTotal,
+}: ShopClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const basePath = BASE_PATH[mode]
 
+  const hasInitial = !!initialProducts
+
   // ── State ──────────────────────────────────────────────────────────────
-  const [products, setProducts] = useState<Product[]>([])
-  const [totalCount, setTotalCount] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+  // ✅ Seeded from the server render so the very first paint (and the HTML
+  // Google sees) already contains real products — not a skeleton.
+  const [products, setProducts] = useState<Product[]>(() =>
+    (initialProducts ?? []).map(normalizeProduct)
+  )
+  const [totalCount, setTotalCount] = useState(initialTotal ?? 0)
+  const [totalPages, setTotalPages] = useState(
+    initialTotal ? Math.max(1, Math.ceil(initialTotal / ITEMS_PER_PAGE)) : 0
+  )
+  const [isLoading, setIsLoading] = useState(!hasInitial)
   const [error, setError] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -236,8 +241,6 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
   const [inStockOnly, setInStockOnly] = useState(false)
   const [priceMin, setPriceMin] = useState<number | null>(null)
   const [priceMax, setPriceMax] = useState<number | null>(null)
-  // ✅ true whenever this instance IS the /new-arrivals page — no longer
-  // dependent on a ?new=true query param that could silently get dropped.
   const [newOnly, setNewOnly] = useState(mode === 'new-arrivals')
 
   const filters = useMemo<FilterState>(
@@ -259,22 +262,10 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
     ]
   )
 
-  // ── On mount: read EVERY incoming query param (from nav/footer links)
-  // into state BEFORE clearing the URL. Previously only `?new=true` was
-  // read here — `?filter=flash-sale` (Flash Sale nav link) and
-  // `?category=...` (Footer links) were silently dropped because the URL
-  // was wiped on the very next line before anything could apply them.
-  // That's why Shop / New Arrivals / Flash Sale all rendered identically.
+  // ── On mount: read incoming query params into state ───────────────────
   useEffect(() => {
-    // /new-arrivals and /flash-sale are dedicated routes now — they don't
-    // read filter state from query params at all, so there's nothing here
-    // for them to do. Running this only for 'shop' also means it can never
-    // stomp on the newOnly/onSaleOnly defaults those two modes are seeded
-    // with above.
     if (mode !== 'shop') return
 
-    // Old bookmarked/shared links still using the query-param style —
-    // send them to the dedicated route instead of trying to fake it on /shop.
     if (searchParams.get('new') === 'true') {
       router.replace('/new-arrivals', { scroll: false })
       return
@@ -284,12 +275,10 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
       return
     }
 
-    // In-stock links → /shop?stock=in-stock
     if (searchParams.get('stock') === 'in-stock') {
       setInStockOnly(true)
     }
 
-    // Footer category links → /shop?category=leather etc.
     const categoryParam = searchParams.get('category')
     if (categoryParam) {
       const match = CATEGORIES.find(
@@ -298,21 +287,17 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
       if (match) setSelectedCategories([match])
     }
 
-    // Color filter links → /shop?colors=red,blue
     const colorsParam = searchParams.get('colors')
     if (colorsParam) {
       setSelectedColors(colorsParam.split(',').filter(Boolean))
     }
 
-    // Navbar search → /shop?search=...
     const searchParam = searchParams.get('search')
     if (searchParam) {
       setSearchQuery(searchParam)
       setLocalSearch(searchParam)
     }
 
-    // Any other ?sort=... links into /shop (Footer now links straight to
-    // /new-arrivals instead of /shop?sort=newest, but keep this generic)
     const sortParam = searchParams.get('sort')
     if (sortParam && SORT_OPTIONS.some((o) => o.value === sortParam)) {
       setSort(sortParam)
@@ -321,26 +306,22 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
     if (searchParams.toString()) {
       router.replace('/shop', { scroll: false })
     }
-    // ✅ FIX: this effect must re-run whenever the incoming URL's query
-    // string changes — not just when `mode` changes. Previously it only
-    // depended on `mode`, so if the user was already sitting on /shop and
-    // triggered a new `?search=...` / `?category=...` / etc. navigation
-    // (e.g. from the navbar search modal), Next.js reused the already-
-    // mounted ShopClient instance instead of remounting it, this effect
-    // never re-ran, and the new query param was silently ignored until a
-    // full page refresh forced a fresh mount. Depending on the actual
-    // query string (not the searchParams object reference, which can
-    // change identity without the content changing) fixes that while
-    // still terminating safely: once the params are read into state, the
-    // router.replace('/shop') above strips them, searchParams becomes ''
-    // again, the effect re-runs once more, finds nothing to do, and stops.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, searchParams.toString()])
 
   // ── Fetch ──────────────────────────────────────────────────────────────
   const abortRef = useRef<AbortController | null>(null)
+  // ✅ The server already fetched page 1 with the incoming searchParams —
+  // skip the duplicate client fetch on mount. Every later filter/sort/page
+  // change still fetches normally.
+  const skipFirstFetch = useRef(hasInitial)
 
   useEffect(() => {
+    if (skipFirstFetch.current) {
+      skipFirstFetch.current = false
+      return
+    }
+
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
@@ -360,7 +341,6 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
         let total = data.total
         let pages = data.pages
 
-        // Client-side safety net for colors (unchanged)
         if (filters.colors.length > 0) {
           normalized = normalized.filter((p) =>
             productMatchesColors(p, filters.colors)
@@ -369,7 +349,6 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
           pages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE))
         }
 
-        // Client-side safety net for "In Stock Only".
         if (filters.inStockOnly) {
           normalized = normalized.filter((p) => productMatchesStock(p, true))
           total = normalized.length
@@ -390,7 +369,7 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
 
     fetchProducts()
     return () => controller.abort()
-  }, [currentPage, sort, searchQuery, filters, newOnly]) // ✅ newOnly added
+  }, [currentPage, sort, searchQuery, filters, newOnly])
 
   // ── URL writer ─────────────────────────────────────────────────────────
   const syncUrl = useCallback(
@@ -413,19 +392,13 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
   )
 
   // ── Handlers ───────────────────────────────────────────────────────────
-  // ✅ NEW: once someone touches a filter/sort/search while viewing "New
-  // Arrivals", drop out of that mode — they're browsing the full shop now.
   const handleFilterChange = (newFilters: FilterState) => {
     setSelectedCategories(newFilters.categories)
     setPriceMin(newFilters.priceMin)
     setPriceMax(newFilters.priceMax)
     setSelectedColors(newFilters.colors)
-    // On /flash-sale, "on sale" is the whole point of the page — never let
-    // the sidebar checkbox turn it off. Everywhere else, respect it normally.
     setOnSaleOnly(mode === 'flash-sale' ? true : newFilters.onSaleOnly)
     setInStockOnly(newFilters.inStockOnly)
-    // Only /shop's generic filtering ever needs to "exit" new-arrivals mode —
-    // /new-arrivals itself keeps showing new stock even while narrowed further.
     if (mode === 'shop') setNewOnly(false)
     syncUrl(sort, newFilters, searchQuery)
     setCurrentPage(1)
@@ -440,11 +413,6 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // ✅ FIX: if the typed term is literally a palette color name ("Pink",
-    // "Navy", ...), filter by that color family instead of running it as
-    // text search — this is exactly what clicking the matching swatch
-    // does, so "search pink" and "Pink swatch" now always return the same
-    // products instead of two different counts.
     const paletteMatch = matchPaletteColor(localSearch)
     if (paletteMatch) {
       setLocalSearch('')
@@ -562,7 +530,7 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
               </>
             ) : filters.onSaleOnly ? (
               <>
-                Grab it before it's{' '}
+                Grab it before it&apos;s{' '}
                 <span style={{ color: '#F3B98B', fontStyle: 'italic' }}>
                   gone
                 </span>
@@ -597,7 +565,7 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
         </div>
       </div>
 
-      {/* ── Floating Search — centered, overlaps the hero/category seam ── */}
+      {/* ── Floating Search ─────────────────────────────────────────────── */}
       <div
         style={{
           position: 'relative',
@@ -672,7 +640,7 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
         </form>
       </div>
 
-      {/* ── Category Pills — fixed height, so nothing overlaps on scroll ── */}
+      {/* ── Category Pills ──────────────────────────────────────────────── */}
       <div className="shop-category-bar" style={{ marginTop: '1.75rem' }}>
         <div className="container-bagbliss">
           <div className="shop-category-pills">
@@ -856,7 +824,7 @@ export default function ShopClient({ mode = 'shop' }: ShopClientProps) {
                 <div className="shop-empty-icon">
                   <ShoppingBag size={40} strokeWidth={1.5} />
                 </div>
-                <h3 className="shop-empty-title">Couldn't load the shop</h3>
+                <h3 className="shop-empty-title">Couldn&apos;t load the shop</h3>
                 <p className="shop-empty-subtitle">{error}</p>
                 <button
                   type="button"

@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cartStore'
 import { IProduct } from '@/types'
 import { CURRENCY_SYMBOL } from '@/constants'
 import { getPricing } from '@/utils/pricing'
+import { categoryLabel } from '@/utils/category'
 import toast from 'react-hot-toast'
 
 interface ProductCardProps {
@@ -193,7 +194,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Product Info */}
         <div className="product-info">
           {/* Category */}
-          <span className="product-category">{product.category}</span>
+          <span className="product-category">
+            {categoryLabel(product.category)}
+          </span>
 
           {/* Name */}
           <h3 className="product-name">{product.name}</h3>
