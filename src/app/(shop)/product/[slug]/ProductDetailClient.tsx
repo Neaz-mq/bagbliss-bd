@@ -20,6 +20,8 @@ import { useCartStore } from '@/store/cartStore'
 import { useWishlistStore } from '@/store/wishlistStore'
 import { CURRENCY_SYMBOL } from '@/constants'
 import { IProduct } from '@/types'
+import { getPricing } from '@/utils/pricing'
+import { categoryLabel } from '@/utils/category'
 import ProductGallery from '@/components/product/ProductGallery'
 import ProductCard from '@/components/product/ProductCard'
 import toast from 'react-hot-toast'
@@ -129,23 +131,6 @@ export function normalizeProduct(raw: Record<string, unknown>): IProductWithImag
   }
 }
 
-// ── দামের একক উৎস ────────────────────────────
-export function getPricing(product: IProductWithImages) {
-  const listPrice = product.price
-
-  const currentPrice =
-    product.isFlashSale && product.flashSalePrice
-      ? product.flashSalePrice
-      : (product.discountPrice ?? product.price)
-
-  const discountPercent =
-    listPrice > currentPrice
-      ? Math.round(((listPrice - currentPrice) / listPrice) * 100)
-      : 0
-
-  return { listPrice, currentPrice, discountPercent }
-}
-
 // ── Props from server component ───────────────
 type Props = {
   initialProduct: Record<string, unknown>
@@ -177,6 +162,7 @@ export default function ProductDetailClient({
 
   const wishlisted = isWishlisted(product._id)
   const { listPrice, currentPrice, discountPercent } = getPricing(product)
+  const catLabel = categoryLabel(product.category)
 
   const productLevelImages =
     product.images && product.images.length > 0
@@ -239,7 +225,7 @@ export default function ProductDetailClient({
               href={`/shop?category=${encodeURIComponent(product.category)}`}
               className="breadcrumb-link"
             >
-              {product.category}
+              {catLabel}
             </Link>
             <ChevronRight size={14} />
             <span className="breadcrumb-current">{product.name}</span>
@@ -278,7 +264,7 @@ export default function ProductDetailClient({
             </div>
 
             {/* Category */}
-            <p className="product-detail-category">{product.category}</p>
+            <p className="product-detail-category">{catLabel}</p>
 
             {/* Name */}
             <h1 className="product-detail-name">{product.name}</h1>
@@ -486,7 +472,7 @@ export default function ProductDetailClient({
               )}
               <div className="detail-meta-item">
                 <span className="detail-meta-label">Category:</span>
-                <span className="detail-meta-value">{product.category}</span>
+                <span className="detail-meta-value">{catLabel}</span>
               </div>
               {product.tags.length > 0 && (
                 <div className="detail-meta-item">

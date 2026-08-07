@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Heart, ShoppingBag, Star, Eye } from 'lucide-react'
 import { useWishlistStore } from '@/store/wishlistStore'
 import { useCartStore } from '@/store/cartStore'
 import { IProduct } from '@/types'
 import { CURRENCY_SYMBOL } from '@/constants'
+import { getPricing } from '@/utils/pricing'
 import toast from 'react-hot-toast'
 
 interface ProductCardProps {
@@ -17,19 +19,13 @@ interface ProductCardProps {
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
+  const router = useRouter()
   const { toggleItem, isWishlisted } = useWishlistStore()
   const { addItem, openCart } = useCartStore()
   const wishlisted = isWishlisted(product._id)
 
-  const discountPercent =
-    product.discountPrice && product.price
-      ? Math.round(
-          ((product.price - product.discountPrice) / product.price) * 100
-        )
-      : 0
-
-  const currentPrice = product.discountPrice || product.price
-  const hasDiscount = !!product.discountPrice
+  const { listPrice, currentPrice, discountPercent } = getPricing(product)
+  const hasDiscount = discountPercent > 0
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -41,6 +37,12 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
+
+    if (product.stock === 0) {
+      toast.error('Out of stock')
+      return
+    }
+
     addItem({
       product,
       quantity: 1,
@@ -51,9 +53,14 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     openCart()
   }
 
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault()
+    router.push(`/product/${product.slug}`)
+  }
+
   const handleMouseEnter = () => {
     setIsHovered(true)
-    if (product.colors[0]?.images?.length > 0) {
+    if (product.colors[0]?.images?.length) {
       setImageIndex(1)
     }
   }
@@ -102,6 +109,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                 }
                 alt={product.name}
                 className="product-image"
+                loading={index < 4 ? 'eager' : 'lazy'}
                 style={{
                   transform: isHovered ? 'scale(1.08)' : 'scale(1)',
                   transition: 'transform 0.5s ease',
@@ -154,27 +162,32 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               onClick={handleAddToCart}
               className="product-action-btn product-action-cart"
               aria-label="Add to cart"
+              disabled={product.stock === 0}
             >
               <ShoppingBag size={18} />
             </button>
             <button
               className="product-action-btn"
               aria-label="Quick view"
-              onClick={(e) => {
-                e.preventDefault()
-                window.location.href = `/product/${product.slug}`
-              }}
+              onClick={handleQuickView}
             >
               <Eye size={18} />
             </button>
           </div>
 
           {/* Stock warning */}
-          {product.stock <= 5 && product.stock > 0 && (
+          {product.stock === 0 ? (
+            <div
+              className="product-stock-warning"
+              style={{ background: '#ef4444' }}
+            >
+              Out of Stock
+            </div>
+          ) : product.stock <= 5 ? (
             <div className="product-stock-warning">
               Only {product.stock} left!
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Product Info */}
@@ -221,7 +234,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             {hasDiscount && (
               <span className="product-price-original">
                 {CURRENCY_SYMBOL}
-                {product.price.toLocaleString()}
+                {listPrice.toLocaleString()}
               </span>
             )}
           </div>
@@ -248,9 +261,13 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       </Link>
 
       {/* Add to Cart — Bottom */}
-      <button onClick={handleAddToCart} className="product-add-to-cart">
+      <button
+        onClick={handleAddToCart}
+        className="product-add-to-cart"
+        disabled={product.stock === 0}
+      >
         <ShoppingBag size={16} />
-        Add to Cart
+        {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
       </button>
     </div>
   )
