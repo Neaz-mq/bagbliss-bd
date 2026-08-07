@@ -11,15 +11,16 @@ interface MongooseCache {
   promise: Promise<typeof mongoose> | null
 }
 
+// `mongoose` নামের বদলে আলাদা নাম — প্যাকেজের সাথে সংঘর্ষ এড়াতে
 declare global {
-  
-  var mongoose: MongooseCache | undefined
+  var _mongooseCache: MongooseCache | undefined
 }
 
-const cached: MongooseCache = global.mongoose ?? { conn: null, promise: null }
+const cached: MongooseCache =
+  global._mongooseCache ?? { conn: null, promise: null }
 
-if (!global.mongoose) {
-  global.mongoose = cached
+if (!global._mongooseCache) {
+  global._mongooseCache = cached
 }
 
 async function connectDB(): Promise<typeof mongoose> {
@@ -31,6 +32,9 @@ async function connectDB(): Promise<typeof mongoose> {
     const opts = {
       bufferCommands: false,
       dbName: 'bagbliss',
+      maxPoolSize: 10,           // serverless এ ছোট pool
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
     }
 
     cached.promise = mongoose.connect(MONGODB_URI, opts)
