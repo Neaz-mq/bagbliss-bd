@@ -37,36 +37,6 @@ type IProductWithImages = IProduct & {
   images?: NormalizedImage[]
 }
 
-const MOCK_REVIEWS = [
-  {
-    id: '1',
-    name: 'Fatima Rahman',
-    avatar: 'F',
-    rating: 5,
-    comment: 'Absolutely love this bag! The quality is amazing for the price. Got so many compliments at college.',
-    date: '2 days ago',
-    verified: true,
-  },
-  {
-    id: '2',
-    name: 'Nadia Islam',
-    avatar: 'N',
-    rating: 5,
-    comment: 'Super cute and spacious enough for my essentials. Fast delivery too! Will order again.',
-    date: '1 week ago',
-    verified: true,
-  },
-  {
-    id: '3',
-    name: 'Sadia Akter',
-    avatar: 'S',
-    rating: 4,
-    comment: 'Beautiful bag, exactly as shown. The strap is adjustable which is great. Slightly smaller than expected.',
-    date: '2 weeks ago',
-    verified: true,
-  },
-]
-
 // ── Star Rating Display ───────────────────────
 function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
   return (
@@ -84,10 +54,7 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
 }
 
 // ── Helper: normalize a single raw image object ──────────────────────────
-function normalizeImage(
-  img: unknown,
-  altText: string
-): NormalizedImage {
+function normalizeImage(img: unknown, altText: string): NormalizedImage {
   if (typeof img === 'string') {
     return { url: img, cloudinaryId: '', alt: altText }
   }
@@ -110,31 +77,28 @@ function normalizeProduct(raw: Record<string, unknown>): IProductWithImages {
     typeof raw.price === 'number' &&
     raw.originalPrice > (raw.price as number)
 
-  // ✅ Normalize colors — also normalize each color's images array
   const rawColors = (raw.colors as Record<string, unknown>[]) ?? []
   const colors = rawColors.map((c) => ({
     name: (c.name as string) ?? 'Default',
     hex: (c.hex as string) ?? (c.colorHex as string) ?? '#E91E8C',
     images: ((c.images as Record<string, unknown>[]) ?? [])
       .map((img) => normalizeImage(img, (c.name as string) ?? 'Product'))
-      .filter((img) => !!img.url), // ✅ drop items with empty URL
+      .filter((img) => !!img.url),
     stock: typeof c.stock === 'number' ? c.stock : 0,
   }))
 
-  // ✅ Normalize ALL product-level images (used for gallery)
   const rawImages = (raw.images as unknown[]) ?? []
   const normalizedImages = rawImages
     .map((img) => normalizeImage(img, (raw.name as string) ?? 'Product'))
-    .filter((img) => !!img.url) // ✅ drop items with empty URL
+    .filter((img) => !!img.url)
 
-  // mainImage = first valid product image
   const mainImage: NormalizedImage =
     normalizedImages.length > 0
       ? normalizedImages[0]
       : { url: '', cloudinaryId: '', alt: (raw.name as string) ?? 'Product' }
 
   return {
-    _id: raw._id as string,
+    _id: String(raw._id ?? ''),
     name: (raw.name as string) ?? '',
     slug: (raw.slug as string) ?? '',
     description: (raw.description as string) ?? '',
@@ -147,8 +111,6 @@ function normalizeProduct(raw: Record<string, unknown>): IProductWithImages {
     tags: (raw.tags as string[]) ?? [],
     colors,
     mainImage,
-
-    // ✅ Keep full images array so gallery can show all product photos
     images: normalizedImages,
 
     status: raw.isActive ? 'active' : 'inactive',
@@ -166,6 +128,23 @@ function normalizeProduct(raw: Record<string, unknown>): IProductWithImages {
     createdAt: (raw.createdAt as string) ?? new Date().toISOString(),
     updatedAt: (raw.updatedAt as string) ?? new Date().toISOString(),
   }
+}
+
+// ── দামের একক উৎস ────────────────────────────
+function getPricing(product: IProductWithImages) {
+  const listPrice = product.price
+
+  const currentPrice =
+    product.isFlashSale && product.flashSalePrice
+      ? product.flashSalePrice
+      : (product.discountPrice ?? product.price)
+
+  const discountPercent =
+    listPrice > currentPrice
+      ? Math.round(((listPrice - currentPrice) / listPrice) * 100)
+      : 0
+
+  return { listPrice, currentPrice, discountPercent }
 }
 
 // ── Main Product Detail Page ──────────────────
@@ -189,38 +168,60 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (!slug) return
 
-    // ✅ Scroll to top on every product navigation
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    const controller = new AbortController()
 
+    window.scrollTo({ top: 0, behavior: 'instant' })
     setLoading(true)
     setNotFound(false)
 
-    fetch(`/api/products/slug/${slug}`)
-      .then((r) => {
-        if (r.status === 404) { setNotFound(true); return null }
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return r.json()
-      })
-      .then((raw) => {
-        if (!raw) return
+    async function load() {
+      try {
+        const res = await fetch(`/api/products/slug/${slug}`, {
+          signal: controller.signal,
+        })
+
+        if (res.status === 404) {
+          setNotFound(true)
+          return
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+        const json = await res.json()
+        const raw = json.data ?? json
+        if (!raw?.slug) throw new Error('Empty payload')
+
         const normalized = normalizeProduct(raw)
         setProduct(normalized)
         setSelectedColor(normalized.colors[0] ?? null)
 
-        // Fetch related products from the same category
-        fetch(`/api/products?category=${encodeURIComponent(normalized.category)}&limit=4`)
-          .then((r) => r.json())
-          .then((data) => {
-            const related: IProduct[] = (data.products ?? [])
+        // Related — ব্যর্থ হলেও মূল পেজ নষ্ট হবে না
+        try {
+          const relRes = await fetch(
+            `/api/products?category=${encodeURIComponent(normalized.category)}&limit=5`,
+            { signal: controller.signal }
+          )
+          const relJson = await relRes.json()
+          const list = relJson.data ?? relJson.products ?? []
+          setRelatedProducts(
+            list
               .filter((p: Record<string, unknown>) => p.slug !== slug)
               .slice(0, 4)
               .map(normalizeProduct)
-            setRelatedProducts(related)
-          })
-          .catch(() => {/* related products are non-critical */})
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false))
+          )
+        } catch {
+          /* non-critical */
+        }
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
+        console.error('[product page]', err)
+        setNotFound(true)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
+    load()
+    return () => controller.abort()
   }, [slug])
 
   // ── Loading state ─────────────────────────
@@ -253,25 +254,15 @@ export default function ProductDetailPage() {
   }
 
   const wishlisted = isWishlisted(product._id)
-  const currentPrice = product.discountPrice ?? product.price
-  const discountPercent = product.discountPrice
-    ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
-    : 0
+  const { listPrice, currentPrice, discountPercent } = getPricing(product)
 
-  // ✅ Build gallery images:
-  //    1. Use all product-level images (from DB images[]) — these are the main product photos
-  //    2. Append color-specific images if they exist and have valid URLs
-  //    3. Final filter removes anything with an empty URL
   const productLevelImages =
     product.images && product.images.length > 0
       ? product.images
-      : [product.mainImage] // fallback to mainImage if images[] somehow empty
+      : [product.mainImage]
 
-  const colorImages = (selectedColor.images ?? []).filter(
-    (img) => !!img.url
-  )
+  const colorImages = (selectedColor.images ?? []).filter((img) => !!img.url)
 
-  // Deduplicate: don't add color images that are already in productLevelImages
   const productImageUrls = new Set(productLevelImages.map((i) => i.url))
   const uniqueColorImages = colorImages.filter(
     (img) => !productImageUrls.has(img.url)
@@ -323,7 +314,7 @@ export default function ProductDetailPage() {
             <Link href="/shop" className="breadcrumb-link">Shop</Link>
             <ChevronRight size={14} />
             <Link
-              href={`/shop?category=${product.category}`}
+              href={`/shop?category=${encodeURIComponent(product.category)}`}
               className="breadcrumb-link"
             >
               {product.category}
@@ -339,10 +330,7 @@ export default function ProductDetailPage() {
         <div className="product-detail-grid">
           {/* Left — Gallery */}
           <div className="product-detail-gallery">
-            <ProductGallery
-              images={allImages}
-              productName={product.name}
-            />
+            <ProductGallery images={allImages} productName={product.name} />
           </div>
 
           {/* Right — Product Info */}
@@ -376,46 +364,26 @@ export default function ProductDetailPage() {
             {/* Rating Row */}
             <div className="product-detail-rating">
               <StarRating rating={product.ratings.average} />
-              <span className="detail-rating-avg">
-                {product.ratings.average}
-              </span>
+              <span className="detail-rating-avg">{product.ratings.average}</span>
               <span className="detail-rating-count">
                 ({product.ratings.count} reviews)
               </span>
-              <span className="detail-sold">
-                · {product.soldCount} sold
-              </span>
+              <span className="detail-sold">· {product.soldCount} sold</span>
             </div>
 
-            {/* Price */}
+            {/* Price — single source of truth */}
             <div className="product-detail-price">
-              {product.isFlashSale && product.flashSalePrice ? (
+              <span className="detail-price-current">
+                {CURRENCY_SYMBOL}{currentPrice.toLocaleString()}
+              </span>
+              {discountPercent > 0 && (
                 <>
-                  <span className="detail-price-current">
-                    {CURRENCY_SYMBOL}{product.flashSalePrice.toLocaleString()}
-                  </span>
                   <span className="detail-price-original">
-                    {CURRENCY_SYMBOL}{product.price.toLocaleString()}
+                    {CURRENCY_SYMBOL}{listPrice.toLocaleString()}
                   </span>
                   <span className="detail-price-discount">
-                    Save {Math.round(((product.price - product.flashSalePrice) / product.price) * 100)}%
+                    Save {discountPercent}%
                   </span>
-                </>
-              ) : (
-                <>
-                  <span className="detail-price-current">
-                    {CURRENCY_SYMBOL}{currentPrice.toLocaleString()}
-                  </span>
-                  {product.discountPrice && (
-                    <>
-                      <span className="detail-price-original">
-                        {CURRENCY_SYMBOL}{product.price.toLocaleString()}
-                      </span>
-                      <span className="detail-price-discount">
-                        Save {discountPercent}%
-                      </span>
-                    </>
-                  )}
                 </>
               )}
             </div>
@@ -431,9 +399,7 @@ export default function ProductDetailPage() {
             <div className="detail-option-group">
               <div className="detail-option-header">
                 <span className="detail-option-label">Color:</span>
-                <span className="detail-option-value">
-                  {selectedColor.name}
-                </span>
+                <span className="detail-option-value">{selectedColor.name}</span>
               </div>
               <div className="detail-colors">
                 {product.colors.map((color) => (
@@ -547,8 +513,9 @@ export default function ProductDetailPage() {
 
             {/* Buy Now */}
             <button
+              onClick={handleAddToCart}
               className="detail-buy-now-btn"
-              disabled={product.stock === 0 || selectedColor.stock === 0}
+              disabled={isAdding || product.stock === 0 || selectedColor.stock === 0}
             >
               <Zap size={18} />
               Buy Now — Instant Checkout
@@ -643,7 +610,7 @@ export default function ProductDetailPage() {
                 <div className="detail-features">
                   <h4>What&apos;s Included:</h4>
                   <ul>
-                    <li>✅ 1x {product.category} Bag</li>
+                    <li>✅ 1x {product.name}</li>
                     <li>✅ Adjustable shoulder strap</li>
                     <li>✅ Dust bag for storage</li>
                     <li>✅ BagBliss authenticity card</li>
@@ -665,47 +632,16 @@ export default function ProductDetailPage() {
                       {product.ratings.count} reviews
                     </span>
                   </div>
-                  <div className="reviews-bars">
-                    {[5, 4, 3, 2, 1].map((star) => (
-                      <div key={star} className="reviews-bar-row">
-                        <span className="reviews-bar-label">{star}★</span>
-                        <div className="reviews-bar">
-                          <div
-                            className="reviews-bar-fill"
-                            style={{
-                              width:
-                                star === 5 ? '70%' :
-                                star === 4 ? '20%' :
-                                star === 3 ? '7%' : '3%',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
 
-                <div className="reviews-list">
-                  {MOCK_REVIEWS.map((review) => (
-                    <div key={review.id} className="review-card">
-                      <div className="review-header">
-                        <div className="review-avatar">{review.avatar}</div>
-                        <div className="review-meta">
-                          <div className="review-name-row">
-                            <span className="review-name">{review.name}</span>
-                            {review.verified && (
-                              <span className="review-verified">
-                                <Check size={11} /> Verified
-                              </span>
-                            )}
-                          </div>
-                          <StarRating rating={review.rating} size={13} />
-                        </div>
-                        <span className="review-date">{review.date}</span>
-                      </div>
-                      <p className="review-comment">{review.comment}</p>
-                    </div>
-                  ))}
+                <div className="reviews-empty" style={{ textAlign: 'center', padding: '48px 20px' }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+                  <p style={{ fontWeight: 600, marginBottom: 6 }}>
+                    Customer reviews coming soon
+                  </p>
+                  <p style={{ color: '#888', fontSize: 14 }}>
+                    Be the first to review this product after your purchase.
+                  </p>
                 </div>
               </div>
             )}
