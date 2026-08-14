@@ -8,6 +8,7 @@ import {
   priceOrder,
   reserveStock,
   releaseStock,
+  newAccessToken,
   OrderError,
   type Reserved,
 } from '@/features/orders/buildOrder'
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest) {
       userId: session?.user?.id ?? null,
       guestEmail: input.shipping.email || null,
       orderNumber: `BB${nanoid(8).toUpperCase()}`,
+      accessToken: newAccessToken(),
       items: priced.items,
       shipping: input.shipping,
       delivery: input.delivery,
@@ -99,6 +101,8 @@ export async function POST(req: NextRequest) {
         order: {
           _id: order._id.toString(),
           orderNumber: order.orderNumber,
+          // ✅ order-success পেজের লিংক বানাতে ক্লায়েন্টের এটা লাগে
+          accessToken: order.accessToken,
           subtotal: priced.subtotal,
           deliveryFee: priced.deliveryFee,
           total: priced.total,

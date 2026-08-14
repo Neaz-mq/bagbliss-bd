@@ -10,6 +10,7 @@ import {
   priceOrder,
   reserveStock,
   releaseStock,
+  newAccessToken,
   OrderError,
   type Reserved,
 } from '@/features/orders/buildOrder'
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
       userId: session?.user?.id ?? null,
       guestEmail: input.shipping.email || null,
       orderNumber: `BB${nanoid(8).toUpperCase()}`,
+      accessToken: newAccessToken(),
       items: priced.items,
       shipping: input.shipping,
       delivery: input.delivery,
@@ -66,7 +68,9 @@ export async function POST(req: NextRequest) {
       orderNote: input.orderNote,
       tranId,
     })
-    createdOrderId = order._id.toString()
+
+    const orderId = order._id.toString()
+    createdOrderId = orderId
 
     const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
 
@@ -93,7 +97,9 @@ export async function POST(req: NextRequest) {
       ship_country: 'Bangladesh',
       shipping_method: 'Courier',
       num_of_item: priced.items.reduce((a, i) => a + i.quantity, 0),
-      value_a: createdOrderId,
+      // ✅ orderId ব্যবহার — createdOrderId এর টাইপ `string | null`,
+      // কিন্তু SSLInitPayload চায় `string | undefined`
+      value_a: orderId,
     }
 
     const sslResponse = await initiateSSLPayment(sslPayload)
@@ -108,10 +114,11 @@ export async function POST(req: NextRequest) {
     }
 
     reserved = [] // অর্ডার তৈরি হয়ে গেছে — স্টক ওই অর্ডারের সাথে যুক্ত
+    createdOrderId = null // catch ব্লক যেন সফল অর্ডার মুছে না ফেলে
 
     return NextResponse.json({
       success: true,
-      orderId: createdOrderId,
+      orderId,
       orderNumber: order.orderNumber,
       total: priced.total,
       gatewayUrl: sslResponse.GatewayPageURL,

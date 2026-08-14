@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { nanoid } from 'nanoid'
 import Product from '@/models/Product'
 import { getDbUnitPrice } from '@/utils/pricing'
 
@@ -64,6 +65,17 @@ export class OrderError extends Error {
     super(message)
     this.status = status
   }
+}
+
+/**
+ * Guest-safe অর্ডার লিংকের টোকেন।
+ * order-success পেজে `?t=` হিসেবে যায় — এটা ছাড়া কেউ
+ * অন্যের ঠিকানা/ফোন দেখতে পারবে না। Guest checkout এ
+ * সেশন নেই, আর ObjectId টাইমস্ট্যাম্প-ভিত্তিক বলে
+ * অনুমানযোগ্য — তাই আলাদা টোকেন দরকার।
+ */
+export function newAccessToken(): string {
+  return nanoid(24)
 }
 
 /**

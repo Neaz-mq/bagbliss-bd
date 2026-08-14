@@ -6,6 +6,8 @@ import { validateSSLPayment } from '@/lib/sslcommerz'
 import { sendOrderEmails } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
+
   try {
     await connectDB()
 
@@ -16,11 +18,13 @@ export async function POST(req: NextRequest) {
     const bank_tran_id = form.get('bank_tran_id') as string
     const status       = form.get('status')       as string
 
-    const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
-
     // ── Step 1: Check status from SSLCommerz ───────────────────────────
     if (status !== 'VALID' && status !== 'VALIDATED') {
       return NextResponse.redirect(`${baseUrl}/payment/fail?reason=invalid_status`)
+    }
+
+    if (!val_id || !tran_id) {
+      return NextResponse.redirect(`${baseUrl}/payment/fail?reason=missing_params`)
     }
 
     // ── Step 2: Validate with SSLCommerz server ────────────────────────
@@ -37,6 +41,16 @@ export async function POST(req: NextRequest) {
     const order = await Order.findOne({ tranId: tran_id })
     if (!order) {
       return NextResponse.redirect(`${baseUrl}/payment/fail?reason=order_not_found`)
+    }
+
+    // ── Step 3b: Idempotency ───────────────────────────────────────────
+    // SSLCommerz একই callback দুবার পাঠাতে পারে, আর IPN রুটও
+    // সমান্তরালে অর্ডারটা paid করে দিতে পারে। ইতিমধ্যে paid হলে
+    // আবার ইমেইল না পাঠিয়ে সরাসরি success পেজে পাঠাই।
+    if (order.paymentStatus === 'paid') {
+      return NextResponse.redirect(
+        `${baseUrl}/order-success/${order._id}?t=${order.accessToken ?? ''}`
+      )
     }
 
     // ── Step 4: Verify amount ──────────────────────────────────────────
@@ -76,13 +90,15 @@ export async function POST(req: NextRequest) {
     }).catch(err => console.error('[EMAIL] SSL payment email failed:', err))
 
     // ── Step 7: Redirect to success page ──────────────────────────────
+    // ✅ accessToken ছাড়া order-success পেজ খুলবে না। আগে
+    // `?payment=success&order=...` পাঠানো হত — ওগুলো পেজে
+    // ব্যবহারই হয় না, আর orderNumber URL এ থাকা অনাবশ্যক।
     return NextResponse.redirect(
-      `${baseUrl}/order-success/${order._id}?payment=success&order=${order.orderNumber}`
+      `${baseUrl}/order-success/${order._id}?t=${order.accessToken ?? ''}`
     )
 
   } catch (err) {
     console.error('[PAYMENT SUCCESS]', err)
-    const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
     return NextResponse.redirect(`${baseUrl}/payment/fail?reason=server_error`)
   }
 }

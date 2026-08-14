@@ -22,8 +22,14 @@ const ShippingSchema = new Schema({
 
 const OrderSchema = new Schema({
   orderNumber:   { type: String, required: true, unique: true },
-  userId:        { type: String, default: null },
+  userId:        { type: String, default: null, index: true },
   guestEmail:    { type: String, default: null },
+
+  // ✅ guest checkout এ সেশন থাকে না, তাই order-success পেজে
+  // এই টোকেন ছাড়া কেউ অর্ডার খুলতে পারবে না। ObjectId
+  // টাইমস্ট্যাম্প-ভিত্তিক বলে অনুমান করা সম্ভব — টোকেন নয়।
+  accessToken:   { type: String, default: null, index: true },
+
   items:         [OrderItemSchema],
   shipping:      { type: ShippingSchema, required: true },
   delivery:      { type: String, default: 'standard' },
@@ -35,13 +41,17 @@ const OrderSchema = new Schema({
   status:        { type: String, enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'], default: 'pending' },
   paymentStatus: { type: String, enum: ['unpaid', 'paid', 'failed', 'cancelled', 'refunded'], default: 'unpaid' },
   orderNote:     { type: String, default: '' },
-  tranId:        { type: String, default: null },
+  tranId:        { type: String, default: null, index: true },
   sslTranId:     { type: String, default: null },
   valId:         { type: String, default: null },
   cardType:      { type: String, default: null },
   bankTranId:    { type: String, default: null },
   currency:      { type: String, default: 'BDT' },
 }, { timestamps: true })
+
+// অ্যাডমিন প্যানেলের অর্ডার লিস্ট — status ফিল্টার + তারিখ অনুযায়ী সাজানো
+OrderSchema.index({ status: 1, createdAt: -1 })
+OrderSchema.index({ paymentStatus: 1, createdAt: -1 })
 
 // Auto-generate orderNumber
 OrderSchema.pre('save', async function () {
