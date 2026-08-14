@@ -109,9 +109,10 @@ function ProductModal({ product, onClose, onSaved }: {
     } : EMPTY
   )
 
-  const [saving, setSaving]       = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [imgUrl, setImgUrl]       = useState('')
+  const [saving, setSaving]           = useState(false)
+  const [uploading, setUploading]     = useState(false)
+  const [fetchingUrl, setFetchingUrl] = useState(false)
+  const [imgUrl, setImgUrl]           = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const set = (k: keyof FormState, v: unknown) => setForm(p => ({ ...p, [k]: v }))
@@ -131,7 +132,31 @@ function ProductModal({ product, onClose, onSaved }: {
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = '' }
   }
 
-  const addUrl    = () => { const url = imgUrl.trim(); if (!url) return; set('images', [...form.images, url]); setImgUrl('') }
+  // Re-uploads a pasted external URL through Cloudinary instead of trusting the
+  // raw domain directly — otherwise next/image throws for any hostname not
+  // listed in next.config.ts remotePatterns.
+  const addUrl = async () => {
+    const url = imgUrl.trim()
+    if (!url) return
+    setFetchingUrl(true)
+    try {
+      const res  = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      set('images', [...form.images, data.url])
+      setImgUrl('')
+      toast.success('Image fetched!')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not fetch that image URL')
+    } finally {
+      setFetchingUrl(false)
+    }
+  }
+
   const removeImg = (i: number) => set('images', form.images.filter((_, idx) => idx !== i))
   const addColor  = () => set('colors', [...form.colors, { name: '', hex: ACCENT, stock: '0' }])
   const rmColor   = (i: number) => set('colors', form.colors.filter((_, idx) => idx !== i))
@@ -230,7 +255,11 @@ function ProductModal({ product, onClose, onSaved }: {
                 <input suppressHydrationWarning type="url" placeholder="Or paste image URL" value={imgUrl} onChange={e => setImgUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addUrl())}
                   style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.82rem', color: '#1e293b', outline: 'none', background: '#fafbfc' }}
                   onFocus={e => (e.target.style.borderColor = ACCENT)} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
-                <button suppressHydrationWarning onClick={addUrl} type="button" style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: ACCENT, color: 'white', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>Add</button>
+                <button suppressHydrationWarning onClick={addUrl} type="button" disabled={fetchingUrl}
+                  style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: ACCENT, color: 'white', fontSize: '0.82rem', fontWeight: 700, cursor: fetchingUrl ? 'not-allowed' : 'pointer', opacity: fetchingUrl ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  {fetchingUrl && <Loader2 size={12} style={{ animation: 'spin 0.7s linear infinite' }} />}
+                  {fetchingUrl ? 'Fetching…' : 'Add'}
+                </button>
               </div>
             </div>
             {form.images.length > 0 ? (
