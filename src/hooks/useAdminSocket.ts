@@ -26,19 +26,61 @@ export function useAdminSocket() {
   const [lastActivity,  setLastActivity]  = useState<string | null>(null)
   const isAdminJoinedRef                  = useRef(false)
 
-  // Join admin room
+  // Join admin room — fetch a short-lived signed token from the server
+  // instead of sending a hardcoded shared secret from the browser.
   useEffect(() => {
     if (!connected || isAdminJoinedRef.current) return
     isAdminJoinedRef.current = true
-    socket.emit('join:admin', { secret: 'bagbliss-socket-secret-2026' })
+
+    let cancelled = false
+
+    const joinAdminRoom = async () => {
+      try {
+        const res = await fetch('/api/socket-token')
+
+        if (!res.ok) {
+          console.error('[useAdminSocket] failed to get socket token', res.status)
+          isAdminJoinedRef.current = false
+          return
+        }
+
+        const { token } = await res.json()
+
+        if (!cancelled) {
+          socket.emit('join:admin', { token })
+        }
+      } catch (err) {
+        console.error('[useAdminSocket] error fetching socket token', err)
+        isAdminJoinedRef.current = false
+      }
+    }
+
+    joinAdminRoom()
+
+    return () => {
+      cancelled = true
+    }
   }, [connected, socket])
 
-  // Reset joined ref on disconnect
+  // Reset joined ref on disconnect so we re-fetch a fresh token on reconnect
   useEffect(() => {
     if (!connected) {
       isAdminJoinedRef.current = false
     }
   }, [connected])
+
+  // Handle join rejection from server (expired/invalid token, wrong role, etc.)
+  useEffect(() => {
+    const onError = (err: { message: string }) => {
+      console.error('[useAdminSocket] admin join rejected:', err.message)
+      isAdminJoinedRef.current = false
+    }
+
+    socket.on('error', onError)
+    return () => {
+      socket.off('error', onError)
+    }
+  }, [socket])
 
   // Listen to events
   useEffect(() => {

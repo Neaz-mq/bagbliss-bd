@@ -4,13 +4,21 @@ const express    = require('express')
 const http       = require('http')
 const { Server } = require('socket.io')
 const cors       = require('cors')
+const jwt        = require('jsonwebtoken')
 
 const app    = express()
 const server = http.createServer(app)
 
-const ALLOWED_ORIGIN = process.env.CLIENT_URL || 'http://localhost:3000'
-const PORT           = process.env.PORT        || 4000
-const EMIT_SECRET    = process.env.EMIT_SECRET || 'bagbliss-socket-secret-2026'
+const ALLOWED_ORIGIN    = process.env.CLIENT_URL || 'http://localhost:3000'
+const PORT               = process.env.PORT        || 4000
+const EMIT_SECRET        = process.env.EMIT_SECRET
+const SOCKET_JWT_SECRET  = process.env.SOCKET_JWT_SECRET
+
+// ── Fail fast if secrets aren't configured ─────────────────────────────────
+if (!EMIT_SECRET || !SOCKET_JWT_SECRET) {
+  console.error('❌ EMIT_SECRET and SOCKET_JWT_SECRET must be set in env. Exiting.')
+  process.exit(1)
+}
 
 // ── Socket.IO setup ───────────────────────────────────────────────────────
 const io = new Server(server, {
@@ -29,7 +37,7 @@ const io = new Server(server, {
 
 // ── State ─────────────────────────────────────────────────────────────────
 const onlineVisitors = new Map()  // socketId → { page, joinedAt }
-const adminSockets   = new Set()  // admin socket IDs
+const adminSockets   = new Set()  // socketIds that passed admin-token verification
 
 // ── Middleware ────────────────────────────────────────────────────────────
 app.use(cors({ origin: ALLOWED_ORIGIN }))
@@ -45,11 +53,10 @@ app.get('/health', (_req, res) => {
   })
 })
 
-// ── Emit endpoint (called by Next.js API) ─────────────────────────────────
+// ── Emit endpoint (called server-to-server by Next.js API routes only) ────
 app.post('/emit', (req, res) => {
   const { secret, event, data, room } = req.body
 
-  // Verify secret
   if (secret !== EMIT_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
@@ -69,17 +76,26 @@ io.on('connection', (socket) => {
   console.log(`[CONNECT] ${socket.id}`)
 
   // ── Join rooms ─────────────────────────────────────────────────────────
-  socket.on('join:admin', ({ secret }) => {
-    if (secret !== EMIT_SECRET) {
-      socket.emit('error', { message: 'Invalid admin secret' })
+  socket.on('join:admin', ({ token }) => {
+    let payload
+    try {
+      payload = jwt.verify(token, SOCKET_JWT_SECRET)
+    } catch (err) {
+      socket.emit('error', { message: 'Invalid or expired admin token' })
+      console.log(`[ADMIN JOIN REJECTED] ${socket.id} — ${err.message}`)
       return
     }
+
+    if (payload.scope !== 'admin-socket' || payload.role !== 'admin') {
+      socket.emit('error', { message: 'Invalid token scope' })
+      return
+    }
+
     socket.join('admin')
     adminSockets.add(socket.id)
     socket.emit('joined:admin', { message: 'Welcome to admin room' })
-    console.log(`[ADMIN JOIN] ${socket.id}`)
+    console.log(`[ADMIN JOIN] ${socket.id} (user: ${payload.sub})`)
 
-    // Send current online count to newly joined admin
     socket.emit('visitors:update', { count: onlineVisitors.size })
   })
 
@@ -92,7 +108,6 @@ io.on('connection', (socket) => {
 
   socket.on('visitor:page', ({ page }) => {
     onlineVisitors.set(socket.id, { page, joinedAt: new Date() })
-    // Notify admins of visitor count update
     io.to('admin').emit('visitors:update', {
       count:    onlineVisitors.size,
       visitors: [...onlineVisitors.values()],
@@ -100,11 +115,15 @@ io.on('connection', (socket) => {
   })
 
   // ── Admin actions ──────────────────────────────────────────────────────
-  socket.on('order:status:update', ({ orderId, status, secret: s }) => {
-    if (s !== EMIT_SECRET) return
-    // Notify customer tracking this order
+  // Trust is established once, at join:admin. No secret needed per-action —
+  // only sockets that passed JWT verification are ever in `adminSockets`.
+  socket.on('order:status:update', ({ orderId, status }) => {
+    if (!adminSockets.has(socket.id)) {
+      socket.emit('error', { message: 'Not authorized as admin' })
+      return
+    }
     io.to(`order:${orderId}`).emit('order:updated', { orderId, status })
-    console.log(`[ORDER STATUS] ${orderId} → ${status}`)
+    console.log(`[ORDER STATUS] ${orderId} → ${status} (by ${socket.id})`)
   })
 
   // ── Disconnect ─────────────────────────────────────────────────────────
@@ -112,7 +131,6 @@ io.on('connection', (socket) => {
     adminSockets.delete(socket.id)
     onlineVisitors.delete(socket.id)
 
-    // Update admin visitor count
     io.to('admin').emit('visitors:update', {
       count:    onlineVisitors.size,
       visitors: [...onlineVisitors.values()],
