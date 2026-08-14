@@ -142,10 +142,7 @@ export default function CheckoutPage() {
   const [delivery,    setDelivery]    = useState('standard')
   const [payment,     setPayment]     = useState('cod')
   const [isPlacing,   setIsPlacing]   = useState(false)
-  const [placed,      setPlaced]      = useState(false)
   const [step,        setStep]        = useState<1 | 2>(1)
-  const [orderTotal,  setOrderTotal]  = useState(0)
-  const [orderId,     setOrderId]     = useState('')
   const [redirecting, setRedirecting] = useState(false)
 
   // ── UI প্রিভিউ হিসাব (সার্ভারের সিদ্ধান্তই চূড়ান্ত) ──────────────────
@@ -173,8 +170,8 @@ export default function CheckoutPage() {
   })
 
   useEffect(() => {
-    if (items.length === 0 && !placed && !redirecting) router.replace('/shop')
-  }, [items, placed, redirecting, router])
+    if (items.length === 0 && !redirecting) router.replace('/shop')
+  }, [items, redirecting, router])
 
   // ✅ SECURITY: শুধু productId + quantity + color পাঠানো হয়।
   // দাম, subtotal, deliveryFee, total — কিছুই ক্লায়েন্ট থেকে যায় না।
@@ -216,13 +213,15 @@ export default function CheckoutPage() {
         const json = await res.json()
         if (!json.success) throw new Error(json.error ?? 'Order failed')
 
-        // ✅ সার্ভারের হিসাব করা total দেখানো হয়, ক্লায়েন্টের নয়।
-        // স্টক শেষ বা দাম বদলে গেলে দুটোর মধ্যে পার্থক্য হতে পারে।
-        setOrderTotal(json.order.total)
-        setOrderId(json.order.orderNumber)
+        // ✅ গেটওয়ে পেমেন্টের মতোই এখন COD ও শেয়ারযোগ্য success
+        // পেজে যায় — রিফ্রেশ করলেও থাকে, লিংক সেভ করা যায়, আর
+        // আইটেম/ঠিকানা সব দেখা যায়। আগের inline স্ক্রিনে এসব ছিল না।
+        setRedirecting(true)
         clearCart()
-        setPlaced(true)
-        toast.success(`🎉 Order placed successfully!`)
+        toast.success('🎉 Order placed successfully!')
+        router.push(
+          `/order-success/${json.order._id}?t=${json.order.accessToken}`
+        )
         return
       }
 
@@ -254,47 +253,23 @@ export default function CheckoutPage() {
     }
   }
 
-  // ── Order Placed Screen ────────────────────────────────────────────────
-  if (placed) {
-    return (
-      <div className="co-success-page">
-        <div className="co-success-inner">
-          <div className="co-success-icon" style={{ background: 'rgba(34,197,94,0.1)', color: '#16a34a' }}>
-            <CheckCircle2 size={48} />
-          </div>
-          <h1 className="co-success-title">Order Confirmed! 🎉</h1>
-          <p className="co-success-desc">
-            Thank you! Your order has been placed. We will process it shortly.
-            Expected delivery in {delivery === 'express' ? '1–2' : '3–5'} business days.
-          </p>
-          <div className="co-success-meta">
-            <div className="co-success-meta-item"><span>Order ID</span><strong>#{orderId}</strong></div>
-            <div className="co-success-meta-item"><span>Payment</span><strong>Cash on Delivery</strong></div>
-            <div className="co-success-meta-item"><span>Total</span><strong>৳{orderTotal.toLocaleString('en-BD')}</strong></div>
-          </div>
-          <div className="co-success-actions">
-            <Link href="/shop" className="btn-primary"><ShoppingBag size={18} /> Continue Shopping</Link>
-            <Link href="/account/orders" className="btn-secondary">Track Order</Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Gateway Redirecting Screen ─────────────────────────────────────────
+  // ── Redirecting Screen (COD → success page, gateway → SSLCommerz) ──────
   if (redirecting) {
     const pm = PAYMENT_METHODS.find(p => p.id === payment)
+    const isGateway = pm?.gateway ?? false
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fdfaf7', padding: '2rem' }}>
         <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: `${pm?.color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: `4px solid ${pm?.color}33`, borderTopColor: pm?.color, animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: `${pm?.color ?? '#1a1a2e'}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: `4px solid ${pm?.color ?? '#1a1a2e'}33`, borderTopColor: pm?.color ?? '#1a1a2e', animation: 'spin 0.8s linear infinite' }} />
           </div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', color: '#1a1a2e', margin: '0 0 0.75rem' }}>
-            Redirecting to {pm?.label}
+            {isGateway ? `Redirecting to ${pm?.label}` : 'Confirming your order…'}
           </h2>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: '#6b7280', lineHeight: 1.7 }}>
-            Please wait while we redirect you to the secure payment gateway. Do not close this window.
+            {isGateway
+              ? 'Please wait while we redirect you to the secure payment gateway. Do not close this window.'
+              : 'Almost there — taking you to your order confirmation.'}
           </p>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
