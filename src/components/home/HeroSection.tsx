@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, X } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, Variants } from 'framer-motion'
 
 // ── Minimal product shape we need from the API ────────────────────────────
 interface HeroProduct {
@@ -43,14 +43,14 @@ function normalizeHeroProduct(raw: Record<string, unknown>): HeroProduct {
 }
 
 // ── Animation variants ────────────────────────────────────────────────────
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: {},
   visible: {
     transition: { staggerChildren: 0.11, delayChildren: 0.05 },
   },
 }
 
-const textLine = {
+const textLine: Variants = {
   hidden: { opacity: 0, y: 36 },
   visible: {
     opacity: 1,
@@ -59,7 +59,7 @@ const textLine = {
   },
 }
 
-const cardWrapper = {
+const cardWrapper: Variants = {
   hidden: { opacity: 0, y: 80, scale: 0.96 },
   visible: {
     opacity: 1,
@@ -69,7 +69,7 @@ const cardWrapper = {
   },
 }
 
-const imageReveal = {
+const imageReveal: Variants = {
   hidden: { clipPath: 'inset(100% 0 0 0)' },
   visible: {
     clipPath: 'inset(0% 0 0 0)',
@@ -77,7 +77,7 @@ const imageReveal = {
   },
 }
 
-const imageKenBurns = {
+const imageKenBurns: Variants = {
   hidden: { scale: 1.08 },
   visible: {
     scale: 1,
@@ -85,7 +85,7 @@ const imageKenBurns = {
   },
 }
 
-const popupVariant = {
+const popupVariant: Variants = {
   hidden: { opacity: 0, y: 10, scale: 0.96 },
   visible: {
     opacity: 1,

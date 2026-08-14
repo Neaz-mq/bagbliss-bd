@@ -47,7 +47,15 @@ function normalizeProduct(raw: Record<string, unknown>): IProduct {
       cloudinaryId: '',
       alt: (raw.name as string) ?? 'Product',
     },
-    status: raw.isActive ? 'active' : 'inactive',
+    // ProductStatus is 'active' | 'draft' | 'out_of_stock' — 'inactive' was
+    // never a valid member, which is exactly what TS2322 was catching.
+    // Map isActive=false to 'draft' (admin has hidden it from the storefront)
+    // and separately flag zero stock as 'out_of_stock' when it IS active.
+    status: !raw.isActive
+      ? 'draft'
+      : (raw.totalStock as number) === 0
+        ? 'out_of_stock'
+        : 'active',
     isFeatured: (raw.isFeatured as boolean) ?? false,
     isFlashSale: (raw.isFlashSale as boolean) ?? false,
     flashSalePrice: raw.flashSalePrice as number | undefined,
@@ -1018,7 +1026,6 @@ export default function FeaturedProducts() {
   // Slider
   const [current, setCurrent] = useState(0)
   const [visibleCount, setVisibleCount] = useState(3)
-  const [enableTransition, setEnableTransition] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Responsive
@@ -1821,9 +1828,7 @@ export default function FeaturedProducts() {
               className="fp-track"
               style={{
                 transform: `translate3d(calc(-${current * moveSize}px + ${dragOffset}px), 0, 0)`,
-                transition: enableTransition
-                  ? 'transform 0.7s cubic-bezier(0.25,1,0.35,1)'
-                  : 'none',
+                transition: 'transform 0.7s cubic-bezier(0.25,1,0.35,1)',
               }}
             >
               {isLoading ? (

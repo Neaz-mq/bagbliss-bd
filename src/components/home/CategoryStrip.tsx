@@ -205,6 +205,7 @@ export default function CategoryStrip() {
       }, 700)
       return () => clearTimeout(id)
     }
+    return undefined
   }, [current, categories.length])
 
   useEffect(() => {
