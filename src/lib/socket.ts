@@ -26,13 +26,26 @@ export function disconnectSocket() {
 }
 
 // ── Emit event to socket server from Next.js API ─────────────────────────
+// Server-to-server only (Next.js API routes → socket server's /emit).
+// No hardcoded fallback secret — if env vars are missing, refuse to emit
+// rather than silently using a known/leaked default.
 export async function serverEmit(
   event:  string,
   data:   unknown,
   room?:  string
 ) {
-  const url    = process.env.SOCKET_SERVER_URL ?? 'http://localhost:4000'
-  const secret = process.env.SOCKET_EMIT_SECRET ?? 'bagbliss-socket-secret-2026'
+  const url    = process.env.SOCKET_SERVER_URL
+  const secret = process.env.SOCKET_EMIT_SECRET
+
+  if (!url) {
+    console.error('[SOCKET EMIT] SOCKET_SERVER_URL is not set — refusing to emit')
+    return false
+  }
+
+  if (!secret) {
+    console.error('[SOCKET EMIT] SOCKET_EMIT_SECRET is not set — refusing to emit')
+    return false
+  }
 
   try {
     const res = await fetch(`${url}/emit`, {
