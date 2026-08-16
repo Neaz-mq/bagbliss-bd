@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
-import { rateLimit } from '@/app/api/admin/rate-limit'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   // Rate limit: 5 registrations per IP per hour

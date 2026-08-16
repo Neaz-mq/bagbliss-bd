@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
 import Facebook from 'next-auth/providers/facebook'
@@ -7,6 +8,24 @@ import clientPromise from '@/lib/mongoClient'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import { authConfig } from '@/auth.config'
+import { rateLimit, resetRateLimit, getClientIp } from '@/lib/rate-limit'
+
+// ── Login input contract ────────────────────────────────────────────────
+// `authorize()` receives `Partial<Record<string, unknown>>` — the shape is
+// NOT guaranteed at compile time or runtime. Without this, `credentials.email`
+// could be any JSON value (e.g. an object like `{ "$ne": null }`) sent by a
+// crafted request to the credentials callback, which would flow straight
+// into a Mongoose query. Validating as a plain string closes that off.
+const LoginCredentialsSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(1).max(200),
+})
+
+// Generic on purpose — never reveal *why* a login failed (wrong email vs.
+// wrong password vs. rate-limited) beyond what's necessary, to avoid
+// account enumeration.
+const INVALID_CREDENTIALS_MSG = 'Invalid email or password'
+const RATE_LIMITED_MSG = 'Too many login attempts. Please try again later.'
 
 // ── helper: verify Google ID token with Google's public endpoint ──────────
 async function verifyGoogleToken(idToken: string) {
@@ -62,28 +81,56 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password are required')
+      async authorize(credentials, request) {
+        const ip = getClientIp(request)
+
+        // ── 1. Coarse per-IP guard ──────────────────────────────────────
+        // Catches malformed/scripted flooding (and credential-stuffing
+        // spread across many different emails) before we even touch Zod
+        // or the database. 20 attempts / 15 min per IP.
+        const ipGuard = await rateLimit(`login-ip:${ip}`, 20, 15 * 60)
+        if (!ipGuard.success) {
+          throw new Error(RATE_LIMITED_MSG)
+        }
+
+        // ── 2. Validate & coerce input shape ────────────────────────────
+        // `credentials` is untyped input from the request — reject anything
+        // that isn't a plain, reasonably-sized email/password string pair
+        // (also rejects non-string payloads, closing off NoSQL-injection
+        // style queries such as `{ email: { "$ne": null } }`).
+        const parsed = LoginCredentialsSchema.safeParse(credentials)
+        if (!parsed.success) {
+          throw new Error(INVALID_CREDENTIALS_MSG)
+        }
+        const { email, password } = parsed.data
+
+        // ── 3. Tight per-account guard ──────────────────────────────────
+        // 5 attempts / 15 min per (ip, email) pair — brute force / credential
+        // stuffing against one specific account.
+        const accountKey = `login:${ip}:${email}`
+        const accountGuard = await rateLimit(accountKey, 5, 15 * 60)
+        if (!accountGuard.success) {
+          throw new Error(RATE_LIMITED_MSG)
         }
 
         await connectDB()
 
-        const user = await User.findOne({
-          email: credentials.email,
-        }).select('+password')
+        const user = await User.findOne({ email }).select('+password')
 
         if (!user || !user.password) {
-          throw new Error('Invalid email or password')
+          throw new Error(INVALID_CREDENTIALS_MSG)
         }
 
-        const isPasswordValid = await user.comparePassword(
-          credentials.password as string
-        )
+        const isPasswordValid = await user.comparePassword(password)
 
         if (!isPasswordValid) {
-          throw new Error('Invalid email or password')
+          throw new Error(INVALID_CREDENTIALS_MSG)
         }
+
+        // ── 4. Success — clear this account's counter ───────────────────
+        // So a legitimate user isn't left rate-limited by their own earlier
+        // typos, or by other people behind the same NAT/IP.
+        await resetRateLimit(accountKey)
 
         return {
           id: user._id.toString(),
@@ -101,10 +148,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: 'Google One Tap',
       credentials: { credential: { type: 'text' } },
       async authorize(creds) {
-        if (!creds?.credential) return null
+        const parsed = z
+          .object({ credential: z.string().min(1).max(4096) })
+          .safeParse(creds)
+        if (!parsed.success) return null
 
         // Verify the Google ID token
-        const googleUser = await verifyGoogleToken(creds.credential as string)
+        const googleUser = await verifyGoogleToken(parsed.data.credential)
         if (!googleUser) {
           console.error('[google-one-tap] Token verification failed')
           return null
