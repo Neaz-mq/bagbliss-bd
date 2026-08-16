@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useState, useEffect, useRef } from 'react'
+import { useHydrated } from '@/hooks/useHydrated'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
@@ -92,7 +93,7 @@ function NavbarInner() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [isMounted, setIsMounted] = useState(false)
+  const isMounted = useHydrated()
   const [hovered, setHovered] = useState<string | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
 
@@ -115,10 +116,6 @@ function NavbarInner() {
     }
     return pathname === p && searchParams.toString() === ''
   }
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
 
   useEffect(() => {
     const h = (e: MouseEvent) => {

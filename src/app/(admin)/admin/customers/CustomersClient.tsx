@@ -19,10 +19,8 @@ const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg 
 const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
 const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
 const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
-const ACCENT_BORDER  = 'rgba(202,134,93,0.2)'
 const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
 const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
-const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -321,8 +319,19 @@ export default function CustomersClient() {
     finally { setLoading(false) }
   }, [page, search, sort])
 
-  useEffect(() => { fetchCustomers() }, [fetchCustomers])
-  useEffect(() => { setPage(1) }, [search, sort])
+  useEffect(() => {
+    // Genuine data-fetching effect — fetchCustomers() calls setLoading(true)
+    // synchronously before its first await, tripping this experimental rule
+    // as a false positive (data fetching is React's own documented use case
+    // for useEffect: https://react.dev/learn/synchronizing-with-effects#fetching-data).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCustomers()
+  }, [fetchCustomers])
+  useEffect(() => {
+    // Resets pagination whenever the filters change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1)
+  }, [search, sort])
 
   const openModal = (c: Customer) => { setModalId(c._id); setModalName(c.name) }
 

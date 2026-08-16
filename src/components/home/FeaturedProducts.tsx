@@ -93,6 +93,9 @@ function QuickViewModal({
 
   useEffect(() => {
     if (product) {
+      // Resets the color/quantity selection whenever a different product is
+      // opened in the modal.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedColor(product.colors?.[0]?.name ?? 'Default')
       setQty(1)
     }

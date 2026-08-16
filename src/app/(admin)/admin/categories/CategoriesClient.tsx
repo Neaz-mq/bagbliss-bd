@@ -15,13 +15,9 @@ import toast from 'react-hot-toast'
    ============================================ */
 const ACCENT        = '#CA865D'
 const ACCENT_DARK    = '#b5724a'
-const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg contrast
 const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
 const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
-const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
 const ACCENT_BORDER  = 'rgba(202,134,93,0.2)'
-const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
-const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
 const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -285,7 +281,14 @@ export default function CategoriesClient() {
     }
   }, [])
 
-  useEffect(() => { fetchCategories() }, [fetchCategories])
+  useEffect(() => {
+    // Genuine data-fetching effect (see React docs: "Fetching data" —
+    // https://react.dev/learn/synchronizing-with-effects#fetching-data).
+    // fetchCategories() calls setLoading(true) synchronously before its
+    // first await, which trips this experimental rule as a false positive.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCategories()
+  }, [fetchCategories])
 
   const sorted = [...categories]
     .filter(c => c.label.toLowerCase().includes(search.toLowerCase()))

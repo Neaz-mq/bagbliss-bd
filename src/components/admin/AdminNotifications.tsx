@@ -15,7 +15,6 @@ import Link from 'next/link'
    ============================================ */
 const ACCENT       = '#CA865D'
 const ACCENT_DARK  = '#b5724a'
-const ACCENT_LIGHT = '#e0a67d'
 const ACCENT_SOFT  = 'rgba(202,134,93,0.1)'   // for icon/badge backgrounds
 const ACCENT_FAINT = 'rgba(202,134,93,0.03)'  // for unread row tint
 const ACCENT_HOVER = 'rgba(202,134,93,0.05)'  // for open-state button bg

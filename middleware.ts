@@ -14,7 +14,7 @@ export default auth((req) => {
       return NextResponse.redirect(loginUrl)
     }
 
-    if ((req.auth.user as any)?.role !== 'admin') {
+    if (req.auth.user?.role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url))
     }
   }

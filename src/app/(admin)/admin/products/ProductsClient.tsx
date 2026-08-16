@@ -20,7 +20,6 @@ const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg 
 const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
 const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
 const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
-const ACCENT_BORDER  = 'rgba(202,134,93,0.2)'
 const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
 const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
 const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
@@ -368,8 +367,12 @@ export default function ProductsClient() {
   const limit = 20
 
   useEffect(() => {
+    // Reads the initial category filter out of the URL once on mount —
+    // a legitimate one-time sync from an external source (the URL) into
+    // React state.
     const params = new URLSearchParams(window.location.search)
     const cat = params.get('category')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (cat) setCat(cat)
   }, [])
 
@@ -386,8 +389,18 @@ export default function ProductsClient() {
     finally  { setLoading(false) }
   }, [page, search, catFilter, statFilter])
 
-  useEffect(() => { fetchProducts() }, [fetchProducts])
-  useEffect(() => { setPage(1) }, [search, catFilter, statFilter])
+  useEffect(() => {
+    // Genuine data-fetching effect — fetchProducts() calls setLoading(true)
+    // synchronously before its first await, tripping this experimental rule
+    // as a false positive.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProducts()
+  }, [fetchProducts])
+  useEffect(() => {
+    // Resets pagination whenever the filters change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1)
+  }, [search, catFilter, statFilter])
 
   const openAdd  = () => { setEditing(null); setModalOpen(true) }
   const openEdit = (p: Product) => { setEditing(p); setModalOpen(true) }

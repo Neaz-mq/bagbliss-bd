@@ -17,14 +17,11 @@ const ACCENT        = '#CA865D'
 const ACCENT_DARK    = '#b5724a'
 const ACCENT_TEXT    = '#8a5a3a'          // darker accent for text-on-light-bg contrast
 const ACCENT_SOFT    = 'rgba(202,134,93,0.08)'
-const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
 const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
 const ACCENT_SOFT4   = 'rgba(202,134,93,0.05)'
 const ACCENT_SOFT5   = 'rgba(202,134,93,0.04)'
 const ACCENT_BORDER  = 'rgba(202,134,93,0.15)'
 const ACCENT_BORDER2 = 'rgba(202,134,93,0.2)'
-const ACCENT_BORDER3 = 'rgba(202,134,93,0.25)'
-const ACCENT_BORDER4 = 'rgba(202,134,93,0.3)'
 const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
 const ACCENT_SHADOW2 = 'rgba(202,134,93,0.4)'
 const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`
@@ -388,7 +385,13 @@ export default function FlashSaleClient() {
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { fetchFlashSale() }, [fetchFlashSale])
+  useEffect(() => {
+    // Genuine data-fetching effect — fetchFlashSale() calls setLoading(true)
+    // synchronously before its first await, tripping this experimental rule
+    // as a false positive.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchFlashSale()
+  }, [fetchFlashSale])
 
   const handleRemove = async (id: string) => {
     setRemoving(id)

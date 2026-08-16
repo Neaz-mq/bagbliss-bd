@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { getProducts } from '@/features/products/api/getProductBySlug'
 import ShopClient from './ShopClient'
+import type { RawProduct } from './ShopClient'
 
 export const revalidate = 300
 
@@ -30,7 +31,14 @@ export default async function ShopPage({ searchParams }: Props) {
 
   return (
     <Suspense fallback={<ShopSkeleton />}>
-      <ShopClient initialProducts={products} initialTotal={total} />
+      <ShopClient
+        // getProducts() returns serialized (JSON.parse(JSON.stringify(...)))
+        // Mongoose docs typed loosely as Record<string, unknown>[]; their
+        // runtime shape matches RawProduct (see PUBLIC_FIELDS), but that
+        // doesn't structurally satisfy it, so we cast through unknown.
+        initialProducts={products as unknown as RawProduct[]}
+        initialTotal={total}
+      />
     </Suspense>
   )
 }

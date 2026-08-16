@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useHydrated } from '@/hooks/useHydrated'
 import {
   MapPin, Plus, Edit2, Trash2, ArrowLeft,
   Home, Briefcase, Check, X,
@@ -67,7 +68,7 @@ const INITIAL_ADDRESSES: Address[] = [
 ]
 
 export default function AddressesPage() {
-  const [mounted, setMounted] = useState(false)
+  const mounted = useHydrated()
   // ✅ FIX: Start with empty array on server, populate after mount
   const [addresses, setAddresses] = useState<Address[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -76,8 +77,10 @@ export default function AddressesPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    // Load addresses only on client to prevent SSR mismatch
+    // Load addresses only on client to prevent SSR mismatch — one-time
+    // client-only hydration from a local data source (no server-renderable
+    // value exists for this), so it must happen post-mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAddresses(INITIAL_ADDRESSES)
   }, [])
 

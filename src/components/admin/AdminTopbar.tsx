@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
+import { useHydrated } from '@/hooks/useHydrated'
 import { Menu, Search, ExternalLink, ChevronDown, LogOut } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
@@ -11,10 +12,8 @@ interface Props { onMenuClick: () => void }
 export default function AdminTopbar({ onMenuClick }: Props) {
   const { data: session} = useSession()
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)           // ✅ add this
+  const mounted = useHydrated()                            // ✅ add this
   const dropdownRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => { setMounted(true) }, [])               // ✅ add this
 
   // ✅ Derive ONLY after mount so server and client agree
   const initials  = mounted ? (session?.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) ?? 'AD') : 'AD'

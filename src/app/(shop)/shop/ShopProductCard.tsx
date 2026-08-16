@@ -65,11 +65,11 @@ function toIProduct(p: Product): IProduct {
     discountPrice:    p.originalPrice ? p.price : undefined,
     category:         p.category,
     tags:             p.tags ?? [],
-    colors: (p.colors ?? []).map((hex) => ({
-      name:   hex,
-      hex,
+    colors: (p.colors ?? []).map((c) => ({
+      name:   c.name,
+      hex:    c.hex,
       images: [],
-      stock:  p.stock,
+      stock:  c.stock ?? p.stock,
     })),
     mainImage: {
       url:          p.images?.[0] ?? '',
@@ -152,7 +152,7 @@ export default function ShopProductCard({ product, viewMode, index }: Props) {
     addItem({
       product:       toIProduct(product),
       quantity:      1,
-      selectedColor: product.colors?.[0] ?? 'Default',
+      selectedColor: product.colors?.[0]?.name ?? 'Default',
       price:         product.price,
     })
     toast.success(`🛍️ ${product.name} added to cart!`)

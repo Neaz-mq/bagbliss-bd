@@ -306,6 +306,9 @@ export default function ShopClient({
     }
 
     if (searchParams.get('stock') === 'in-stock') {
+      // Syncs filter state from the URL on mount/navigation — a legitimate
+      // one-time sync from an external source (the URL), not derived state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInStockOnly(true)
     }
 

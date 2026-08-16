@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useHydrated } from '@/hooks/useHydrated'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
@@ -55,8 +56,7 @@ function GoogleButton({
   onClick: () => void
   isLoading: boolean
 }) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const mounted = useHydrated()
 
   if (!mounted) {
     return (

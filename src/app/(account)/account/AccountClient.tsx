@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useHydrated } from '@/hooks/useHydrated'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -90,11 +91,7 @@ export default function AccountPage() {
   const [signingOut, setSigningOut] = useState(false)
   // ✅ FIX 2: Track mount state so date strings only render client-side,
   //    preventing server/client mismatch on date formatting
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useHydrated()
 
   useEffect(() => {
     if (status === 'unauthenticated') {

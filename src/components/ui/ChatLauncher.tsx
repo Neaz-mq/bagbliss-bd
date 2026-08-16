@@ -361,6 +361,10 @@ export default function ChatLauncher() {
   // Detect mobile (< 1024px — matches your Navbar breakpoint)
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1023px)')
+    // Initial sync read of an external API before subscribing to its
+    // changes — matches React's documented "Subscribing to an external
+    // store" pattern (https://react.dev/learn/synchronizing-with-effects#subscribing-to-events).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobile(mq.matches)
     const h = (e: MediaQueryListEvent) => setIsMobile(e.matches)
     mq.addEventListener('change', h)
@@ -514,7 +518,7 @@ export default function ChatLauncher() {
             position: 'relative',
             transition: 'background 0.3s, box-shadow 0.3s',
             // Slightly smaller on mobile so it doesn't feel chunky
-            ...(isMobile && { width: 48, height: 48 } as any),
+            ...(isMobile && { width: 48, height: 48 } as React.CSSProperties),
           }}
         >
           {/* Pulse ring */}

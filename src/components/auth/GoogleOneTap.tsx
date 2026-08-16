@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { useHydrated } from '@/hooks/useHydrated'
 import { useSession, signIn } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -52,10 +53,9 @@ export default function GoogleOneTap() {
   const pathname = usePathname()
   const router = useRouter()
   const initialized = useRef(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useHydrated()
 
   useEffect(() => {
-    setMounted(true)
     // Suppress GSI_LOGGER FedCM error from Next.js dev overlay
     suppressFedCMConsoleError()
   }, [])

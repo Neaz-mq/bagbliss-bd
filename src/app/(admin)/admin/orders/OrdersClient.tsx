@@ -350,8 +350,18 @@ export default function OrdersPage() {
     }
   }, [page, search, statusFilter, paymentFilter])
 
-  useEffect(() => { fetchOrders() }, [fetchOrders])
-  useEffect(() => { setPage(1) }, [search, statusFilter, paymentFilter])
+  useEffect(() => {
+    // Genuine data-fetching effect — fetchOrders() calls setLoading(true)
+    // synchronously before its first await, tripping this experimental rule
+    // as a false positive.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchOrders()
+  }, [fetchOrders])
+  useEffect(() => {
+    // Resets pagination whenever the filters change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1)
+  }, [search, statusFilter, paymentFilter])
 
   const handleStatusChange = async (id: string, status: OrderStatus) => {
     await fetch(`/api/admin/orders/${id}`, {
