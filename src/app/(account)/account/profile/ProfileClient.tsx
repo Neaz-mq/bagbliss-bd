@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation'
 import { User, Mail, Phone, Camera, Save, ArrowLeft, Check } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { useHydrated } from '@/hooks/useHydrated'
 
 export default function ProfilePage() {
   const { data: session, update } = useSession()
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
+  const mounted = useHydrated()
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -30,13 +31,13 @@ export default function ProfilePage() {
     dob: '',
   })
 
-  // ✅ FIX 2: Populate form only after mount when session is available
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
+  // ✅ FIX 2: Populate form once the session becomes available. This
+  // synchronizes local editable form state with an external source (the
+  // auth session), which only resolves after mount — a legitimate use of
+  // an effect, not something derivable during render.
   useEffect(() => {
     if (session?.user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm((prev) => ({
         ...prev,
         name: session.user.name || '',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
@@ -20,6 +20,7 @@ import {
   Undo2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useHydrated } from '@/hooks/useHydrated'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -36,8 +37,7 @@ function GoogleButton({
   onClick: () => void
   isLoading: boolean
 }) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const mounted = useHydrated()
 
   if (!mounted) {
     return (

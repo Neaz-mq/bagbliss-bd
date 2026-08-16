@@ -20,6 +20,12 @@ import { getColorFamily, matchPaletteColor } from './colorPalette'
 import { SHOP_CATEGORIES, categoryLabelToValue } from '@/constants/shopCategories'
 
 // ── Types ─────────────────────────────────────────────────────────────────
+export interface ProductColor {
+  name: string
+  hex: string
+  stock?: number
+}
+
 export interface Product {
   _id: string
   name: string
@@ -28,7 +34,7 @@ export interface Product {
   originalPrice?: number
   images: string[]
   category: string
-  colors?: any[]
+  colors?: ProductColor[]
   rating?: number
   reviewCount?: number
   stock: number
@@ -48,8 +54,32 @@ export interface FilterState {
   inStockOnly: boolean
 }
 
+// Raw shape coming back from the DB / API — looser than the normalized
+// `Product` UI type (some fields optional/differently-named, e.g. `_id`
+// as ObjectId, `totalStock` instead of `stock`).
+export interface RawProduct {
+  _id: unknown
+  name: string
+  slug: string
+  price: number
+  originalPrice?: number
+  flashSalePrice?: number
+  images?: string[]
+  category?: string
+  colors?: ProductColor[]
+  rating?: number
+  reviewCount?: number
+  totalStock?: number
+  stock?: number
+  isFeatured?: boolean
+  isFlashSale?: boolean
+  isOnSale?: boolean
+  tags?: string[]
+  createdAt: string
+}
+
 interface ApiResponse {
-  products: any[]
+  products: RawProduct[]
   total: number
   pages: number
   page: number
@@ -81,7 +111,7 @@ export function slugifyCategory(label: string): string {
 // isFlashSale + flashSalePrice showed its regular `price` on /shop while
 // the product detail page and ProductCard showed the (lower) flash price —
 // two different numbers for the same bag. Now mirrors getPricing().
-function normalizeProduct(p: any): Product {
+function normalizeProduct(p: RawProduct): Product {
   const normalizedCategory = (p.category || '')
     .split('-')
     .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -194,7 +224,7 @@ export type ShopMode = 'shop' | 'new-arrivals' | 'flash-sale'
 interface ShopClientProps {
   mode?: ShopMode
   /** Server-rendered first page — makes /shop indexable by Google. */
-  initialProducts?: any[]
+  initialProducts?: RawProduct[]
   initialTotal?: number
 }
 
@@ -358,10 +388,10 @@ export default function ShopClient({
         setProducts(normalized)
         setTotalCount(total)
         setTotalPages(pages)
-      } catch (err: any) {
-        if (err.name === 'AbortError') return
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
         console.error('Fetch error:', err)
-        setError(err.message || 'Failed to load products')
+        setError(err instanceof Error ? err.message : 'Failed to load products')
       } finally {
         setIsLoading(false)
       }
