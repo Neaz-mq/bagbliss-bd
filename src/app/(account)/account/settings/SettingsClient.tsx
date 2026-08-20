@@ -1,17 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { signOut } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import {
   Bell, Shield, Globe, Moon,
   LogOut, Trash2, ArrowLeft,
   Check, Eye, EyeOff, Mail,
   MessageSquare, Zap, BarChart2,
+  AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-
-export const dynamic = 'force-dynamic'
 
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
@@ -88,7 +87,11 @@ function SectionCard({ icon, title, iconColor = '#E91E8C', danger = false, child
   )
 }
 
-export default function SettingsPage() {
+export default function SettingsClient() {
+  const { data: session } = useSession()
+  // ✅ Single source of truth for role — avoids repeated inline casts
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'admin'
+
   const [notifications, setNotifications] = useState({
     orderUpdates: true, flashSale: true, newsletter: false, sms: true,
   })
@@ -150,36 +153,41 @@ export default function SettingsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
           {/* ── Notifications ── */}
-          <SectionCard icon={<Bell size={20} />} title="Notifications">
-            <div>
-              <SettingRow
-                icon={<Zap size={15} color="var(--color-accent)" />}
-                label="Order Updates"
-                desc="Get notified when your order status changes"
-                right={<ToggleSwitch checked={notifications.orderUpdates} onChange={() => toggle('notifications', 'orderUpdates')} />}
-              />
-              <SettingRow
-                icon={<Zap size={15} color="var(--color-gold)" />}
-                label="Flash Sale Alerts"
-                desc="Be first to know about flash deals"
-                right={<ToggleSwitch checked={notifications.flashSale} onChange={() => toggle('notifications', 'flashSale')} />}
-              />
-              <SettingRow
-                icon={<Mail size={15} color="var(--color-accent)" />}
-                label="Newsletter"
-                desc="Weekly style tips and new arrivals"
-                right={<ToggleSwitch checked={notifications.newsletter} onChange={() => toggle('notifications', 'newsletter')} />}
-              />
-              <SettingRow
-                icon={<MessageSquare size={15} color="var(--color-accent)" />}
-                label="SMS Notifications"
-                desc="Receive order alerts via SMS"
-                right={<ToggleSwitch checked={notifications.sms} onChange={() => toggle('notifications', 'sms')} />}
-              />
-            </div>
-          </SectionCard>
+          {/* ✅ FIX: shopper-only settings (order/flash-sale/newsletter/SMS alerts)
+              are meaningless for an admin/staff account, so the whole section
+              is hidden for admins instead of shipping toggles that do nothing. */}
+          {!isAdmin && (
+            <SectionCard icon={<Bell size={20} />} title="Notifications">
+              <div>
+                <SettingRow
+                  icon={<Zap size={15} color="var(--color-accent)" />}
+                  label="Order Updates"
+                  desc="Get notified when your order status changes"
+                  right={<ToggleSwitch checked={notifications.orderUpdates} onChange={() => toggle('notifications', 'orderUpdates')} />}
+                />
+                <SettingRow
+                  icon={<Zap size={15} color="var(--color-gold)" />}
+                  label="Flash Sale Alerts"
+                  desc="Be first to know about flash deals"
+                  right={<ToggleSwitch checked={notifications.flashSale} onChange={() => toggle('notifications', 'flashSale')} />}
+                />
+                <SettingRow
+                  icon={<Mail size={15} color="var(--color-accent)" />}
+                  label="Newsletter"
+                  desc="Weekly style tips and new arrivals"
+                  right={<ToggleSwitch checked={notifications.newsletter} onChange={() => toggle('notifications', 'newsletter')} />}
+                />
+                <SettingRow
+                  icon={<MessageSquare size={15} color="var(--color-accent)" />}
+                  label="SMS Notifications"
+                  desc="Receive order alerts via SMS"
+                  right={<ToggleSwitch checked={notifications.sms} onChange={() => toggle('notifications', 'sms')} />}
+                />
+              </div>
+            </SectionCard>
+          )}
 
-          {/* ── Security ── */}
+          {/* ── Security — same for everyone ── */}
           <SectionCard icon={<Shield size={20} />} title="Security">
             <div style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
@@ -250,7 +258,7 @@ export default function SettingsPage() {
             </div>
           </SectionCard>
 
-          {/* ── Preferences ── */}
+          {/* ── Preferences — same for everyone (general UX, not shopping-specific) ── */}
           <SectionCard icon={<Globe size={20} />} title="Preferences">
             <div>
               <SettingRow
@@ -283,8 +291,10 @@ export default function SettingsPage() {
               <SettingRow
                 icon={<BarChart2 size={15} color="var(--color-accent)" />}
                 label="Data Saving Mode"
-                desc="Reduce image quality to save data"
-                right={<ToggleSwitch checked={privacy.dataSaving} onChange={() => toggle('privacy', 'dataSaving')} />}
+                desc="Reduce image quality to save data (coming soon)"
+                right={
+                  <ToggleSwitch checked={privacy.dataSaving} onChange={() => { toggle('privacy', 'dataSaving'); toast('📶 Coming soon!') }} />
+                }
               />
             </div>
           </SectionCard>
@@ -293,7 +303,7 @@ export default function SettingsPage() {
           <SectionCard icon={<Trash2 size={20} />} title="Danger Zone" iconColor="#ef4444" danger>
             <div style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-              {/* Sign Out */}
+              {/* Sign Out — same for everyone */}
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 gap: '1rem', padding: '0.875rem 0',
@@ -317,32 +327,48 @@ export default function SettingsPage() {
               </div>
 
               {/* Delete Account */}
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: '1rem', padding: '0.875rem 0', flexWrap: 'wrap',
-              }}>
-                <div>
-                  <p style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-error)', margin: '0 0 0.2rem' }}>Delete Account</p>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: 0 }}>
-                    Permanently delete your account and all data
+              {/* ✅ FIX: industry standard is that an admin/staff account can't
+                  self-delete — doing so on a single-admin store would lock
+                  everyone out of the admin panel. Customers keep the normal
+                  delete flow; admins see a disabled row explaining why. */}
+              {isAdmin ? (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  padding: '0.875rem 0',
+                }}>
+                  <AlertTriangle size={16} color="var(--color-text-muted)" style={{ flexShrink: 0 }} />
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                    Admin accounts can&apos;t be self-deleted from here. Contact the store owner to remove admin access.
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    if (confirm('Are you sure? This cannot be undone.')) {
-                      toast.error('Account deletion request sent. Contact support.')
-                    }
-                  }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.4rem',
-                    padding: '0.5rem 1.125rem', background: 'none',
-                    border: '2px solid rgba(239,68,68,0.3)', borderRadius: '9999px',
-                    fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 700,
-                    color: 'var(--color-error)', cursor: 'pointer',
-                  }}>
-                  <Trash2 size={15} /> Delete
-                </button>
-              </div>
+              ) : (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: '1rem', padding: '0.875rem 0', flexWrap: 'wrap',
+                }}>
+                  <div>
+                    <p style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-error)', margin: '0 0 0.2rem' }}>Delete Account</p>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                      Permanently delete your account and all data
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (confirm('Are you sure? This cannot be undone.')) {
+                        toast.error('Account deletion request sent. Contact support.')
+                      }
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.4rem',
+                      padding: '0.5rem 1.125rem', background: 'none',
+                      border: '2px solid rgba(239,68,68,0.3)', borderRadius: '9999px',
+                      fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 700,
+                      color: 'var(--color-error)', cursor: 'pointer',
+                    }}>
+                    <Trash2 size={15} /> Delete
+                  </button>
+                </div>
+              )}
             </div>
           </SectionCard>
 

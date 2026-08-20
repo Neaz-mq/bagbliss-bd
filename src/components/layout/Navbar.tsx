@@ -274,17 +274,28 @@ function NavbarInner() {
                 </p>
               </div>
               <div className="h-px bg-[rgba(26,26,46,0.06)]" />
+              {/* ⭐ FIX: "My Orders" used to be a hard-coded item shown to
+                  every logged-in user, admin or not. An admin account has
+                  no personal purchase history, so it always rendered as a
+                  dead "My Orders" link (0 orders, confusing next to the
+                  Admin Panel entry right below it). It's now only added to
+                  the list when the user is NOT an admin, mirroring how
+                  "Admin Panel" is only added when they ARE one. */}
               {[
                 {
                   href: '/account',
                   icon: <User size={15} />,
                   label: 'My Account',
                 },
-                {
-                  href: '/account/orders',
-                  icon: <Package size={15} />,
-                  label: 'My Orders',
-                },
+                ...(session.user?.role !== 'admin'
+                  ? [
+                      {
+                        href: '/account/orders',
+                        icon: <Package size={15} />,
+                        label: 'My Orders',
+                      },
+                    ]
+                  : []),
                 ...(session.user?.role === 'admin'
                   ? [
                       {

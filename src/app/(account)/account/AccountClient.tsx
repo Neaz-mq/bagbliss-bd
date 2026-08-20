@@ -156,6 +156,7 @@ export default function AccountPage() {
   if (!session) return null
 
   const user = session.user
+  const isAdmin = (user as { role?: string }).role === 'admin'
   const totalSpent = orders.reduce((acc, o) => acc + o.total, 0)
   const deliveredCount = orders.filter((o) => o.status === 'delivered').length
   const recentOrders = orders.slice(0, 3)
@@ -167,13 +168,29 @@ export default function AccountPage() {
       href: '/account/profile',
       desc: 'Edit personal info',
     },
-    {
-      icon: Package,
-      label: 'My Orders',
-      href: '/account/orders',
-      desc: `${orders.length} orders`,
-    },
-    { icon: Heart, label: 'Wishlist', href: '/wishlist', desc: 'Saved items' },
+    // Admins don't place personal orders, so this link is only useful for customers
+    ...(!isAdmin
+      ? [
+          {
+            icon: Package,
+            label: 'My Orders',
+            href: '/account/orders',
+            desc: `${orders.length} orders`,
+          },
+        ]
+      : []),
+    // ✅ FIX: Wishlist is a shopping feature — admins don't shop from this account,
+    //    so it's hidden for them (industry standard: admin account ≠ storefront account)
+    ...(!isAdmin
+      ? [
+          {
+            icon: Heart,
+            label: 'Wishlist',
+            href: '/wishlist',
+            desc: 'Saved items',
+          },
+        ]
+      : []),
     {
       icon: MapPin,
       label: 'Addresses',
@@ -186,6 +203,16 @@ export default function AccountPage() {
       href: '/account/settings',
       desc: 'Account preferences',
     },
+    ...(isAdmin
+      ? [
+          {
+            icon: Shield,
+            label: 'Admin Panel',
+            href: '/admin',
+            desc: 'Manage store',
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -427,7 +454,68 @@ export default function AccountPage() {
       )}
 
       <div className="container-bagbliss">
-        {/* ── Stats Row ── */}
+        {/* ── Stats Row (customer shopping stats — not relevant for admins) ── */}
+        {isAdmin ? (
+          <Link
+            href="/admin"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              background:
+                'linear-gradient(135deg, rgba(233,30,140,0.06), rgba(201,168,76,0.06))',
+              border: '1px solid rgba(233,30,140,0.15)',
+              borderRadius: 'var(--radius-xl)',
+              padding: '1.25rem 1.5rem',
+              marginBottom: '2rem',
+              textDecoration: 'none',
+            }}
+          >
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}
+            >
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'rgba(233,30,140,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Shield size={22} color="var(--color-accent)" />
+              </div>
+              <div>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    color: 'var(--color-primary)',
+                    margin: '0 0 0.15rem',
+                  }}
+                >
+                  Store stats live in your Admin Dashboard
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '0.8rem',
+                    color: 'var(--color-text-muted)',
+                    margin: 0,
+                  }}
+                >
+                  Revenue, orders, products and customers — all in one place
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={18} color="var(--color-text-muted)" />
+          </Link>
+        ) : (
         <div
           style={{
             display: 'grid',
@@ -523,6 +611,7 @@ export default function AccountPage() {
             )
           })}
         </div>
+        )}
 
         {/* ── Main Layout ── */}
         <div
@@ -682,45 +771,49 @@ export default function AccountPage() {
               </div>
             </div>
 
-            {/* Trust badges */}
-            <div
-              style={{
-                background: 'white',
-                borderRadius: 'var(--radius-xl)',
-                border: '1px solid rgba(26,26,46,0.06)',
-                padding: '1.25rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.875rem',
-              }}
-            >
-              {[
-                { icon: Shield, text: 'Secure & Encrypted Account' },
-                { icon: Truck, text: 'Free shipping on ৳1500+' },
-                { icon: Star, text: 'Earn rewards on every order' },
-              ].map(({ icon: Icon, text }) => (
-                <div
-                  key={text}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                  }}
-                >
-                  <Icon size={16} color="var(--color-accent)" />
-                  <span
+            {/* ✅ FIX: Trust badges are storefront marketing copy ("free shipping",
+                "earn rewards") — irrelevant to an admin managing the store, so
+                only render this box for customers. */}
+            {!isAdmin && (
+              <div
+                style={{
+                  background: 'white',
+                  borderRadius: 'var(--radius-xl)',
+                  border: '1px solid rgba(26,26,46,0.06)',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.875rem',
+                }}
+              >
+                {[
+                  { icon: Shield, text: 'Secure & Encrypted Account' },
+                  { icon: Truck, text: 'Free shipping on ৳1500+' },
+                  { icon: Star, text: 'Earn rewards on every order' },
+                ].map(({ icon: Icon, text }) => (
+                  <div
+                    key={text}
                     style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '0.8rem',
-                      color: 'var(--color-text-secondary)',
-                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
                     }}
                   >
-                    {text}
-                  </span>
-                </div>
-              ))}
-            </div>
+                    <Icon size={16} color="var(--color-accent)" />
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '0.8rem',
+                        color: 'var(--color-text-secondary)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right: Content Area */}
@@ -728,7 +821,61 @@ export default function AccountPage() {
             style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
             className="account-content-col"
           >
-            {/* Recent Orders */}
+            {/* Recent Orders — customer-only; admins get a dashboard shortcut instead */}
+            {isAdmin ? (
+              <div
+                style={{
+                  background: 'white',
+                  borderRadius: 'var(--radius-xl)',
+                  border: '1px solid rgba(26,26,46,0.06)',
+                  padding: '3rem 2rem',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: 'rgba(233,30,140,0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1rem',
+                    color: 'var(--color-accent)',
+                  }}
+                >
+                  <Shield size={28} strokeWidth={1.5} />
+                </div>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '1.1rem',
+                    color: 'var(--color-primary)',
+                    margin: '0 0 0.5rem',
+                  }}
+                >
+                  This is your personal account, not the store
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '0.875rem',
+                    color: 'var(--color-text-muted)',
+                    margin: '0 0 1.25rem',
+                  }}
+                >
+                  All customer orders are managed from the Admin Panel
+                </p>
+                <Link
+                  href="/admin/orders"
+                  className="btn-primary"
+                  style={{ fontSize: '0.82rem', padding: '0.625rem 1.5rem' }}
+                >
+                  Go to Admin Orders
+                </Link>
+              </div>
+            ) : (
             <div
               style={{
                 background: 'white',
@@ -980,8 +1127,15 @@ export default function AccountPage() {
                 </div>
               )}
             </div>
+            )}
 
-            {/* Quick Actions Grid */}
+            {/* ✅ FIX: Quick Actions is entirely redundant for admins — Admin Panel
+                is already reachable from the top nav dropdown and the banner
+                card above, and the remaining actions (Wishlist, Track Orders,
+                Manage Address) are storefront/shopping actions that don't
+                apply to an admin account. So the whole section is hidden for
+                admins instead of shipping a near-empty card. */}
+            {!isAdmin && (
             <div
               style={{
                 background: 'white',
@@ -1082,6 +1236,7 @@ export default function AccountPage() {
                 ))}
               </div>
             </div>
+            )}
 
             {/* Account Info Card */}
             <div
