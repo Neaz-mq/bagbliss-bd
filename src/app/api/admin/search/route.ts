@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         .lean(),
       
       User.find({
-        role: 'customer',
+        role: 'user',
         $or: [{ name: regex }, { email: regex }],
       })
         .select('name email image')

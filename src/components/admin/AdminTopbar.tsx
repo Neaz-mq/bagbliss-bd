@@ -70,42 +70,34 @@ export default function AdminTopbar({ onMenuClick }: Props) {
 
   // ── Debounced live search ──────────────────────────────────
   const runSearch = useCallback(async (q: string) => {
-    console.log('🔍 runSearch called with query:', q)
-    
     if (abortRef.current) {
-      console.log('⚠️ Aborting previous request')
       abortRef.current.abort()
     }
-    
+
     const controller = new AbortController()
     abortRef.current = controller
 
     setLoading(true)
     setError(null)
-    
+
     try {
       const url = `/api/admin/search?q=${encodeURIComponent(q)}`
-      console.log('📡 Fetching:', url)
-      
       const res = await fetch(url, {
         signal: controller.signal,
       })
-      
-      console.log('📊 Response status:', res.status)
-      
+
       if (!res.ok) {
         throw new Error(`Search request failed: ${res.status}`)
       }
-      
+
       const json = await res.json()
-      console.log('✅ Response data:', json)
-      
+
       setResults(Array.isArray(json?.data) ? json.data : [])
       setError(null)
     } catch (err) {
       const error = err as Error
       if (error.name !== 'AbortError') {
-        console.error('❌ Admin search error:', error.message)
+        console.error('Admin search error:', error.message)
         setError(error.message)
         setResults([])
       }
@@ -118,19 +110,16 @@ export default function AdminTopbar({ onMenuClick }: Props) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
     const trimmed = query.trim()
-    console.log('📝 Query changed:', trimmed, `(length: ${trimmed.length})`)
-    
+
     if (trimmed.length < 2) {
-      console.log('⏭️ Query too short, skipping search')
       setResults([])
       setLoading(false)
       setError(null)
       return
     }
 
-    console.log('⏱️ Starting debounce timer (300ms)')
     debounceRef.current = setTimeout(() => runSearch(trimmed), 300)
-    
+
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
@@ -138,14 +127,12 @@ export default function AdminTopbar({ onMenuClick }: Props) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    console.log('🎯 Input changed:', value)
     setQuery(value)
     setSearchOpen(true)
     setActiveIndex(-1)
   }
 
   const goToResult = (result: SearchResult) => {
-    console.log('🎉 Going to result:', result)
     setSearchOpen(false)
     setQuery('')
     setResults([])
@@ -154,7 +141,6 @@ export default function AdminTopbar({ onMenuClick }: Props) {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
-      console.log('❌ Escape pressed')
       setSearchOpen(false)
       searchInputRef.current?.blur()
       return
@@ -164,17 +150,14 @@ export default function AdminTopbar({ onMenuClick }: Props) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       const newIndex = (activeIndex + 1) % results.length
-      console.log('⬇️ Arrow down:', newIndex)
       setActiveIndex(newIndex)
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       const newIndex = activeIndex <= 0 ? results.length - 1 : activeIndex - 1
-      console.log('⬆️ Arrow up:', newIndex)
       setActiveIndex(newIndex)
     } else if (e.key === 'Enter') {
       e.preventDefault()
       const chosen = activeIndex >= 0 ? results[activeIndex] : results[0]
-      console.log('↩️ Enter pressed, choosing result:', chosen)
       if (chosen) goToResult(chosen)
     }
   }
@@ -205,7 +188,7 @@ export default function AdminTopbar({ onMenuClick }: Props) {
           <Menu size={18} strokeWidth={2} />
         </button>
 
-        <div ref={searchWrapRef} className="hidden md:flex" style={{ position: 'relative', maxWidth: '320px', width: '100%' }}>
+        <div ref={searchWrapRef} className="hidden md:flex" style={{ position: 'relative', maxWidth: '360px', width: '100%' }}>
           <div
             style={{ alignItems: 'center', gap: '10px', background: '#f8fafc', border: `1.5px solid ${searchOpen ? '#cbd5e1' : '#e8edf5'}`, borderRadius: '12px', padding: '0 14px', height: '40px', display: 'flex', width: '100%' }}
           >
@@ -220,19 +203,18 @@ export default function AdminTopbar({ onMenuClick }: Props) {
               onChange={handleChange}
               onFocus={() => query.trim().length >= 2 && setSearchOpen(true)}
               onKeyDown={handleKeyDown}
-              placeholder="Search orders, products, customers…"
+              placeholder="Search orders, products…"
               autoComplete="off"
               style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '0.83rem', color: '#334155', width: '100%' }}
             />
             {query && (
               <button
                 type="button"
-                onClick={() => { 
-                  console.log('🗑️ Clearing search')
+                onClick={() => {
                   setQuery('')
                   setResults([])
                   setError(null)
-                  searchInputRef.current?.focus() 
+                  searchInputRef.current?.focus()
                 }}
                 style={{ border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem', padding: 0, lineHeight: 1 }}
                 aria-label="Clear search"
@@ -251,13 +233,13 @@ export default function AdminTopbar({ onMenuClick }: Props) {
               {/* Error state */}
               {error && (
                 <div style={{ padding: '18px 16px', fontSize: '0.8rem', color: '#e11d48', textAlign: 'center', background: '#fff1f2' }}>
-                  ❌ {error}
+                  {error}
                 </div>
               )}
 
               {loading && results.length === 0 && (
                 <div style={{ padding: '18px 16px', fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
-                  🔄 Searching…
+                  Searching…
                 </div>
               )}
 
