@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 import {
   LayoutDashboard, ShoppingBag, Package,
   Users, Tag, Zap, Settings, X,
@@ -58,9 +59,39 @@ interface Props {
 
 export default function AdminSidebar({ isOpen, onClose }: Props) {
   const pathname = usePathname()
+  const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const asideRef = useRef<HTMLElement>(null)
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname.startsWith(href)
+
+  // Close on route change happens via onClick on each Link already,
+  // but also close whenever the pathname changes for safety (e.g. back/forward nav).
+  useEffect(() => {
+    onClose()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // Lock background scroll while the drawer is open on mobile.
+  useEffect(() => {
+    if (!isOpen) return
+    const original = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = original }
+  }, [isOpen])
+
+  // Close on Escape, and move focus into the drawer for keyboard/a11y users.
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    closeBtnRef.current?.focus()
+
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   return (
     <>
@@ -69,96 +100,86 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
         <div
           className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
       <aside
+        ref={asideRef}
+        role="navigation"
+        aria-label="Admin sidebar"
         className={`
-          fixed top-0 left-0 z-30 h-full flex flex-col
+          fixed top-0 left-0 z-30 flex h-full w-[260px] flex-col
+          bg-[#0d1117] border-r border-white/10
           transition-transform duration-300 ease-in-out
-          lg:static lg:translate-x-0 lg:z-auto lg:shrink-0
+          lg:static lg:z-auto lg:shrink-0 lg:translate-x-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
-        style={{
-          width: '260px',
-          background: '#0d1117',
-          borderRight: '1px solid rgba(255,255,255,0.07)',
-        }}
       >
-
         {/* ── Logo header ──────────────────────── */}
-        <div style={{
-          padding: '16px 16px 14px',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '36px', height: '36px', minWidth: '36px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #CA865D 0%, #c9a84c 100%)',
-              boxShadow: '0 4px 12px rgba(202,134,93,0.4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+        <div className="flex-shrink-0 border-b border-white/10 px-4 pb-3.5 pt-4">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex h-9 w-9 min-w-9 items-center justify-center rounded-[10px] shadow-[0_4px_12px_rgba(202,134,93,0.4)]"
+              style={{ background: 'linear-gradient(135deg, #CA865D 0%, #c9a84c 100%)' }}
+            >
               <ShoppingCart size={17} color="white" strokeWidth={2.2} />
             </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{
-                color: '#ffffff', fontWeight: 700, fontSize: '0.92rem',
-                margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap',
-              }}>
+            <div className="min-w-0 flex-1">
+              {/* Inline color forces contrast regardless of Tailwind class resolution */}
+              <p
+                className="m-0 whitespace-nowrap text-[0.92rem] font-bold tracking-tight"
+                style={{ color: '#ffffff' }}
+              >
                 BagBliss BD
               </p>
-              <p style={{
-                color: 'rgba(224, 166, 125, 0.85)', fontWeight: 600,
-                fontSize: '0.62rem', margin: '3px 0 0',
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-              }}>
+              <p
+                className="m-0 mt-[3px] whitespace-nowrap text-[0.62rem] font-semibold uppercase tracking-[0.08em]"
+                style={{ color: '#f0b98a' }}
+              >
                 Admin Panel
               </p>
             </div>
 
-            {/* ✅ suppressHydrationWarning added — fixes fdprocessedid injection */}
+            {/* Close button — larger tap target, real hover/active/focus feedback, always clickable */}
             <button
+              ref={closeBtnRef}
+              type="button"
               suppressHydrationWarning
-              onClick={onClose}
-              className="lg:hidden"
-              style={{
-                width: '32px', height: '32px', minWidth: '32px',
-                borderRadius: '8px', display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
-                color: 'rgba(255,255,255,0.7)',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                cursor: 'pointer',
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
               }}
+              aria-label="Close sidebar"
+              className="
+                relative z-10 flex h-10 w-10 min-w-10 shrink-0 cursor-pointer
+                items-center justify-center rounded-lg border border-white/10
+                bg-white/10 text-white/80 outline-none
+                transition-colors duration-150
+                hover:bg-white/20 hover:text-white
+                active:scale-95 active:bg-white/25
+                focus-visible:ring-2 focus-visible:ring-[#e8c96e]
+                lg:hidden
+              "
             >
-              <X size={16} strokeWidth={2.5} />
+              <X size={18} strokeWidth={2.5} />
             </button>
           </div>
         </div>
 
         {/* ── Navigation ───────────────────────── */}
-        <nav style={{
-          flex: 1, overflowY: 'auto',
-          padding: '14px 10px', scrollbarWidth: 'none',
-        }}>
+        <nav className="flex-1 overflow-y-auto px-2.5 py-3.5 [scrollbar-width:none]">
           {NAV_GROUPS.map((group, gi) => (
-            <div
-              key={group.label}
-              style={{ marginBottom: gi < NAV_GROUPS.length - 1 ? '22px' : 0 }}
-            >
-              <p style={{
-                fontSize: '0.62rem', fontWeight: 700,
-                letterSpacing: '0.09em', textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.28)',
-                padding: '0 10px', marginBottom: '5px',
-              }}>
+            <div key={group.label} className={gi < NAV_GROUPS.length - 1 ? 'mb-[22px]' : ''}>
+              <p
+                className="mb-1.5 px-2.5 text-[0.66rem] font-bold uppercase tracking-[0.09em]"
+                style={{ color: '#8b98ac' }}
+              >
                 {group.label}
               </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <div className="flex flex-col gap-px">
                 {group.items.map((item) => {
                   const { href, label, icon: Icon, exact, badge } = item
                   const active = isActive(href, exact)
@@ -167,44 +188,34 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
                       key={href}
                       href={href}
                       onClick={onClose}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '9px 10px 9px 14px', borderRadius: '8px',
-                        fontSize: '0.875rem',
-                        fontWeight: active ? 600 : 400,
-                        textDecoration: 'none', position: 'relative',
-                        color: active ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                        background: active ? 'rgba(202,134,93,0.15)' : 'transparent',
-                        transition: 'all 0.12s ease',
-                      }}
+                      aria-current={active ? 'page' : undefined}
+                      className={`
+                        relative flex items-center gap-2.5 rounded-lg py-2.5 pl-3.5 pr-2.5
+                        text-[0.875rem] no-underline transition-colors duration-150
+                        ${active ? 'bg-[rgba(202,134,93,0.18)] font-semibold' : 'font-normal hover:bg-white/10'}
+                      `}
+                      style={{ color: active ? '#ffffff' : '#c3cad6' }}
                     >
                       {active && (
-                        <span style={{
-                          position: 'absolute', left: 0, top: '50%',
-                          transform: 'translateY(-50%)',
-                          width: '3px', height: '18px',
-                          borderRadius: '0 3px 3px 0',
-                          background: 'linear-gradient(to bottom, #CA865D, #c9a84c)',
-                        }} />
+                        <span
+                          className="absolute left-0 top-1/2 h-[18px] w-[3px] -translate-y-1/2 rounded-r-[3px]"
+                          style={{ background: 'linear-gradient(to bottom, #CA865D, #c9a84c)' }}
+                        />
                       )}
 
                       <Icon
                         size={17}
-                        style={{
-                          color: active ? '#e8c96e' : 'rgba(255,255,255,0.45)',
-                          flexShrink: 0,
-                        }}
+                        className="shrink-0"
+                        style={{ color: active ? '#e8c96e' : '#8b98ac' }}
                       />
 
-                      <span style={{ flex: 1 }}>{label}</span>
+                      <span className="flex-1">{label}</span>
 
                       {badge != null && (
-                        <span style={{
-                          fontSize: '0.6rem', fontWeight: 700,
-                          padding: '2px 7px', borderRadius: '5px',
-                          background: 'rgba(202,134,93,0.25)',
-                          color: '#e8c96e', letterSpacing: '0.04em', flexShrink: 0,
-                        }}>
+                        <span
+                          className="shrink-0 rounded-[5px] bg-[rgba(202,134,93,0.25)] px-[7px] py-0.5 text-[0.6rem] font-bold tracking-[0.04em]"
+                          style={{ color: '#f0d18f' }}
+                        >
                           {badge}
                         </span>
                       )}
@@ -217,30 +228,15 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
         </nav>
 
         {/* ── Footer ───────────────────────────── */}
-        <div style={{
-          padding: '10px 12px 14px',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          flexShrink: 0,
-        }}>
-          <div style={{
-            borderRadius: '10px', padding: '12px 14px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', marginBottom: '7px',
-            }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
+        <div className="flex-shrink-0 border-t border-white/10 px-3 pb-3.5 pt-2.5">
+          <div className="rounded-[10px] border border-white/10 bg-white/[0.04] px-3.5 py-3">
+            <div className="mb-[7px] flex items-center justify-between">
+              <span className="text-[0.78rem] font-semibold" style={{ color: '#e2e8f0' }}>
                 Store Status
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{
-                  width: '7px', height: '7px', borderRadius: '50%',
-                  background: '#22c55e', boxShadow: '0 0 7px rgba(34,197,94,0.7)',
-                  display: 'inline-block',
-                }} />
-                <span style={{ fontSize: '0.72rem', color: '#4ade80', fontWeight: 600 }}>
+              <div className="flex items-center gap-[5px]">
+                <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#22c55e] shadow-[0_0_7px_rgba(34,197,94,0.7)]" />
+                <span className="text-[0.72rem] font-semibold" style={{ color: '#4ade80' }}>
                   Live
                 </span>
               </div>
@@ -249,18 +245,14 @@ export default function AdminSidebar({ isOpen, onClose }: Props) {
             <Link
               href="/"
               target="_blank"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '4px',
-                fontSize: '0.72rem', color: 'rgba(255,255,255,0.38)',
-                textDecoration: 'none',
-              }}
+              className="flex items-center gap-1 text-[0.72rem] no-underline transition-colors"
+              style={{ color: '#9aa5b5' }}
             >
               <span>bagbliss-bd.vercel.app</span>
               <ExternalLink size={11} />
             </Link>
           </div>
         </div>
-
       </aside>
     </>
   )
