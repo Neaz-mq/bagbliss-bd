@@ -74,6 +74,33 @@ function useIsMobile(breakpoint = MOBILE_BREAKPOINT) {
   return width < breakpoint
 }
 
+// Builds a compact page-number sequence with ellipses, e.g.
+// [1, '…', 4, 5, 6, '…', 12] — always keeps first, last, current,
+// and `siblingCount` neighbours on each side of current visible.
+function buildPaginationRange(current: number, total: number, siblingCount = 1): (number | 'dots')[] {
+  const totalNumbers = siblingCount * 2 + 5 // first + last + current + 2*siblings + 2 dots
+  if (total <= totalNumbers) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  const leftIndex = Math.max(current - siblingCount, 1)
+  const rightIndex = Math.min(current + siblingCount, total)
+
+  const showLeftDots = leftIndex > 2
+  const showRightDots = rightIndex < total - 1
+
+  const range: (number | 'dots')[] = [1]
+
+  if (showLeftDots) range.push('dots')
+  for (let i = leftIndex === 1 ? 2 : leftIndex; i <= (rightIndex === total ? total - 1 : rightIndex); i++) {
+    if (i > 1 && i < total) range.push(i)
+  }
+  if (showRightDots) range.push('dots')
+
+  range.push(total)
+  return range
+}
+
 // Small helper so every table cell truncates the same way instead of
 // silently overflowing into its neighbour when space runs out.
 const ellipsisStyle: React.CSSProperties = {
@@ -511,7 +538,7 @@ export default function OrdersPage() {
     : viewportWidth < 480 ? 'Search order #, name, phone…'
     : 'Search order #, customer name, phone…'
 
-  const limit = 15
+  const limit = 10
 
   // Scroll-fade state for the status tabs row. On mobile the tabs
   // overflow horizontally — without a visual cue, "Delivered" /
@@ -990,63 +1017,157 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* ── Pagination ── */}
+      {/* ── Pagination ──
+          Trendy pill-style pager. Desktop: single row, "Showing…" on
+          the left, control pill on the right, First/Last shortcuts.
+          Mobile: stacked, centered, with a slim animated progress
+          track under the label (fills as `page` advances through
+          `pages`) and a bigger, bolder active-page pill with a glow
+          ring — reads more like a native app stepper than a desktop
+          table footer. Fully dynamic via buildPaginationRange(), so
+          it looks the same whether there are 2 pages or 200. */}
       {pages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
-            Showing <strong style={{ color: '#1e293b' }}>{(page - 1) * limit + 1}–{Math.min(page * limit, total)}</strong> of <strong style={{ color: '#1e293b' }}>{total}</strong> orders
-          </p>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+        <div style={{
+          display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: isMobile ? '12px' : '14px',
+          padding: isMobile ? '14px 16px' : '10px 16px',
+          background: '#fff', border: '1px solid #f1f5f9', borderRadius: isMobile ? '18px' : '16px',
+          boxShadow: isMobile ? '0 4px 16px rgba(15,23,42,0.05)' : '0 1px 2px rgba(0,0,0,0.03)',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: isMobile ? 'center' : 'flex-start' }}>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0, whiteSpace: 'nowrap' }}>
+              Showing <strong style={{ color: '#1e293b', fontWeight: 700 }}>{(page - 1) * limit + 1}–{Math.min(page * limit, total)}</strong> of <strong style={{ color: '#1e293b', fontWeight: 700 }}>{total}</strong>
+            </p>
+            {isMobile && (
+              <div style={{ width: '120px', height: '4px', borderRadius: '999px', background: '#f1f5f9', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: '999px',
+                  width: `${(page / pages) * 100}%`,
+                  background: `linear-gradient(90deg, ${ACCENT}, ${ACCENT_DARK})`,
+                  transition: 'width 0.25s ease',
+                }} />
+              </div>
+            )}
+          </div>
+
+          <div style={{
+            display: 'flex', gap: isMobile ? '6px' : '4px', alignItems: 'center',
+            justifyContent: isMobile ? 'center' : 'flex-start',
+            background: '#f8fafc', border: '1px solid #f1f5f9',
+            borderRadius: isMobile ? '16px' : '12px', padding: isMobile ? '6px' : '4px',
+          }}>
+            {!isMobile && (
+              <button suppressHydrationWarning
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                aria-label="First page"
+                style={{
+                  height: '32px', padding: '0 10px', borderRadius: '9px', border: 'none',
+                  background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.35 : 1,
+                  color: '#475569', fontSize: '0.72rem', fontWeight: 700, transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => { if (page !== 1) e.currentTarget.style.background = '#fff' }}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                First
+              </button>
+            )}
+
             <button suppressHydrationWarning
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
+              aria-label="Previous page"
               style={{
-                width: '36px', height: '36px', borderRadius: '10px',
-                border: '1.5px solid #e2e8f0', background: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.4 : 1, color: '#475569',
+                width: isMobile ? '38px' : '32px', height: isMobile ? '38px' : '32px',
+                borderRadius: isMobile ? '12px' : '9px',
+                border: isMobile ? `1.5px solid ${page === 1 ? '#e8edf5' : ACCENT_BORDER2}` : 'none',
+                background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.35 : 1,
+                color: page === 1 ? '#475569' : (isMobile ? ACCENT : '#475569'),
+                transition: 'background 0.15s, transform 0.1s', flexShrink: 0,
               }}
+              onMouseEnter={e => { if (page !== 1 && !isMobile) e.currentTarget.style.background = '#fff' }}
+              onMouseLeave={e => { if (!isMobile) e.currentTarget.style.background = 'transparent' }}
             >
-              <ChevronLeft size={15} />
+              <ChevronLeft size={isMobile ? 17 : 15} />
             </button>
 
-            {Array.from({ length: Math.min(isMobile ? 3 : 5, pages) }, (_, i) => {
-              const windowSize = isMobile ? 3 : 5
-              let p = i + 1
-              if (pages > windowSize) {
-                if (page <= Math.ceil(windowSize / 2)) p = i + 1
-                else if (page >= pages - Math.floor(windowSize / 2)) p = pages - windowSize + 1 + i
-                else p = page - Math.floor(windowSize / 2) + i
-              }
-              return (
+            {buildPaginationRange(page, pages, isMobile ? 0 : 1).map((p, i) =>
+              p === 'dots' ? (
+                <span key={`dots-${i}`} style={{
+                  width: isMobile ? '20px' : '28px', height: isMobile ? '38px' : '32px',
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', color: '#cbd5e1',
+                  fontSize: '0.78rem', fontWeight: 800, letterSpacing: '1px', flexShrink: 0,
+                }}>
+                  •••
+                </span>
+              ) : (
                 <button suppressHydrationWarning
                   key={p}
                   onClick={() => setPage(p)}
+                  aria-current={page === p ? 'page' : undefined}
                   style={{
-                    width: '36px', height: '36px', borderRadius: '10px',
-                    border: `1.5px solid ${page === p ? ACCENT_BORDER3 : '#e2e8f0'}`,
-                    background: page === p ? ACCENT_SOFT : '#fff',
-                    color: page === p ? ACCENT : '#475569',
-                    fontWeight: page === p ? 800 : 500, fontSize: '0.82rem', cursor: 'pointer',
+                    width: isMobile ? '38px' : '32px', height: isMobile ? '38px' : '32px',
+                    borderRadius: isMobile ? '12px' : '9px', border: 'none',
+                    background: page === p ? `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})` : 'transparent',
+                    color: page === p ? '#fff' : '#475569',
+                    fontWeight: page === p ? 800 : 600, fontSize: isMobile ? '0.88rem' : '0.82rem', cursor: 'pointer',
+                    flexShrink: 0, transition: 'transform 0.15s, background 0.15s, box-shadow 0.15s',
+                    boxShadow: page === p
+                      ? isMobile
+                        ? `0 4px 14px ${ACCENT_SHADOW}, 0 0 0 4px ${ACCENT_SOFT}`
+                        : `0 3px 10px ${ACCENT_SHADOW}`
+                      : 'none',
+                    transform: page === p ? (isMobile ? 'scale(1.1)' : 'scale(1.06)') : 'scale(1)',
                   }}
+                  onMouseEnter={e => { if (page !== p && !isMobile) e.currentTarget.style.background = '#fff' }}
+                  onMouseLeave={e => { if (page !== p && !isMobile) e.currentTarget.style.background = 'transparent' }}
                 >
                   {p}
                 </button>
               )
-            })}
+            )}
 
             <button suppressHydrationWarning
               onClick={() => setPage(p => Math.min(pages, p + 1))}
               disabled={page === pages}
+              aria-label="Next page"
               style={{
-                width: '36px', height: '36px', borderRadius: '10px',
-                border: '1.5px solid #e2e8f0', background: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: page === pages ? 'not-allowed' : 'pointer', opacity: page === pages ? 0.4 : 1, color: '#475569',
+                width: isMobile ? '38px' : '32px', height: isMobile ? '38px' : '32px',
+                borderRadius: isMobile ? '12px' : '9px',
+                border: isMobile ? `1.5px solid ${page === pages ? '#e8edf5' : ACCENT_BORDER2}` : 'none',
+                background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: page === pages ? 'not-allowed' : 'pointer', opacity: page === pages ? 0.35 : 1,
+                color: page === pages ? '#475569' : (isMobile ? ACCENT : '#475569'),
+                transition: 'background 0.15s, transform 0.1s', flexShrink: 0,
               }}
+              onMouseEnter={e => { if (page !== pages && !isMobile) e.currentTarget.style.background = '#fff' }}
+              onMouseLeave={e => { if (!isMobile) e.currentTarget.style.background = 'transparent' }}
             >
-              <ChevronRight size={15} />
+              <ChevronRight size={isMobile ? 17 : 15} />
             </button>
+
+            {!isMobile && (
+              <button suppressHydrationWarning
+                onClick={() => setPage(pages)}
+                disabled={page === pages}
+                aria-label="Last page"
+                style={{
+                  height: '32px', padding: '0 10px', borderRadius: '9px', border: 'none',
+                  background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: page === pages ? 'not-allowed' : 'pointer', opacity: page === pages ? 0.35 : 1,
+                  color: '#475569', fontSize: '0.72rem', fontWeight: 700, transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => { if (page !== pages) e.currentTarget.style.background = '#fff' }}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                Last
+              </button>
+            )}
           </div>
         </div>
       )}
