@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import {
-  Bell, Shield, Globe, Moon,
+  Bell, Shield,
   LogOut, Trash2, ArrowLeft,
   Check, Eye, EyeOff, Mail,
-  MessageSquare, Zap, BarChart2,
+  MessageSquare, Zap,
   AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -95,17 +95,13 @@ export default function SettingsClient() {
   const [notifications, setNotifications] = useState({
     orderUpdates: true, flashSale: true, newsletter: false, sms: true,
   })
-  const [privacy, setPrivacy] = useState({ showProfile: false, dataSaving: true })
-  const [darkMode, setDarkMode] = useState(false)
-  const [language, setLanguage] = useState('en')
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' })
   const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false })
   const [isSavingPw, setIsSavingPw] = useState(false)
 
-  const toggle = (group: 'notifications' | 'privacy', key: string) => {
-    if (group === 'notifications') setNotifications(p => ({ ...p, [key]: !p[key as keyof typeof p] }))
-    else setPrivacy(p => ({ ...p, [key]: !p[key as keyof typeof p] }))
+  const toggleNotification = (key: keyof typeof notifications) => {
+    setNotifications(p => ({ ...p, [key]: !p[key] }))
     toast.success('Setting updated')
   }
 
@@ -163,25 +159,25 @@ export default function SettingsClient() {
                   icon={<Zap size={15} color="var(--color-accent)" />}
                   label="Order Updates"
                   desc="Get notified when your order status changes"
-                  right={<ToggleSwitch checked={notifications.orderUpdates} onChange={() => toggle('notifications', 'orderUpdates')} />}
+                  right={<ToggleSwitch checked={notifications.orderUpdates} onChange={() => toggleNotification('orderUpdates')} />}
                 />
                 <SettingRow
                   icon={<Zap size={15} color="var(--color-gold)" />}
                   label="Flash Sale Alerts"
                   desc="Be first to know about flash deals"
-                  right={<ToggleSwitch checked={notifications.flashSale} onChange={() => toggle('notifications', 'flashSale')} />}
+                  right={<ToggleSwitch checked={notifications.flashSale} onChange={() => toggleNotification('flashSale')} />}
                 />
                 <SettingRow
                   icon={<Mail size={15} color="var(--color-accent)" />}
                   label="Newsletter"
                   desc="Weekly style tips and new arrivals"
-                  right={<ToggleSwitch checked={notifications.newsletter} onChange={() => toggle('notifications', 'newsletter')} />}
+                  right={<ToggleSwitch checked={notifications.newsletter} onChange={() => toggleNotification('newsletter')} />}
                 />
                 <SettingRow
                   icon={<MessageSquare size={15} color="var(--color-accent)" />}
                   label="SMS Notifications"
                   desc="Receive order alerts via SMS"
-                  right={<ToggleSwitch checked={notifications.sms} onChange={() => toggle('notifications', 'sms')} />}
+                  right={<ToggleSwitch checked={notifications.sms} onChange={() => toggleNotification('sms')} />}
                 />
               </div>
             </SectionCard>
@@ -255,47 +251,6 @@ export default function SettingsClient() {
                   </button>
                 </form>
               )}
-            </div>
-          </SectionCard>
-
-          {/* ── Preferences — same for everyone (general UX, not shopping-specific) ── */}
-          <SectionCard icon={<Globe size={20} />} title="Preferences">
-            <div>
-              <SettingRow
-                icon={<Moon size={15} color="var(--color-primary)" />}
-                label="Dark Mode"
-                desc="Switch to dark theme (coming soon)"
-                right={
-                  <ToggleSwitch checked={darkMode} onChange={() => { setDarkMode(!darkMode); toast('🌙 Coming soon!') }} />
-                }
-              />
-              <SettingRow
-                icon={<Globe size={15} color="var(--color-accent)" />}
-                label="Language"
-                desc="Choose your preferred language"
-                right={
-                  <select value={language}
-                    onChange={e => { setLanguage(e.target.value); toast.success('Language preference saved') }}
-                    style={{
-                      padding: '0.4rem 0.75rem',
-                      border: '2px solid rgba(26,26,46,0.1)', borderRadius: '0.5rem',
-                      fontFamily: 'var(--font-body)', fontSize: '0.85rem',
-                      color: 'var(--color-text-primary)', background: 'white',
-                      cursor: 'pointer', outline: 'none',
-                    }}>
-                    <option value="en">English</option>
-                    <option value="bn">বাংলা</option>
-                  </select>
-                }
-              />
-              <SettingRow
-                icon={<BarChart2 size={15} color="var(--color-accent)" />}
-                label="Data Saving Mode"
-                desc="Reduce image quality to save data (coming soon)"
-                right={
-                  <ToggleSwitch checked={privacy.dataSaving} onChange={() => { toggle('privacy', 'dataSaving'); toast('📶 Coming soon!') }} />
-                }
-              />
             </div>
           </SectionCard>
 

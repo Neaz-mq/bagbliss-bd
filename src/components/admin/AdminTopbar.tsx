@@ -179,11 +179,20 @@ export default function AdminTopbar({ onMenuClick }: Props) {
 
       {/* Left */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+        {/*
+          FIX: previously this button had an inline `style={{ display: 'flex', ... }}`
+          alongside `className="lg:hidden"`. Inline styles always win over class-based
+          rules (including responsive/media-query classes), so `lg:hidden` could never
+          actually hide the button at the lg breakpoint (1024px+) — it stayed visible
+          at every viewport width, even when the sidebar was already docked.
+          `display` is now controlled purely via Tailwind classes (`flex ... lg:hidden`)
+          so the responsive variant can correctly override it.
+        */}
         <button
           suppressHydrationWarning
           onClick={onMenuClick}
-          className="lg:hidden"
-          style={{ width: '38px', height: '38px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#475569', cursor: 'pointer' }}
+          className="flex items-center justify-center lg:hidden"
+          style={{ width: '38px', height: '38px', flexShrink: 0, borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#475569', cursor: 'pointer' }}
         >
           <Menu size={18} strokeWidth={2} />
         </button>
