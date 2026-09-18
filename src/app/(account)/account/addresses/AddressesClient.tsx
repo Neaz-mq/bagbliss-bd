@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useHydrated } from '@/hooks/useHydrated'
 import {
   MapPin, Plus, Edit2, Trash2, ArrowLeft,
-  Home, Briefcase, Check, X,
+  Home, Briefcase, Check, X, ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -66,6 +66,150 @@ const INITIAL_ADDRESSES: Address[] = [
     postalCode: '1230', isDefault: true,
   },
 ]
+
+// ── Custom Dropdown ──────────────────────────────────────────────────────────
+// Replaces the native <select> (whose popup can't be themed and clips
+// against ancestor overflow) with the same floating-panel pattern used on
+// the checkout/profile pages: position:fixed panel that escapes clipping
+// and follows the trigger on scroll instead of closing abruptly.
+interface DropdownOption { value: string; label: string }
+
+function Dropdown({
+  value, options, onChange, placeholder = 'Select…',
+}: {
+  value: string
+  options: DropdownOption[]
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
+  const btnRef   = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const computeCoords = () => {
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (!rect) return
+    setCoords({ top: rect.bottom + 6, left: rect.left, width: rect.width })
+  }
+
+  const openDropdown = () => {
+    if (open) { setOpen(false); return }
+    computeCoords()
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (panelRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+
+    let raf = 0
+    const onScrollOrResize = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const rect = btnRef.current?.getBoundingClientRect()
+        if (!rect || rect.bottom < 0 || rect.top > window.innerHeight) { setOpen(false); return }
+        computeCoords()
+      })
+    }
+
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', escHandler)
+    window.addEventListener('scroll', onScrollOrResize, true)
+    window.addEventListener('resize', onScrollOrResize)
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', escHandler)
+      window.removeEventListener('scroll', onScrollOrResize, true)
+      window.removeEventListener('resize', onScrollOrResize)
+    }
+  }, [open])
+
+  const selected = options.find(o => o.value === value)
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <button
+        type="button"
+        ref={btnRef}
+        onClick={openDropdown}
+        suppressHydrationWarning
+        style={{
+          ...inputStyle,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: 'pointer', textAlign: 'left',
+          borderColor: open ? 'var(--color-accent)' : 'rgba(26,26,46,0.1)',
+          color: value ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+        }}
+      >
+        <span>{selected ? selected.label : placeholder}</span>
+        <ChevronDown
+          size={16}
+          style={{
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.15s',
+            color: 'var(--color-text-muted)', flexShrink: 0,
+          }}
+        />
+      </button>
+
+      {open && coords && (
+        <div
+          ref={panelRef}
+          className="addr-float-panel"
+          style={{
+            position: 'fixed', top: coords.top, left: coords.left, width: coords.width, zIndex: 1000,
+            background: 'white', borderRadius: '14px', border: '1px solid rgba(26,26,46,0.08)',
+            boxShadow: '0 16px 40px rgba(15,23,42,0.16)', padding: '6px',
+            maxHeight: '260px', overflowY: 'auto',
+          }}
+        >
+          {options.map(o => {
+            const active = o.value === value
+            return (
+              <button
+                key={o.value || '__empty__'}
+                type="button"
+                suppressHydrationWarning
+                onClick={() => { onChange(o.value); setOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                  padding: '9px 12px', border: 'none', borderRadius: '9px',
+                  background: active ? 'rgba(233,30,140,0.06)' : 'transparent',
+                  color: active ? 'var(--color-accent)' : 'var(--color-text-primary)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: active ? 700 : 500,
+                  cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(26,26,46,0.04)' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                {o.label}
+                {active && <Check size={14} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      <style>{`
+        .addr-float-panel { scrollbar-width: thin; scrollbar-color: rgba(233,30,140,0.35) transparent; }
+        .addr-float-panel::-webkit-scrollbar { width: 6px; }
+        .addr-float-panel::-webkit-scrollbar-track { background: transparent; }
+        .addr-float-panel::-webkit-scrollbar-thumb { background: rgba(233,30,140,0.35); border-radius: 999px; }
+        .addr-float-panel::-webkit-scrollbar-thumb:hover { background: rgba(233,30,140,0.5); }
+      `}</style>
+    </div>
+  )
+}
+
+const DIVISION_OPTIONS: DropdownOption[] = DIVISIONS.map(d => ({ value: d, label: d }))
 
 export default function AddressesPage() {
   const mounted = useHydrated()
@@ -259,14 +403,12 @@ export default function AddressesPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }} className="addr-grid-3-resp">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={labelStyle}>Division <span style={{ color: 'var(--color-accent)' }}>*</span></label>
-                  <select name="division" value={form.division} onChange={handleChange}
-                    suppressHydrationWarning
-                    style={{ ...inputStyle, cursor: 'pointer', appearance: 'none' }}
-                    onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
-                    onBlur={e => e.target.style.borderColor = 'rgba(26,26,46,0.1)'}>
-                    <option value="">Select Division</option>
-                    {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                  <Dropdown
+                    value={form.division}
+                    onChange={v => setForm(prev => ({ ...prev, division: v }))}
+                    options={DIVISION_OPTIONS}
+                    placeholder="Select Division"
+                  />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={labelStyle}>District <span style={{ color: 'var(--color-accent)' }}>*</span></label>

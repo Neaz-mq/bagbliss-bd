@@ -5,8 +5,8 @@ import { useSession, signOut } from 'next-auth/react'
 import {
   Bell, Shield,
   LogOut, Trash2, ArrowLeft,
-  Check, Eye, EyeOff, Mail,
-  MessageSquare, Zap,
+  Check, Eye, EyeOff,
+  Zap,
   AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -92,8 +92,10 @@ export default function SettingsClient() {
   // ✅ Single source of truth for role — avoids repeated inline casts
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'admin'
 
+  // ✅ Newsletter / SMS toggles removed per request — only Order Updates
+  // and Flash Sale Alerts remain in the Notifications section.
   const [notifications, setNotifications] = useState({
-    orderUpdates: true, flashSale: true, newsletter: false, sms: true,
+    orderUpdates: true, flashSale: true,
   })
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' })
@@ -149,9 +151,9 @@ export default function SettingsClient() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
           {/* ── Notifications ── */}
-          {/* ✅ FIX: shopper-only settings (order/flash-sale/newsletter/SMS alerts)
-              are meaningless for an admin/staff account, so the whole section
-              is hidden for admins instead of shipping toggles that do nothing. */}
+          {/* ✅ FIX: shopper-only settings are meaningless for an admin/staff
+              account, so the whole section is hidden for admins instead of
+              shipping toggles that do nothing. */}
           {!isAdmin && (
             <SectionCard icon={<Bell size={20} />} title="Notifications">
               <div>
@@ -166,18 +168,6 @@ export default function SettingsClient() {
                   label="Flash Sale Alerts"
                   desc="Be first to know about flash deals"
                   right={<ToggleSwitch checked={notifications.flashSale} onChange={() => toggleNotification('flashSale')} />}
-                />
-                <SettingRow
-                  icon={<Mail size={15} color="var(--color-accent)" />}
-                  label="Newsletter"
-                  desc="Weekly style tips and new arrivals"
-                  right={<ToggleSwitch checked={notifications.newsletter} onChange={() => toggleNotification('newsletter')} />}
-                />
-                <SettingRow
-                  icon={<MessageSquare size={15} color="var(--color-accent)" />}
-                  label="SMS Notifications"
-                  desc="Receive order alerts via SMS"
-                  right={<ToggleSwitch checked={notifications.sms} onChange={() => toggleNotification('sms')} />}
                 />
               </div>
             </SectionCard>

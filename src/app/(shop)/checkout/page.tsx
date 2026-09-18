@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -12,7 +12,7 @@ import {
   ChevronRight, ShoppingBag, Truck, Shield, CreditCard,
   Smartphone, Banknote, MapPin, User, Phone, Mail, Home,
   AlertCircle, CheckCircle2, Lock, Zap, ChevronLeft, Tag,
-  ExternalLink,
+  ExternalLink, ChevronDown,
 } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import toast from 'react-hot-toast'
@@ -132,6 +132,158 @@ function GatewayNotice({ method }: { method: string }) {
   )
 }
 
+// ── Custom Dropdown ─────────────────────────────────────────────────────────
+// Same visual language as the ProductsClient admin dropdown (pill-style
+// trigger + floating rounded panel with checkmark on the selected row)
+// instead of the browser's native <select> popup, which can't be themed.
+// Anchored with position: fixed so it can't be clipped by any ancestor
+// with overflow set, and clamps its left edge so it never runs off-screen.
+interface DropdownOption { value: string; label: string }
+
+function Dropdown({
+  value, options, onChange, placeholder = 'Select…', error,
+}: {
+  value: string
+  options: DropdownOption[]
+  onChange: (v: string) => void
+  placeholder?: string
+  error?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
+  const btnRef   = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const computeCoords = () => {
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const maxLeft = window.innerWidth - rect.width - 8
+    setCoords({ top: rect.bottom + 6, left: Math.max(8, Math.min(rect.left, maxLeft)), width: rect.width })
+  }
+
+  const openDropdown = () => {
+    if (open) { setOpen(false); return }
+    computeCoords()
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (panelRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+
+    // Follow the trigger button as the page scrolls instead of closing
+    // abruptly — keeps the panel glued to the field, no stray leftover
+    // bar/flash. Scrolling *inside* the panel's own option list is
+    // ignored (it doesn't move the button, so recompute is a no-op).
+    // If the field scrolls off-screen entirely, close instead of
+    // floating in empty space.
+    let raf = 0
+    const onScrollOrResize = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const rect = btnRef.current?.getBoundingClientRect()
+        if (!rect || rect.bottom < 0 || rect.top > window.innerHeight) {
+          setOpen(false)
+          return
+        }
+        computeCoords()
+      })
+    }
+
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', escHandler)
+    window.addEventListener('scroll', onScrollOrResize, true)
+    window.addEventListener('resize', onScrollOrResize)
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', escHandler)
+      window.removeEventListener('scroll', onScrollOrResize, true)
+      window.removeEventListener('resize', onScrollOrResize)
+    }
+  }, [open])
+
+  const selected = options.find(o => o.value === value)
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <button
+        type="button"
+        ref={btnRef}
+        onClick={openDropdown}
+        suppressHydrationWarning
+        className={`co-input co-select ${error ? 'co-input-error' : ''}`}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          textAlign: 'left', cursor: 'pointer', width: '100%',
+        }}
+      >
+        <span style={{ color: selected ? 'inherit' : 'var(--color-text-muted, #9aa0ab)' }}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <ChevronDown
+          size={16}
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }}
+        />
+      </button>
+
+      {open && coords && (
+        <div
+          ref={panelRef}
+          className="co-dropdown-panel"
+          style={{
+            position: 'fixed', top: coords.top, left: coords.left, width: coords.width, zIndex: 1000,
+            background: '#fff', borderRadius: '14px', border: '1px solid #f1f5f9',
+            boxShadow: '0 16px 40px rgba(15,23,42,0.16)', padding: '6px',
+            maxHeight: '280px', overflowY: 'auto',
+          }}
+        >
+          {options.map(o => {
+            const active = o.value === value
+            return (
+              <button
+                key={o.value}
+                type="button"
+                suppressHydrationWarning
+                onClick={() => { onChange(o.value); setOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  width: '100%', padding: '9px 12px', border: 'none', borderRadius: '9px',
+                  background: active ? 'rgba(233,30,140,0.06)' : 'transparent',
+                  color: active ? '#e91e8c' : '#334155',
+                  fontSize: '0.85rem', fontWeight: active ? 700 : 600,
+                  cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f8fafc' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                {o.label}
+                {active && <CheckCircle2 size={14} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+      <style>{`
+        .co-dropdown-panel { scrollbar-width: thin; scrollbar-color: #e2c9b8 transparent; }
+        .co-dropdown-panel::-webkit-scrollbar { width: 6px; }
+        .co-dropdown-panel::-webkit-scrollbar-track { background: transparent; }
+        .co-dropdown-panel::-webkit-scrollbar-thumb { background: #e2c9b8; border-radius: 999px; }
+        .co-dropdown-panel::-webkit-scrollbar-thumb:hover { background: #d9b79f; }
+      `}</style>
+    </div>
+  )
+}
+
+const DIVISION_OPTIONS: DropdownOption[] = DIVISIONS.map(d => ({ value: d, label: d }))
+
 // ── Main Page ──────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
   const router    = useRouter()
@@ -158,6 +310,7 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -358,14 +511,13 @@ export default function CheckoutPage() {
 
                       <div className="co-field co-field-third">
                         <label className="co-label">Division *</label>
-                        <select
-                          {...register('division')}
-                          className={`co-input co-select ${errors.division ? 'co-input-error' : ''}`}
-                          suppressHydrationWarning
-                        >
-                          <option value="">Select Division</option>
-                          {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
+                        <Dropdown
+                          value={watch('division')}
+                          onChange={v => setValue('division', v, { shouldValidate: true })}
+                          options={DIVISION_OPTIONS}
+                          placeholder="Select Division"
+                          error={!!errors.division}
+                        />
                         {errors.division && <span className="co-field-error"><AlertCircle size={12} /> {errors.division.message}</span>}
                       </div>
 

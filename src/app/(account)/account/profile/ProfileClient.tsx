@@ -1,13 +1,419 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { User, Mail, Phone, Camera, Save, ArrowLeft, Check } from 'lucide-react'
+import {
+  User, Mail, Phone, Camera, Save, ArrowLeft, Check,
+  ChevronDown, ChevronLeft, ChevronRight, Calendar as CalendarIcon,
+} from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useHydrated } from '@/hooks/useHydrated'
 
+// ── Gender options (feeds the custom Dropdown below) ────────────────────────
+interface DropdownOption { value: string; label: string }
+
+const GENDER_OPTIONS: DropdownOption[] = [
+  { value: '',           label: 'Select gender' },
+  { value: 'female',     label: 'Female' },
+  { value: 'male',       label: 'Male' },
+  { value: 'other',      label: 'Other' },
+  { value: 'prefer_not', label: 'Prefer not to say' },
+]
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+]
+
+// ── Date helpers (for the custom DatePicker) ────────────────────────────────
+function toISODate(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function toDisplayDate(iso: string) {
+  if (!iso) return ''
+  const [y, m, d] = iso.split('-')
+  return `${m}/${d}/${y}`
+}
+
+function parseISODate(iso: string): Date | null {
+  if (!iso) return null
+  const [y, m, d] = iso.split('-').map(Number)
+  if (!y || !m || !d) return null
+  return new Date(y, m - 1, d)
+}
+
+// Builds a fixed 6-row (42-cell) calendar grid for the given month,
+// including the trailing days of the previous/next month so every
+// week row is fully populated.
+function buildCalendarGrid(year: number, month: number): Date[] {
+  const firstOfMonth = new Date(year, month, 1)
+  const startOffset = firstOfMonth.getDay() // 0 = Sunday
+  const gridStart = new Date(year, month, 1 - startOffset)
+  return Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(gridStart)
+    d.setDate(gridStart.getDate() + i)
+    return d
+  })
+}
+
+const navBtnStyle: React.CSSProperties = {
+  width: '28px', height: '28px', borderRadius: '8px', border: 'none',
+  background: 'rgba(26,26,46,0.04)', display: 'flex', alignItems: 'center',
+  justifyContent: 'center', cursor: 'pointer', color: 'var(--color-primary)',
+}
+
+// ── Custom Dropdown ──────────────────────────────────────────────────────────
+// Same floating-panel pattern used elsewhere in the app (checkout / admin
+// pages): a pill/rounded trigger button + a position:fixed panel that lives
+// outside any ancestor's overflow clipping, and follows the trigger on
+// scroll instead of closing abruptly.
+function Dropdown({
+  value, options, onChange, placeholder = 'Select…',
+}: {
+  value: string
+  options: DropdownOption[]
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
+  const btnRef   = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const computeCoords = () => {
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (!rect) return
+    setCoords({ top: rect.bottom + 6, left: rect.left, width: rect.width })
+  }
+
+  const openDropdown = () => {
+    if (open) { setOpen(false); return }
+    computeCoords()
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (panelRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+
+    let raf = 0
+    const onScrollOrResize = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const rect = btnRef.current?.getBoundingClientRect()
+        if (!rect || rect.bottom < 0 || rect.top > window.innerHeight) { setOpen(false); return }
+        computeCoords()
+      })
+    }
+
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', escHandler)
+    window.addEventListener('scroll', onScrollOrResize, true)
+    window.addEventListener('resize', onScrollOrResize)
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', escHandler)
+      window.removeEventListener('scroll', onScrollOrResize, true)
+      window.removeEventListener('resize', onScrollOrResize)
+    }
+  }, [open])
+
+  const selected = options.find(o => o.value === value)
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <button
+        type="button"
+        ref={btnRef}
+        onClick={openDropdown}
+        suppressHydrationWarning
+        style={{
+          width: '100%', padding: '0.875rem 1rem',
+          border: `2px solid ${open ? 'var(--color-accent)' : 'rgba(26,26,46,0.1)'}`,
+          borderRadius: 'var(--radius-md)',
+          fontFamily: 'var(--font-body)', fontSize: '0.95rem',
+          color: value ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+          background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: 'pointer', textAlign: 'left', outline: 'none',
+        }}
+      >
+        <span>{selected ? selected.label : placeholder}</span>
+        <ChevronDown
+          size={16}
+          style={{
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.15s',
+            color: 'var(--color-text-muted)', flexShrink: 0,
+          }}
+        />
+      </button>
+
+      {open && coords && (
+        <div
+          ref={panelRef}
+          className="profile-float-panel"
+          style={{
+            position: 'fixed', top: coords.top, left: coords.left, width: coords.width, zIndex: 1000,
+            background: 'white', borderRadius: '14px', border: '1px solid rgba(26,26,46,0.08)',
+            boxShadow: '0 16px 40px rgba(15,23,42,0.16)', padding: '6px',
+            maxHeight: '260px', overflowY: 'auto',
+          }}
+        >
+          {options.map(o => {
+            const active = o.value === value
+            return (
+              <button
+                key={o.value || '__empty__'}
+                type="button"
+                suppressHydrationWarning
+                onClick={() => { onChange(o.value); setOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                  padding: '9px 12px', border: 'none', borderRadius: '9px',
+                  background: active ? 'rgba(233,30,140,0.06)' : 'transparent',
+                  color: active ? 'var(--color-accent)' : 'var(--color-text-primary)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: active ? 700 : 500,
+                  cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(26,26,46,0.04)' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                {o.label}
+                {active && <Check size={14} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Custom Date Picker ───────────────────────────────────────────────────────
+// Replaces the native <input type="date"> (whose calendar popup can't be
+// restyled) with a themed calendar panel: month navigation, a 6-row day
+// grid, an accent-colored selection, a today outline, and Clear/Today
+// shortcuts. Value is kept in the same 'YYYY-MM-DD' shape the form/API
+// already expects, just formatted as MM/DD/YYYY for display.
+function DatePicker({
+  value, onChange, placeholder = 'mm/dd/yyyy',
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
+  const btnRef   = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const selectedDate = parseISODate(value)
+  const today = new Date()
+  const todayISO = toISODate(today)
+
+  const [viewYear,  setViewYear]  = useState(selectedDate?.getFullYear() ?? today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(selectedDate?.getMonth()   ?? today.getMonth())
+
+  const PANEL_WIDTH = 300
+
+  const computeCoords = () => {
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const maxLeft = window.innerWidth - PANEL_WIDTH - 8
+    setCoords({ top: rect.bottom + 6, left: Math.max(8, Math.min(rect.left, maxLeft)) })
+  }
+
+  const openPicker = () => {
+    if (open) { setOpen(false); return }
+    if (selectedDate) { setViewYear(selectedDate.getFullYear()); setViewMonth(selectedDate.getMonth()) }
+    computeCoords()
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (panelRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+
+    let raf = 0
+    const onScrollOrResize = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const rect = btnRef.current?.getBoundingClientRect()
+        if (!rect || rect.bottom < 0 || rect.top > window.innerHeight) { setOpen(false); return }
+        computeCoords()
+      })
+    }
+
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', escHandler)
+    window.addEventListener('scroll', onScrollOrResize, true)
+    window.addEventListener('resize', onScrollOrResize)
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', escHandler)
+      window.removeEventListener('scroll', onScrollOrResize, true)
+      window.removeEventListener('resize', onScrollOrResize)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const grid = buildCalendarGrid(viewYear, viewMonth)
+
+  const goPrevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) } else setViewMonth(m => m - 1)
+  }
+  const goNextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) } else setViewMonth(m => m + 1)
+  }
+
+  const pick = (d: Date) => { onChange(toISODate(d)); setOpen(false) }
+
+  const goToday = () => {
+    setViewYear(today.getFullYear())
+    setViewMonth(today.getMonth())
+    pick(today)
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        ref={btnRef}
+        onClick={openPicker}
+        suppressHydrationWarning
+        style={{
+          width: '100%', padding: '0.875rem 2.75rem 0.875rem 1rem', position: 'relative',
+          border: `2px solid ${open ? 'var(--color-accent)' : 'rgba(26,26,46,0.1)'}`,
+          borderRadius: 'var(--radius-md)',
+          fontFamily: 'var(--font-body)', fontSize: '0.95rem',
+          color: value ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+          background: 'white', textAlign: 'left', cursor: 'pointer', outline: 'none',
+        }}
+      >
+        {value ? toDisplayDate(value) : placeholder}
+        <CalendarIcon
+          size={16}
+          style={{
+            position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
+            color: 'var(--color-text-muted)', pointerEvents: 'none',
+          }}
+        />
+      </button>
+
+      {open && coords && (
+        <div
+          ref={panelRef}
+          style={{
+            position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000, width: `${PANEL_WIDTH}px`,
+            background: 'white', borderRadius: '16px', border: '1px solid rgba(26,26,46,0.08)',
+            boxShadow: '0 16px 40px rgba(15,23,42,0.16)', padding: '1rem', boxSizing: 'border-box',
+          }}
+        >
+          {/* Month nav */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <button type="button" onClick={goPrevMonth} suppressHydrationWarning style={navBtnStyle} aria-label="Previous month">
+              <ChevronLeft size={16} />
+            </button>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-primary)' }}>
+              {MONTH_NAMES[viewMonth]} {viewYear}
+            </span>
+            <button type="button" onClick={goNextMonth} suppressHydrationWarning style={navBtnStyle} aria-label="Next month">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          {/* Weekday header */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '4px' }}>
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+              <div key={d} style={{ textAlign: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', padding: '4px 0' }}>
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Day grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+            {grid.map((d, i) => {
+              const iso        = toISODate(d)
+              const inMonth    = d.getMonth() === viewMonth
+              const isSelected = value === iso
+              const isToday    = iso === todayISO
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  suppressHydrationWarning
+                  onClick={() => pick(d)}
+                  style={{
+                    width: '100%', aspectRatio: '1', border: isToday && !isSelected ? '1.5px solid var(--color-accent)' : 'none',
+                    borderRadius: '8px',
+                    background: isSelected ? 'var(--color-accent)' : 'transparent',
+                    color: isSelected ? 'white' : inMonth ? 'var(--color-text-primary)' : 'rgba(26,26,46,0.28)',
+                    fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: isSelected ? 700 : 500,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 0.1s',
+                  }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(233,30,140,0.08)' }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+                >
+                  {d.getDate()}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Footer */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(26,26,46,0.06)' }}>
+            <button
+              type="button" suppressHydrationWarning
+              onClick={() => { onChange(''); setOpen(false) }}
+              style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', padding: '4px 6px' }}
+            >
+              Clear
+            </button>
+            <button
+              type="button" suppressHydrationWarning
+              onClick={goToday}
+              style={{ background: 'none', border: 'none', color: 'var(--color-accent)', fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', padding: '4px 6px' }}
+            >
+              Today
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .profile-float-panel { scrollbar-width: thin; scrollbar-color: rgba(233,30,140,0.35) transparent; }
+        .profile-float-panel::-webkit-scrollbar { width: 6px; }
+        .profile-float-panel::-webkit-scrollbar-track { background: transparent; }
+        .profile-float-panel::-webkit-scrollbar-thumb { background: rgba(233,30,140,0.35); border-radius: 999px; }
+        .profile-float-panel::-webkit-scrollbar-thumb:hover { background: rgba(233,30,140,0.5); }
+      `}</style>
+    </div>
+  )
+}
+
+// ── Main Page ────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { data: session, update } = useSession()
   const router = useRouter()
@@ -584,32 +990,12 @@ export default function ProfilePage() {
                   >
                     Gender
                   </label>
-                  <select
-                    id="profile-gender"
-                    name="gender"
+                  <Dropdown
                     value={form.gender}
-                    onChange={handleChange}
-                    suppressHydrationWarning
-                    style={{
-                      width: '100%',
-                      padding: '0.875rem 1rem',
-                      border: '2px solid rgba(26,26,46,0.1)',
-                      borderRadius: 'var(--radius-md)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '0.95rem',
-                      color: 'var(--color-text-primary)',
-                      background: 'white',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      appearance: 'none',
-                    }}
-                  >
-                    <option value="">Select gender</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="other">Other</option>
-                    <option value="prefer_not">Prefer not to say</option>
-                  </select>
+                    onChange={(v) => setForm((prev) => ({ ...prev, gender: v }))}
+                    options={GENDER_OPTIONS}
+                    placeholder="Select gender"
+                  />
                 </div>
                 <div
                   style={{
@@ -619,7 +1005,6 @@ export default function ProfilePage() {
                   }}
                 >
                   <label
-                    htmlFor="profile-dob"
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: '0.875rem',
@@ -629,24 +1014,9 @@ export default function ProfilePage() {
                   >
                     Date of Birth
                   </label>
-                  <input
-                    id="profile-dob"
-                    type="date"
-                    name="dob"
+                  <DatePicker
                     value={form.dob}
-                    onChange={handleChange}
-                    suppressHydrationWarning
-                    style={{
-                      width: '100%',
-                      padding: '0.875rem 1rem',
-                      border: '2px solid rgba(26,26,46,0.1)',
-                      borderRadius: 'var(--radius-md)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '0.95rem',
-                      color: 'var(--color-text-primary)',
-                      background: 'white',
-                      outline: 'none',
-                    }}
+                    onChange={(v) => setForm((prev) => ({ ...prev, dob: v }))}
                   />
                 </div>
               </div>
