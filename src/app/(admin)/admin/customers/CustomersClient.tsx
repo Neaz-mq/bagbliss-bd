@@ -1,11 +1,11 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Search, RefreshCw, X, ChevronLeft, ChevronRight,
   ChevronDown, Users, ShoppingBag, TrendingUp,
-  Mail, Calendar, Eye, Package, Clock,
+  Mail, Calendar, Eye, Package, Clock, Check,
 } from 'lucide-react'
 
 /* ============================================
@@ -100,6 +100,137 @@ function Avatar({ name, image, size = 40 }: { name: string; image?: string; size
     </div>
   )
 }
+
+// ── Dropdown ───────────────────────────────────────────────────────────────────
+// Same visual language as the "All Payments" filter on the Orders admin page:
+// a pill-shaped trigger button, and a floating rounded panel with a soft
+// accent highlight + checkmark on the selected row — instead of the
+// browser's native <select> popup, which can't be themed.
+interface DropdownOption { value: string; label: string }
+
+function Dropdown({
+  value, options, onChange, fullWidth = false,
+}: {
+  value: string
+  options: DropdownOption[]
+  onChange: (v: string) => void
+  fullWidth?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  // ✅ FIX: the panel used to be `position: absolute` inside this
+  // wrapper, which meant any ancestor with `overflow: hidden` (or the
+  // viewport edge on narrow screens) could clip its rounded corners
+  // and cut it off mid-panel. Anchoring it with `position: fixed` and
+  // computed viewport coordinates makes it escape all ancestor
+  // clipping — it's only ever bounded by the screen itself, and we
+  // clamp the left edge so it never runs past the right side either.
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
+  const btnRef   = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const openDropdown = () => {
+    if (open) { setOpen(false); return }
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (rect) {
+      const panelWidth = fullWidth ? rect.width : Math.max(rect.width, 190)
+      const maxLeft = window.innerWidth - panelWidth - 8
+      const left = Math.max(8, Math.min(rect.left, maxLeft))
+      setCoords({ top: rect.bottom + 6, left, width: rect.width })
+    }
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (panelRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const closeOnScrollOrResize = () => setOpen(false)
+    const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', escHandler)
+    window.addEventListener('scroll', closeOnScrollOrResize, true)
+    window.addEventListener('resize', closeOnScrollOrResize)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', escHandler)
+      window.removeEventListener('scroll', closeOnScrollOrResize, true)
+      window.removeEventListener('resize', closeOnScrollOrResize)
+    }
+  }, [open])
+
+  const selected = options.find(o => o.value === value)
+
+  return (
+    <div style={{ position: 'relative', width: fullWidth ? '100%' : 'auto', flexShrink: 0 }}>
+      <button
+        suppressHydrationWarning
+        ref={btnRef}
+        type="button"
+        onClick={openDropdown}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          width: fullWidth ? '100%' : 'auto',
+          height: '42px', padding: '0 14px',
+          borderRadius: '12px',
+          border: `1.5px solid ${open ? ACCENT_BORDER3 : '#f1f5f9'}`,
+          background: open ? ACCENT_SOFT : '#f8fafc',
+          fontSize: '0.85rem', fontWeight: 700,
+          color: open ? ACCENT_TEXT : '#334155',
+          cursor: 'pointer', whiteSpace: 'nowrap',
+          boxSizing: 'border-box', transition: 'background 0.15s, border-color 0.15s',
+        }}
+      >
+        <span style={{ flex: fullWidth ? 1 : 'none', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {selected ? selected.label : 'Select…'}
+        </span>
+        <ChevronDown size={14} style={{ flexShrink: 0, color: open ? ACCENT : '#94a3b8', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+      </button>
+
+      {open && coords && (
+        <div ref={panelRef} style={{
+          position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000,
+          width: fullWidth ? coords.width : undefined,
+          minWidth: fullWidth ? coords.width : '190px',
+          background: '#fff', borderRadius: '14px',
+          border: '1px solid #f1f5f9',
+          boxShadow: '0 16px 40px rgba(15,23,42,0.16)',
+          padding: '6px', maxHeight: '280px', overflowY: 'auto',
+        }}>
+          {options.map(o => {
+            const active = o.value === value
+            return (
+              <button
+                suppressHydrationWarning
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  width: '100%', padding: '9px 12px', border: 'none',
+                  borderRadius: '9px',
+                  background: active ? ACCENT_SOFT : 'transparent',
+                  color: active ? ACCENT_TEXT : '#334155',
+                  fontSize: '0.85rem', fontWeight: active ? 700 : 600,
+                  cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f8fafc' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.label}</span>
+                {active && <Check size={14} color={ACCENT} style={{ flexShrink: 0 }} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const SORT_DROPDOWN_OPTIONS: DropdownOption[] = SORT_OPTS.map(o => ({ value: o.v, label: o.l }))
 
 // ── Customer Detail Modal ──────────────────────────────────────────────────────
 
@@ -424,22 +555,11 @@ export default function CustomersClient() {
           )}
         </div>
 
-        <div style={{ position: 'relative' }}>
-          <select
-            suppressHydrationWarning
-            value={sort}
-            onChange={e => setSort(e.target.value)}
-            style={{
-              height: '42px', paddingLeft: '12px', paddingRight: '32px',
-              border: '1.5px solid #f1f5f9', borderRadius: '12px',
-              background: '#f8fafc', fontSize: '0.82rem', color: '#334155',
-              outline: 'none', cursor: 'pointer', appearance: 'none',
-            }}
-          >
-            {SORT_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-          </select>
-          <ChevronDown size={13} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-        </div>
+        {/* ✅ FIX: was a native <select> (browser-default popup, no
+            checkmark, system font/highlight colour) — now the same
+            pill-trigger + floating rounded-panel dropdown used on the
+            Orders and Products pages. */}
+        <Dropdown value={sort} onChange={setSort} options={SORT_DROPDOWN_OPTIONS} />
       </div>
 
       {/* Table */}

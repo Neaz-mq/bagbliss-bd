@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Plus, Search, RefreshCw, Edit2, Trash2, X, Upload,
   ChevronDown, ChevronLeft, ChevronRight, Package,
-  AlertTriangle, Loader2, Eye,
+  AlertTriangle, Loader2, Eye, Check,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -158,6 +158,155 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   )
 }
 
+/* ============================================
+   CUSTOM DROPDOWN
+   Same visual language as the "All Payments" filter on the Orders
+   admin page: a pill-shaped trigger button, and a floating rounded
+   panel with a soft accent highlight + checkmark on the selected row
+   (instead of the browser's native <select> popup, which can't be
+   themed and looks out of place next to the rest of the UI).
+   Used for both the category FILTER (page level) and the category
+   PICKER inside the Add/Edit Product modal.
+   ============================================ */
+interface DropdownOption {
+  value: string
+  label: string
+  emoji?: string
+  dot?: string
+}
+
+function Dropdown({
+  value, options, onChange, placeholder = 'Select…', fullWidth = false, icon,
+}: {
+  value: string
+  options: DropdownOption[]
+  onChange: (v: string) => void
+  placeholder?: string
+  fullWidth?: boolean
+  icon?: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  // ✅ FIX: the panel used to be `position: absolute` inside this
+  // wrapper, which meant any ancestor with `overflow: hidden` (or the
+  // viewport edge on narrow screens) could clip its rounded corners
+  // and cut it off mid-panel. Anchoring it with `position: fixed` and
+  // computed viewport coordinates makes it escape all ancestor
+  // clipping — it's only ever bounded by the screen itself, and we
+  // clamp the left edge so it never runs past the right side either.
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
+  const btnRef   = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const openDropdown = () => {
+    if (open) { setOpen(false); return }
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (rect) {
+      const panelWidth = fullWidth ? rect.width : Math.max(rect.width, 210)
+      const maxLeft = window.innerWidth - panelWidth - 8
+      const left = Math.max(8, Math.min(rect.left, maxLeft))
+      setCoords({ top: rect.bottom + 6, left, width: rect.width })
+    }
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (panelRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const closeOnScrollOrResize = () => setOpen(false)
+    const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', escHandler)
+    window.addEventListener('scroll', closeOnScrollOrResize, true)
+    window.addEventListener('resize', closeOnScrollOrResize)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', escHandler)
+      window.removeEventListener('scroll', closeOnScrollOrResize, true)
+      window.removeEventListener('resize', closeOnScrollOrResize)
+    }
+  }, [open])
+
+  const selected = options.find(o => o.value === value)
+
+  return (
+    <div style={{ position: 'relative', width: fullWidth ? '100%' : 'auto', flexShrink: 0 }}>
+      <button
+        suppressHydrationWarning
+        ref={btnRef}
+        type="button"
+        onClick={openDropdown}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          width: fullWidth ? '100%' : 'auto',
+          height: '40px', padding: '0 14px',
+          borderRadius: '10px',
+          border: `1.5px solid ${open ? ACCENT_BORDER3 : '#f1f5f9'}`,
+          background: open ? ACCENT_SOFT : '#f8fafc',
+          fontSize: '0.85rem', fontWeight: 700,
+          color: open ? ACCENT_TEXT : '#334155',
+          cursor: 'pointer', whiteSpace: 'nowrap',
+          boxSizing: 'border-box', transition: 'background 0.15s, border-color 0.15s',
+        }}
+      >
+        {icon}
+        <span style={{ flex: fullWidth ? 1 : 'none', textAlign: 'left', ...ellipsisStyle }}>
+          {selected ? <>{selected.emoji ? `${selected.emoji} ` : ''}{selected.label}</> : placeholder}
+        </span>
+        <ChevronDown size={14} style={{ flexShrink: 0, color: open ? ACCENT : '#94a3b8', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+      </button>
+
+      {open && coords && (
+        <div ref={panelRef} style={{
+          position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000,
+          width: fullWidth ? coords.width : undefined,
+          minWidth: fullWidth ? coords.width : '210px',
+          background: '#fff', borderRadius: '14px',
+          border: '1px solid #f1f5f9',
+          boxShadow: '0 16px 40px rgba(15,23,42,0.16)',
+          padding: '6px', maxHeight: '280px', overflowY: 'auto',
+        }}>
+          {options.map(o => {
+            const active = o.value === value
+            return (
+              <button
+                suppressHydrationWarning
+                key={o.value || '__all__'}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  width: '100%', padding: '9px 12px', border: 'none',
+                  borderRadius: '9px',
+                  background: active ? ACCENT_SOFT : 'transparent',
+                  color: active ? ACCENT_TEXT : '#334155',
+                  fontSize: '0.85rem', fontWeight: active ? 700 : 600,
+                  cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f8fafc' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                {o.dot && <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: o.dot, flexShrink: 0 }} />}
+                {o.emoji && <span style={{ flexShrink: 0 }}>{o.emoji}</span>}
+                <span style={{ flex: 1, ...ellipsisStyle }}>{o.label}</span>
+                {active && <Check size={14} color={ACCENT} style={{ flexShrink: 0 }} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const CATEGORY_FILTER_OPTIONS: DropdownOption[] = [
+  { value: '', label: 'All Categories' },
+  ...CATEGORIES.map(c => ({ value: c.value, label: c.label, emoji: c.emoji })),
+]
+
 function ProductModal({ product, onClose, onSaved }: {
   product: Product | null; onClose: () => void; onSaved: () => void
 }) {
@@ -299,13 +448,12 @@ function ProductModal({ product, onClose, onSaved }: {
             <SectionLabel>Basic Information</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <FInput placeholder="Product name *" value={form.name} onChange={v => set('name', v)} />
-              <div style={{ position: 'relative' }}>
-                <select suppressHydrationWarning value={form.category} onChange={e => set('category', e.target.value)}
-                  style={{ width: '100%', padding: '9px 32px 9px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#fafbfc', cursor: 'pointer', appearance: 'none', boxSizing: 'border-box' }}>
-                  {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
-                </select>
-                <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-              </div>
+              <Dropdown
+                value={form.category}
+                onChange={v => set('category', v)}
+                fullWidth
+                options={CATEGORIES.map(c => ({ value: c.value, label: c.label, emoji: c.emoji }))}
+              />
               <input suppressHydrationWarning placeholder="Short description" value={form.shortDescription} onChange={e => set('shortDescription', e.target.value)}
                 style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#fafbfc', boxSizing: 'border-box' }}
                 onFocus={e => (e.target.style.borderColor = ACCENT)} onBlur={e => (e.target.style.borderColor = '#e8edf5')} />
@@ -630,14 +778,15 @@ export default function ProductsClient() {
               style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontSize: viewportWidth < 360 ? '0.8rem' : '0.85rem', color: '#334155' }} />
             {search && <button suppressHydrationWarning onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex', flexShrink: 0 }}><X size={13} /></button>}
           </div>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <select suppressHydrationWarning value={catFilter} onChange={e => setCat(e.target.value)}
-              style={{ height: '40px', paddingLeft: '12px', paddingRight: '32px', border: '1.5px solid #f1f5f9', borderRadius: '10px', background: '#f8fafc', fontSize: '0.82rem', color: '#334155', outline: 'none', cursor: 'pointer', appearance: 'none', maxWidth: isMobile ? '160px' : 'none' }}>
-              <option value="">All Categories</option>
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
-            </select>
-            <ChevronDown size={13} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-          </div>
+          {/* ✅ FIX: was a native <select> (browser-default popup, no
+              checkmark, system font) — now the same pill-trigger +
+              floating rounded-panel dropdown used on the Orders page. */}
+          <Dropdown
+            value={catFilter}
+            onChange={setCat}
+            options={CATEGORY_FILTER_OPTIONS}
+            placeholder="All Categories"
+          />
         </div>
 
         {isMobile ? (

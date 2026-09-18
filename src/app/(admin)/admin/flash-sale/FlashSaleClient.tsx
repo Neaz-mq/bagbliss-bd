@@ -1,10 +1,10 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Zap, Package, Search, X, Plus, Trash2, RefreshCw,
-  ChevronDown, Save, AlertTriangle, TrendingDown, Tag, ShoppingBag, Loader2,
+  ChevronDown, Save, AlertTriangle, TrendingDown, Tag, ShoppingBag, Loader2, Check,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -22,6 +22,7 @@ const ACCENT_SOFT4   = 'rgba(202,134,93,0.05)'
 const ACCENT_SOFT5   = 'rgba(202,134,93,0.04)'
 const ACCENT_BORDER  = 'rgba(202,134,93,0.15)'
 const ACCENT_BORDER2 = 'rgba(202,134,93,0.2)'
+const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
 const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
 const ACCENT_SHADOW2 = 'rgba(202,134,93,0.4)'
 const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`
@@ -51,6 +52,12 @@ const CAT_LABELS: Record<string, string> = {
   party:            '💖 Party & Evening',
 }
 
+const SORT_OPTIONS = [
+  { value: 'discount', label: 'Highest Discount' },
+  { value: 'price',    label: 'Lowest Price' },
+  { value: 'stock',    label: 'Most Stock' },
+]
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function discount(original: number, sale: number) {
@@ -72,6 +79,131 @@ function PriceInput({
         onFocus={e => (e.target.style.borderColor = ACCENT)}
         onBlur={e => (e.target.style.borderColor = '#e8edf5')}
       />
+    </div>
+  )
+}
+
+// ── Dropdown ───────────────────────────────────────────────────────────────────
+// Same visual language as the "All Payments" filter on the Orders admin page:
+// a pill-shaped trigger button, and a floating rounded panel with a soft
+// accent highlight + checkmark on the selected row — instead of the
+// browser's native <select> popup, which can't be themed.
+// The panel is anchored with `position: fixed` (computed from the trigger's
+// on-screen rect) rather than `position: absolute`, so it can never be
+// clipped by an ancestor's `overflow: hidden` or run off the viewport edge.
+interface DropdownOption { value: string; label: string }
+
+function Dropdown({
+  value, options, onChange, fullWidth = false,
+}: {
+  value: string
+  options: DropdownOption[]
+  onChange: (v: string) => void
+  fullWidth?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
+  const btnRef   = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  const openDropdown = () => {
+    if (open) { setOpen(false); return }
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (rect) {
+      const panelWidth = fullWidth ? rect.width : Math.max(rect.width, 190)
+      const maxLeft = window.innerWidth - panelWidth - 8
+      const left = Math.max(8, Math.min(rect.left, maxLeft))
+      setCoords({ top: rect.bottom + 6, left, width: rect.width })
+    }
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return
+      if (panelRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    const closeOnScrollOrResize = () => setOpen(false)
+    const escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', escHandler)
+    window.addEventListener('scroll', closeOnScrollOrResize, true)
+    window.addEventListener('resize', closeOnScrollOrResize)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', escHandler)
+      window.removeEventListener('scroll', closeOnScrollOrResize, true)
+      window.removeEventListener('resize', closeOnScrollOrResize)
+    }
+  }, [open])
+
+  const selected = options.find(o => o.value === value)
+
+  return (
+    <div style={{ position: 'relative', width: fullWidth ? '100%' : 'auto', flexShrink: 0 }}>
+      <button
+        suppressHydrationWarning
+        ref={btnRef}
+        type="button"
+        onClick={openDropdown}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          width: fullWidth ? '100%' : 'auto',
+          height: '42px', padding: '0 14px',
+          borderRadius: '12px',
+          border: `1.5px solid ${open ? ACCENT_BORDER3 : '#f1f5f9'}`,
+          background: open ? ACCENT_SOFT : '#f8fafc',
+          fontSize: '0.85rem', fontWeight: 700,
+          color: open ? ACCENT_TEXT : '#334155',
+          cursor: 'pointer', whiteSpace: 'nowrap',
+          boxSizing: 'border-box', transition: 'background 0.15s, border-color 0.15s',
+        }}
+      >
+        <span style={{ flex: fullWidth ? 1 : 'none', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {selected ? selected.label : 'Select…'}
+        </span>
+        <ChevronDown size={14} style={{ flexShrink: 0, color: open ? ACCENT : '#94a3b8', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+      </button>
+
+      {open && coords && (
+        <div ref={panelRef} style={{
+          position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000,
+          width: fullWidth ? coords.width : undefined,
+          minWidth: fullWidth ? coords.width : '190px',
+          background: '#fff', borderRadius: '14px',
+          border: '1px solid #f1f5f9',
+          boxShadow: '0 16px 40px rgba(15,23,42,0.16)',
+          padding: '6px', maxHeight: '280px', overflowY: 'auto',
+        }}>
+          {options.map(o => {
+            const active = o.value === value
+            return (
+              <button
+                suppressHydrationWarning
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  width: '100%', padding: '9px 12px', border: 'none',
+                  borderRadius: '9px',
+                  background: active ? ACCENT_SOFT : 'transparent',
+                  color: active ? ACCENT_TEXT : '#334155',
+                  fontSize: '0.85rem', fontWeight: active ? 700 : 600,
+                  cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f8fafc' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.label}</span>
+                {active && <Check size={14} color={ACCENT} style={{ flexShrink: 0 }} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -499,19 +631,11 @@ export default function FlashSaleClient() {
           )}
         </div>
 
-        <div style={{ position: 'relative' }}>
-          {/* ✅ suppressHydrationWarning on controlled select */}
-          <select
-            suppressHydrationWarning
-            value={sortBy} onChange={e => setSortBy(e.target.value)}
-            style={{ height: '42px', paddingLeft: '12px', paddingRight: '30px', border: '1.5px solid #f1f5f9', borderRadius: '12px', background: '#f8fafc', fontSize: '0.82rem', color: '#334155', outline: 'none', cursor: 'pointer', appearance: 'none' }}
-          >
-            <option value="discount">Highest Discount</option>
-            <option value="price">Lowest Price</option>
-            <option value="stock">Most Stock</option>
-          </select>
-          <ChevronDown size={13} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-        </div>
+        {/* ✅ FIX: was a native <select> (browser-default popup, no
+            checkmark, could get clipped by ancestor overflow / the
+            screen edge) — now the same viewport-anchored dropdown
+            used on Products, Customers, and Orders. */}
+        <Dropdown value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} />
       </div>
 
       {/* Products Grid */}
