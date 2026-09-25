@@ -65,6 +65,25 @@ const SORT_OPTS = [
   { v: '-totalSpent', l: 'Top Spenders' },
 ]
 
+// ✅ NEW: below this width the customer table has no room to lay out
+// six columns cleanly (avatar+name, email, order count, spent, joined
+// date, action button) — that's exactly what the screenshot shows:
+// header labels merging into "CUSTOMEREMAILORDERS" and row content
+// wrapping over itself. Below this breakpoint we render stacked cards
+// instead, same pattern as the Orders admin page.
+const MOBILE_BREAKPOINT = 860
+
+function useViewportWidth() {
+  const [width, setWidth] = useState(1280)
+  useEffect(() => {
+    const check = () => setWidth(window.innerWidth)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return width
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 // ✅ Always format dates with explicit locale 'en-GB' to avoid server/client mismatch
@@ -239,6 +258,8 @@ function CustomerModal({
 }: { customerId: string; customerName: string; onClose: () => void }) {
   const [detail, setDetail]   = useState<CustomerDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const viewportWidth = useViewportWidth()
+  const isMobile = viewportWidth < 560
 
   useEffect(() => {
     fetch(`/api/admin/customers/${customerId}`)
@@ -270,12 +291,15 @@ function CustomerModal({
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 24px', borderBottom: '1px solid #f1f5f9', flexShrink: 0,
+          padding: '20px 24px', borderBottom: '1px solid #f1f5f9', flexShrink: 0, gap: '12px',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             {detail && <Avatar name={detail.user.name} image={detail.user.image} size={44} />}
-            <div>
-              <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{customerName}</p>
+            <div style={{ minWidth: 0 }}>
+              <p style={{
+                fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{customerName}</p>
               <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '2px 0 0' }}>Customer Profile</p>
             </div>
           </div>
@@ -283,7 +307,7 @@ function CustomerModal({
             suppressHydrationWarning
             onClick={onClose}
             style={{
-              width: '36px', height: '36px', borderRadius: '10px',
+              width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
               border: '1.5px solid #e2e8f0', background: '#f8fafc',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', color: '#64748b',
@@ -314,9 +338,12 @@ function CustomerModal({
                 <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Contact Information
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                   <Mail size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.875rem', color: '#334155', fontWeight: 500 }}>{detail.user.email}</span>
+                  <span style={{
+                    fontSize: '0.875rem', color: '#334155', fontWeight: 500,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+                  }}>{detail.user.email}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Calendar size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
@@ -328,15 +355,15 @@ function CustomerModal({
               </div>
 
               {/* Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(3, 1fr)', gap: isMobile ? '8px' : '12px' }}>
                 {[
                   { label: 'Total Orders', value: detail.orders.length,          icon: ShoppingBag, color: '#6366f1', bg: 'rgba(99,102,241,0.08)'  },
                   { label: 'Total Spent',  value: `৳${totalSpent.toLocaleString('en-US')}`, icon: TrendingUp,  color: ACCENT, bg: ACCENT_SOFT },
                   { label: 'Delivered',    value: delivered,                      icon: Package,     color: '#10b981', bg: 'rgba(16,185,129,0.08)'  },
                 ].map(({ label, value, icon: Icon, color, bg }) => (
                   <div key={label} style={{
-                    background: '#f8fafc', borderRadius: '14px', padding: '16px',
-                    border: '1px solid #f1f5f9', textAlign: 'center',
+                    background: '#f8fafc', borderRadius: '14px', padding: isMobile ? '10px 6px' : '16px',
+                    border: '1px solid #f1f5f9', textAlign: 'center', minWidth: 0,
                   }}>
                     <div style={{
                       width: '36px', height: '36px', borderRadius: '10px', background: bg,
@@ -345,7 +372,10 @@ function CustomerModal({
                       <Icon size={16} style={{ color }} />
                     </div>
                     {/* ✅ div instead of p to avoid invalid nesting */}
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{value}</div>
+                    <div style={{
+                      fontSize: isMobile ? '0.92rem' : '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{value}</div>
                     <div style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '3px 0 0' }}>{label}</div>
                   </div>
                 ))}
@@ -370,7 +400,8 @@ function CustomerModal({
                       const cfg = STATUS_CFG[order.status] ?? STATUS_CFG.processing
                       return (
                         <div key={order._id} style={{
-                          display: 'flex', alignItems: 'center', gap: '12px',
+                          display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap',
+                          alignItems: 'center', gap: '12px',
                           padding: '14px 16px', background: '#f8fafc',
                           borderRadius: '12px', border: '1px solid #f1f5f9',
                         }}>
@@ -381,15 +412,18 @@ function CustomerModal({
                           }}>
                             <ShoppingBag size={14} color={ACCENT} />
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+                          <div style={{ flex: 1, minWidth: isMobile ? '120px' : 0 }}>
+                            <div style={{
+                              fontSize: '0.875rem', fontWeight: 700, color: '#1e293b', margin: 0,
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>
                               #{order.orderNumber}
                             </div>
                             <div style={{
                               fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0',
                               display: 'flex', alignItems: 'center', gap: '4px',
                             }}>
-                              <Clock size={10} />
+                              <Clock size={10} style={{ flexShrink: 0 }} />
                               {fmt(order.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}
                               {' · '}
                               {order.items.length} item{order.items.length !== 1 ? 's' : ''}
@@ -399,8 +433,9 @@ function CustomerModal({
                             display: 'inline-flex', alignItems: 'center', gap: '5px',
                             fontSize: '0.72rem', fontWeight: 700, padding: '4px 9px',
                             borderRadius: '8px', background: cfg.bg, color: cfg.text, whiteSpace: 'nowrap',
+                            flexShrink: 0,
                           }}>
-                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: cfg.dot }} />
+                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
                             {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                           </span>
                           <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0, flexShrink: 0 }}>
@@ -434,6 +469,10 @@ export default function CustomersClient() {
   const [sort,      setSort]      = useState('-createdAt')
   const [modalId,   setModalId]   = useState<string | null>(null)
   const [modalName, setModalName] = useState('')
+
+  // ✅ NEW: drives the table → stacked-cards switch below.
+  const viewportWidth = useViewportWidth()
+  const isMobile = viewportWidth < MOBILE_BREAKPOINT
 
   const limit = 20
 
@@ -500,16 +539,20 @@ export default function CustomersClient() {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px' }}>
+      {/* ✅ FIX: single column on mobile (isMobile) instead of the
+          auto-fit(minmax(140px,1fr)) grid, which was still cramming
+          two-per-row at narrow widths and squeezing the revenue figure
+          ("৳10,…") into ellipsis. */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
         {[
           { label: 'Total Customers', value: total,                                    icon: Users,       gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)', bg: 'rgba(99,102,241,0.08)'  },
           { label: 'With Orders',     value: withOrders,                               icon: ShoppingBag, gradient: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, bg: ACCENT_SOFT },
           { label: 'Total Revenue',   value: `৳${totalSpent.toLocaleString('en-US')}`, icon: TrendingUp,  gradient: 'linear-gradient(135deg, #10b981, #059669)', bg: 'rgba(16,185,129,0.08)'  },
         ].map(({ label, value, icon: Icon, gradient, bg }) => (
           <div key={label} style={{
-            background: '#fff', borderRadius: '16px', padding: '20px',
+            background: '#fff', borderRadius: '16px', padding: '16px',
             border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            display: 'flex', alignItems: 'center', gap: '14px',
+            display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0,
           }}>
             <div style={{
               width: '44px', height: '44px', borderRadius: '14px', background: gradient,
@@ -518,9 +561,12 @@ export default function CustomersClient() {
             }}>
               <Icon size={20} color="white" strokeWidth={2} />
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               {/* ✅ div instead of p — avoids invalid nesting if this renders inside another p */}
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{value}</div>
+              <div style={{
+                fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', lineHeight: 1,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{value}</div>
               <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', fontWeight: 500 }}>{label}</div>
             </div>
           </div>
@@ -542,13 +588,13 @@ export default function CustomersClient() {
             placeholder="Search by name or email…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
+            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
           />
           {search && (
             <button
               suppressHydrationWarning
               onClick={() => setSearch('')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex', flexShrink: 0 }}
             >
               <X size={14} />
             </button>
@@ -562,161 +608,270 @@ export default function CustomersClient() {
         <Dropdown value={sort} onChange={setSort} options={SORT_DROPDOWN_OPTIONS} />
       </div>
 
-      {/* Table */}
-      <div style={{
-        background: '#fff', borderRadius: '16px',
-        border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden',
-      }}>
-        {/* Head */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '2fr 1.5fr 80px 110px 110px 56px',
-          padding: '11px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8',
-          textTransform: 'uppercase', letterSpacing: '0.08em',
-          background: '#fafbfc', borderBottom: '1px solid #f1f5f9',
-        }}>
-          <span>Customer</span>
-          <span>Email</span>
-          <span>Orders</span>
-          <span>Total Spent</span>
-          <span>Joined</span>
-          <span />
-        </div>
-
-        {/* Loading */}
-        {loading && (
-          <div style={{ padding: '60px', textAlign: 'center' }}>
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '50%',
-              border: '3px solid #f1f5f9', borderTopColor: ACCENT,
-              animation: 'spin 0.7s linear infinite', margin: '0 auto 12px',
-            }} />
-            <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading customers…</p>
-          </div>
-        )}
-
-        {/* Empty */}
-        {!loading && customers.length === 0 && (
-          <div style={{ padding: '80px 20px', textAlign: 'center' }}>
-            <div style={{
-              width: '64px', height: '64px', borderRadius: '18px',
-              background: ACCENT_SOFT3,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
-            }}>
-              <Users size={26} color={ACCENT} style={{ opacity: 0.5 }} />
+      {/* ── Customer list: stacked cards on narrow screens, grid table
+          from MOBILE_BREAKPOINT up ── */}
+      {isMobile ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {loading && (
+            <div style={{ padding: '60px 20px', textAlign: 'center', background: '#fff', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '50%',
+                border: '3px solid #f1f5f9', borderTopColor: ACCENT,
+                animation: 'spin 0.7s linear infinite', margin: '0 auto 12px',
+              }} />
+              <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading customers…</p>
             </div>
-            <p style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', margin: 0 }}>No customers found</p>
-            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '6px 0 0' }}>
-              {search ? 'Try a different search term' : 'Customers will appear here once people register'}
-            </p>
-          </div>
-        )}
+          )}
 
-        {/* Rows */}
-        {!loading && customers.map((c, i) => (
-          <div
-            key={c._id}
-            style={{
-              display: 'grid', gridTemplateColumns: '2fr 1.5fr 80px 110px 110px 56px',
-              padding: '13px 20px',
-              borderBottom: i < customers.length - 1 ? '1px solid #f8fafc' : 'none',
-              alignItems: 'center', transition: 'background 0.1s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#fafbfc')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          >
-            {/* Name + Avatar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-              <Avatar name={c.name} image={c.image} size={38} />
-              <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontSize: '0.875rem', fontWeight: 700, color: '#1e293b',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {c.name}
-                </div>
-                {c.lastOrder && (
-                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
-                    {/* ✅ explicit locale */}
-                    Last order {fmt(c.lastOrder, { day: 'numeric', month: 'short' })}
+          {!loading && customers.length === 0 && (
+            <div style={{ padding: '60px 20px', textAlign: 'center', background: '#fff', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '16px',
+                background: ACCENT_SOFT3,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px',
+              }}>
+                <Users size={22} color={ACCENT} style={{ opacity: 0.5 }} />
+              </div>
+              <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#334155', margin: 0 }}>No customers found</p>
+              <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '6px 0 0' }}>
+                {search ? 'Try a different search term' : 'Customers will appear here once people register'}
+              </p>
+            </div>
+          )}
+
+          {!loading && customers.map(c => (
+            <button
+              suppressHydrationWarning
+              key={c._id}
+              onClick={() => openModal(c)}
+              style={{
+                display: 'flex', flexDirection: 'column', gap: '10px',
+                background: '#fff', borderRadius: '16px', border: '1px solid #f1f5f9',
+                padding: '14px 16px', textAlign: 'left', cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)', width: '100%',
+              }}
+            >
+              {/* Row 1: avatar + name/email, view icon */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Avatar name={c.name} image={c.image} size={38} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{
+                    fontSize: '0.88rem', fontWeight: 700, color: '#1e293b',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {c.name}
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Email */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-              <Mail size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
-              <div style={{
-                fontSize: '0.8rem', color: '#64748b',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {c.email}
-              </div>
-            </div>
-
-            {/* Orders */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                minWidth: '28px', height: '24px', borderRadius: '7px', padding: '0 7px',
-                background: c.orderCount > 0 ? ACCENT_SOFT : '#f8fafc',
-                fontSize: '0.8rem', fontWeight: 800,
-                color: c.orderCount > 0 ? ACCENT_TEXT : '#94a3b8',
-              }}>
-                {c.orderCount}
-              </div>
-            </div>
-
-            {/* Spent */}
-            <div style={{ fontSize: '0.9rem', fontWeight: 800, color: c.totalSpent > 0 ? '#0f172a' : '#94a3b8' }}>
-              {c.totalSpent > 0 ? `৳${c.totalSpent.toLocaleString('en-US')}` : '—'}
-            </div>
-
-            {/* Joined */}
-            <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-              {/* ✅ explicit locale */}
-              {fmt(c.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}
-            </div>
-
-            {/* View */}
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <button
-                suppressHydrationWarning
-                onClick={() => openModal(c)}
-                style={{
-                  width: '32px', height: '32px', borderRadius: '9px',
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px',
+                    fontSize: '0.75rem', color: '#94a3b8',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    <Mail size={11} style={{ flexShrink: 0 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</span>
+                  </div>
+                </div>
+                <span style={{
+                  width: '30px', height: '30px', borderRadius: '9px', flexShrink: 0,
                   border: '1.5px solid #e2e8f0', background: '#f8fafc',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: '#64748b',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background     = ACCENT_SOFT2
-                  e.currentTarget.style.borderColor    = ACCENT_BORDER2
-                  e.currentTarget.style.color          = ACCENT
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background     = '#f8fafc'
-                  e.currentTarget.style.borderColor    = '#e2e8f0'
-                  e.currentTarget.style.color          = '#64748b'
-                }}
-              >
-                <Eye size={13} />
-              </button>
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b',
+                }}>
+                  <Eye size={13} />
+                </span>
+              </div>
+
+              {/* Row 2: orders / spent / joined */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+                paddingTop: '10px', borderTop: '1px solid #f8fafc',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    minWidth: '26px', height: '22px', borderRadius: '7px', padding: '0 6px',
+                    background: c.orderCount > 0 ? ACCENT_SOFT : '#f8fafc',
+                    fontSize: '0.74rem', fontWeight: 800, flexShrink: 0,
+                    color: c.orderCount > 0 ? ACCENT_TEXT : '#94a3b8',
+                  }}>
+                    {c.orderCount}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>orders</span>
+                </div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: c.totalSpent > 0 ? '#0f172a' : '#94a3b8', whiteSpace: 'nowrap' }}>
+                  {c.totalSpent > 0 ? `৳${c.totalSpent.toLocaleString('en-US')}` : '—'}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {fmt(c.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div style={{
+          background: '#fff', borderRadius: '16px',
+          border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', overflow: 'hidden',
+        }}>
+          {/* Safety-net horizontal scroll — same pattern as the Orders
+              table — in case a viewport lands right at the boundary. */}
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ minWidth: '680px' }}>
+              {/* Head */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: '2fr 1.5fr 80px 110px 110px 56px',
+                padding: '11px 20px', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8',
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                background: '#fafbfc', borderBottom: '1px solid #f1f5f9',
+              }}>
+                <span>Customer</span>
+                <span>Email</span>
+                <span>Orders</span>
+                <span>Total Spent</span>
+                <span>Joined</span>
+                <span />
+              </div>
+
+              {/* Loading */}
+              {loading && (
+                <div style={{ padding: '60px', textAlign: 'center' }}>
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '50%',
+                    border: '3px solid #f1f5f9', borderTopColor: ACCENT,
+                    animation: 'spin 0.7s linear infinite', margin: '0 auto 12px',
+                  }} />
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>Loading customers…</p>
+                </div>
+              )}
+
+              {/* Empty */}
+              {!loading && customers.length === 0 && (
+                <div style={{ padding: '80px 20px', textAlign: 'center' }}>
+                  <div style={{
+                    width: '64px', height: '64px', borderRadius: '18px',
+                    background: ACCENT_SOFT3,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+                  }}>
+                    <Users size={26} color={ACCENT} style={{ opacity: 0.5 }} />
+                  </div>
+                  <p style={{ fontSize: '1rem', fontWeight: 700, color: '#334155', margin: 0 }}>No customers found</p>
+                  <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '6px 0 0' }}>
+                    {search ? 'Try a different search term' : 'Customers will appear here once people register'}
+                  </p>
+                </div>
+              )}
+
+              {/* Rows */}
+              {!loading && customers.map((c, i) => (
+                <div
+                  key={c._id}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '2fr 1.5fr 80px 110px 110px 56px',
+                    padding: '13px 20px',
+                    borderBottom: i < customers.length - 1 ? '1px solid #f8fafc' : 'none',
+                    alignItems: 'center', transition: 'background 0.1s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#fafbfc')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  {/* Name + Avatar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    <Avatar name={c.name} image={c.image} size={38} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{
+                        fontSize: '0.875rem', fontWeight: 700, color: '#1e293b',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {c.name}
+                      </div>
+                      {c.lastOrder && (
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px', whiteSpace: 'nowrap' }}>
+                          {/* ✅ explicit locale */}
+                          Last order {fmt(c.lastOrder, { day: 'numeric', month: 'short' })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                    <Mail size={13} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                    <div style={{
+                      fontSize: '0.8rem', color: '#64748b',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {c.email}
+                    </div>
+                  </div>
+
+                  {/* Orders */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      minWidth: '28px', height: '24px', borderRadius: '7px', padding: '0 7px',
+                      background: c.orderCount > 0 ? ACCENT_SOFT : '#f8fafc',
+                      fontSize: '0.8rem', fontWeight: 800,
+                      color: c.orderCount > 0 ? ACCENT_TEXT : '#94a3b8',
+                    }}>
+                      {c.orderCount}
+                    </div>
+                  </div>
+
+                  {/* Spent */}
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: c.totalSpent > 0 ? '#0f172a' : '#94a3b8', whiteSpace: 'nowrap' }}>
+                    {c.totalSpent > 0 ? `৳${c.totalSpent.toLocaleString('en-US')}` : '—'}
+                  </div>
+
+                  {/* Joined */}
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                    {/* ✅ explicit locale */}
+                    {fmt(c.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </div>
+
+                  {/* View */}
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <button
+                      suppressHydrationWarning
+                      onClick={() => openModal(c)}
+                      style={{
+                        width: '32px', height: '32px', borderRadius: '9px',
+                        border: '1.5px solid #e2e8f0', background: '#f8fafc',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', color: '#64748b', flexShrink: 0,
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background     = ACCENT_SOFT2
+                        e.currentTarget.style.borderColor    = ACCENT_BORDER2
+                        e.currentTarget.style.color          = ACCENT
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background     = '#f8fafc'
+                        e.currentTarget.style.borderColor    = '#e2e8f0'
+                        e.currentTarget.style.color          = '#64748b'
+                      }}
+                    >
+                      <Eye size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Pagination */}
       {pages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
+        <div style={{
+          display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
+          justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
+        }}>
+          <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0, textAlign: isMobile ? 'center' : 'left' }}>
             Showing{' '}
             <strong style={{ color: '#1e293b' }}>{(page - 1) * limit + 1}–{Math.min(page * limit, total)}</strong>
             {' '}of{' '}
             <strong style={{ color: '#1e293b' }}>{total}</strong> customers
           </p>
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '6px', justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
             <button
               suppressHydrationWarning
               onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -726,18 +881,20 @@ export default function CustomersClient() {
                 border: '1.5px solid #e2e8f0', background: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: page === 1 ? 'not-allowed' : 'pointer',
-                opacity: page === 1 ? 0.4 : 1, color: '#475569',
+                opacity: page === 1 ? 0.4 : 1, color: '#475569', flexShrink: 0,
               }}
             >
               <ChevronLeft size={15} />
             </button>
 
-            {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+            {Array.from({ length: Math.min(isMobile ? 3 : 5, pages) }, (_, i) => {
+              const span = isMobile ? 3 : 5
               let n = i + 1
-              if (pages > 5) {
-                if      (page <= 3)       n = i + 1
-                else if (page >= pages - 2) n = pages - 4 + i
-                else                      n = page - 2 + i
+              if (pages > span) {
+                const edge = Math.floor(span / 2)
+                if      (page <= edge + 1)         n = i + 1
+                else if (page >= pages - edge)      n = pages - span + 1 + i
+                else                                n = page - edge + i
               }
               return (
                 <button
@@ -750,7 +907,7 @@ export default function CustomersClient() {
                     background: page === n ? ACCENT_SOFT : '#fff',
                     color: page === n ? ACCENT : '#475569',
                     fontWeight: page === n ? 800 : 500,
-                    fontSize: '0.82rem', cursor: 'pointer',
+                    fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0,
                   }}
                 >
                   {n}
@@ -767,7 +924,7 @@ export default function CustomersClient() {
                 border: '1.5px solid #e2e8f0', background: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: page === pages ? 'not-allowed' : 'pointer',
-                opacity: page === pages ? 0.4 : 1, color: '#475569',
+                opacity: page === pages ? 0.4 : 1, color: '#475569', flexShrink: 0,
               }}
             >
               <ChevronRight size={15} />
