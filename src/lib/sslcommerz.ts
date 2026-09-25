@@ -29,10 +29,14 @@ export interface SSLInitPayload {
   cus_phone:      string
   cus_add1:       string
   cus_city:       string
+  cus_state:      string
+  cus_postcode:   string
   cus_country:    string
   ship_name:      string
   ship_add1:      string
   ship_city:      string
+  ship_state:     string
+  ship_postcode:  string
   ship_country:   string
   shipping_method: string
   num_of_item:    number
