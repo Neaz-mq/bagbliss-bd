@@ -227,12 +227,16 @@ function DatePicker({
   const [viewYear,  setViewYear]  = useState(selectedDate?.getFullYear() ?? today.getFullYear())
   const [viewMonth, setViewMonth] = useState(selectedDate?.getMonth()   ?? today.getMonth())
 
-  const PANEL_WIDTH = 300
+  // Slightly narrower panel so it still fits inside very small phone
+  // viewports (e.g. 320–360px) without needing horizontal scroll.
+  const [panelWidth, setPanelWidth] = useState(300)
 
   const computeCoords = () => {
     const rect = btnRef.current?.getBoundingClientRect()
     if (!rect) return
-    const maxLeft = window.innerWidth - PANEL_WIDTH - 8
+    const width = Math.min(300, window.innerWidth - 16)
+    setPanelWidth(width)
+    const maxLeft = window.innerWidth - width - 8
     setCoords({ top: rect.bottom + 6, left: Math.max(8, Math.min(rect.left, maxLeft)) })
   }
 
@@ -324,7 +328,7 @@ function DatePicker({
         <div
           ref={panelRef}
           style={{
-            position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000, width: `${PANEL_WIDTH}px`,
+            position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000, width: `${panelWidth}px`,
             background: 'white', borderRadius: '16px', border: '1px solid rgba(26,26,46,0.08)',
             boxShadow: '0 16px 40px rgba(15,23,42,0.16)', padding: '1rem', boxSizing: 'border-box',
           }}
@@ -542,7 +546,6 @@ export default function ProfilePage() {
     return (
       <div
         style={{
-          paddingTop: '72px',
           minHeight: '100vh',
           background: 'var(--color-surface)',
         }}
@@ -553,17 +556,14 @@ export default function ProfilePage() {
   return (
     <div
       style={{
-        paddingTop: '72px',
         minHeight: '100vh',
         background: 'var(--color-surface)',
         paddingBottom: '5rem',
       }}
     >
-      <div
-        style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1.5rem' }}
-      >
+      <div className="profile-container" style={{ maxWidth: '900px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <Link
             href="/account"
             style={{
@@ -583,7 +583,7 @@ export default function ProfilePage() {
           <h1
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(1.75rem,4vw,2.5rem)',
+              fontSize: 'clamp(1.5rem,5vw,2.5rem)',
               color: 'var(--color-primary)',
               margin: '0 0 0.25rem',
             }}
@@ -613,11 +613,11 @@ export default function ProfilePage() {
         >
           {/* Avatar Card */}
           <div
+            className="profile-avatar-card"
             style={{
               background: 'white',
               borderRadius: 'var(--radius-xl)',
               border: '1px solid rgba(26,26,46,0.06)',
-              padding: '2rem 1.5rem',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -722,7 +722,7 @@ export default function ProfilePage() {
                 fontSize: '0.8rem',
                 color: 'var(--color-text-muted)',
                 margin: 0,
-                wordBreak: 'break-all',
+                overflowWrap: 'anywhere',
               }}
             >
               {form.email}
@@ -750,20 +750,20 @@ export default function ProfilePage() {
 
           {/* Form Card */}
           <div
+            className="profile-form-card"
             style={{
               background: 'white',
               borderRadius: 'var(--radius-xl)',
               border: '1px solid rgba(26,26,46,0.06)',
-              padding: '2rem',
             }}
           >
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: '1.35rem',
+                fontSize: '1.2rem',
                 fontWeight: 600,
                 color: 'var(--color-primary)',
-                margin: '0 0 1.75rem',
+                margin: '0 0 1.5rem',
                 paddingBottom: '1rem',
                 borderBottom: '1px solid rgba(26,26,46,0.06)',
               }}
@@ -828,6 +828,7 @@ export default function ProfilePage() {
                       color: 'var(--color-text-primary)',
                       outline: 'none',
                       background: 'white',
+                      boxSizing: 'border-box',
                     }}
                     onFocus={(e) =>
                       (e.target.style.borderColor = 'var(--color-accent)')
@@ -888,6 +889,7 @@ export default function ProfilePage() {
                       color: 'var(--color-text-muted)',
                       background: 'var(--color-surface)',
                       cursor: 'not-allowed',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -953,6 +955,7 @@ export default function ProfilePage() {
                       color: 'var(--color-text-primary)',
                       outline: 'none',
                       background: 'white',
+                      boxSizing: 'border-box',
                     }}
                     onFocus={(e) =>
                       (e.target.style.borderColor = 'var(--color-accent)')
@@ -964,14 +967,8 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Gender + DOB */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '1rem',
-                }}
-              >
+              {/* Gender + DOB — stacked on mobile, side by side from tablet up */}
+              <div className="profile-gender-dob-grid">
                 <div
                   style={{
                     display: 'flex',
@@ -1023,16 +1020,17 @@ export default function ProfilePage() {
 
               {/* Actions */}
               <div
+                className="profile-actions-row"
                 style={{
                   display: 'flex',
                   gap: '0.75rem',
-                  justifyContent: 'flex-end',
                   paddingTop: '0.5rem',
                 }}
               >
                 <button
                   type="button"
                   onClick={() => router.back()}
+                  className="profile-btn-cancel"
                   style={{
                     padding: '0.75rem 1.5rem',
                     background: 'transparent',
@@ -1051,9 +1049,11 @@ export default function ProfilePage() {
                   type="submit"
                   disabled={isSaving}
                   suppressHydrationWarning
+                  className="profile-btn-save"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: '0.5rem',
                     padding: '0.875rem 2rem',
                     background: saved ? '#16a34a' : 'var(--color-accent)',
@@ -1092,6 +1092,54 @@ export default function ProfilePage() {
         </div>
 
         <style>{`
+          .profile-container {
+            padding: 1.25rem 1rem 2rem;
+          }
+          .profile-avatar-card {
+            padding: 1.5rem 1.25rem;
+          }
+          .profile-form-card {
+            padding: 1.5rem 1.25rem;
+          }
+          .profile-gender-dob-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+          }
+          .profile-actions-row {
+            flex-direction: column-reverse;
+          }
+          .profile-btn-cancel,
+          .profile-btn-save {
+            width: 100%;
+          }
+
+          @media (min-width: 480px) {
+            .profile-gender-dob-grid {
+              grid-template-columns: 1fr 1fr;
+            }
+            .profile-actions-row {
+              flex-direction: row;
+              justify-content: flex-end;
+            }
+            .profile-btn-cancel,
+            .profile-btn-save {
+              width: auto;
+            }
+          }
+
+          @media (min-width: 640px) {
+            .profile-container {
+              padding: 2rem 1.5rem;
+            }
+            .profile-avatar-card {
+              padding: 2rem 1.5rem;
+            }
+            .profile-form-card {
+              padding: 2rem;
+            }
+          }
+
           @media (min-width: 768px) {
             .profile-layout { grid-template-columns: 240px 1fr !important; align-items: start; }
           }

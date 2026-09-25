@@ -63,8 +63,6 @@ const STATUS_CONFIG = {
   },
 } as const
 
-// ✅ FIX 1: Use fixed locale 'en-GB' with timeZone: 'UTC' so server and
-//    client always produce identical strings regardless of user's locale/TZ
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -89,8 +87,6 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [ordersLoading, setOrdersLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
-  // ✅ FIX 2: Track mount state so date strings only render client-side,
-  //    preventing server/client mismatch on date formatting
   const mounted = useHydrated()
 
   useEffect(() => {
@@ -119,19 +115,12 @@ export default function AccountPage() {
     return (
       <div
         style={{
-          paddingTop: '72px',
           minHeight: '100vh',
           background: 'var(--color-surface)',
         }}
       >
         <div className="container-bagbliss" style={{ paddingTop: '3rem' }}>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '280px 1fr',
-              gap: '2rem',
-            }}
-          >
+          <div className="account-loading-grid">
             <div
               className="skeleton"
               style={{ height: '480px', borderRadius: 'var(--radius-xl)' }}
@@ -168,7 +157,6 @@ export default function AccountPage() {
       href: '/account/profile',
       desc: 'Edit personal info',
     },
-    // Admins don't place personal orders, so this link is only useful for customers
     ...(!isAdmin
       ? [
           {
@@ -179,8 +167,6 @@ export default function AccountPage() {
           },
         ]
       : []),
-    // ✅ FIX: Wishlist is a shopping feature — admins don't shop from this account,
-    //    so it's hidden for them (industry standard: admin account ≠ storefront account)
     ...(!isAdmin
       ? [
           {
@@ -218,7 +204,6 @@ export default function AccountPage() {
   return (
     <div
       style={{
-        paddingTop: '72px',
         minHeight: '100vh',
         background: 'var(--color-surface)',
         paddingBottom: '5rem',
@@ -228,10 +213,10 @@ export default function AccountPage() {
       {/* ── Hero Banner ── */}
       {mounted && (
         <div
+          className="account-hero"
           style={{
             background:
               'linear-gradient(135deg, var(--color-primary) 0%, #2d1b4e 60%, #1e0a2e 100%)',
-            padding: '2.5rem 0',
             position: 'relative',
             overflow: 'hidden',
             marginBottom: '2rem',
@@ -266,13 +251,12 @@ export default function AccountPage() {
 
           <div className="container-bagbliss">
             <div
+              className="account-hero-inner"
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: '1.5rem',
+                gap: '1.25rem',
                 position: 'relative',
                 zIndex: 1,
-                flexWrap: 'wrap',
               }}
             >
               {/* Avatar */}
@@ -282,9 +266,8 @@ export default function AccountPage() {
                   <img
                     src={user.image}
                     alt={user.name ?? ''}
+                    className="account-avatar"
                     style={{
-                      width: '80px',
-                      height: '80px',
                       borderRadius: '50%',
                       objectFit: 'cover',
                       border: '3px solid rgba(233,30,140,0.5)',
@@ -293,9 +276,8 @@ export default function AccountPage() {
                   />
                 ) : (
                   <div
+                    className="account-avatar"
                     style={{
-                      width: '80px',
-                      height: '80px',
                       borderRadius: '50%',
                       background:
                         'linear-gradient(135deg, var(--color-accent), #c2185b)',
@@ -328,8 +310,9 @@ export default function AccountPage() {
               </div>
 
               {/* Name & info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="account-hero-info" style={{ flex: 1, minWidth: 0 }}>
                 <div
+                  className="account-hero-name-row"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -341,11 +324,12 @@ export default function AccountPage() {
                   <h1
                     style={{
                       fontFamily: 'var(--font-display)',
-                      fontSize: 'clamp(1.5rem,3vw,2rem)',
+                      fontSize: 'clamp(1.35rem,5vw,2rem)',
                       fontWeight: 700,
                       color: 'white',
                       margin: 0,
                       lineHeight: 1.2,
+                      overflowWrap: 'anywhere',
                     }}
                   >
                     {user.name ?? 'Welcome'}
@@ -369,6 +353,7 @@ export default function AccountPage() {
                   )}
                 </div>
                 <div
+                  className="account-hero-meta-row"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -385,9 +370,11 @@ export default function AccountPage() {
                         fontFamily: 'var(--font-body)',
                         fontSize: '0.85rem',
                         color: 'rgba(255,255,255,0.6)',
+                        overflowWrap: 'anywhere',
+                        maxWidth: '100%',
                       }}
                     >
-                      <Mail size={13} /> {user.email}
+                      <Mail size={13} style={{ flexShrink: 0 }} /> {user.email}
                     </span>
                   )}
                   <span
@@ -400,7 +387,7 @@ export default function AccountPage() {
                       color: 'rgba(255,255,255,0.6)',
                     }}
                   >
-                    <Calendar size={13} />
+                    <Calendar size={13} style={{ flexShrink: 0 }} />
                     Member since{' '}
                     {formatJoinDate((user as { createdAt?: string }).createdAt)}
                   </span>
@@ -410,9 +397,11 @@ export default function AccountPage() {
               {/* Edit Profile button */}
               <Link
                 href="/account/profile"
+                className="account-edit-btn"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '0.5rem',
                   padding: '0.625rem 1.25rem',
                   border: '2px solid rgba(255,255,255,0.2)',
@@ -445,8 +434,8 @@ export default function AccountPage() {
       {/* Skeleton shown before mount so layout doesn't jump */}
       {!mounted && (
         <div
+          className="account-hero-skeleton"
           style={{
-            height: '140px',
             marginBottom: '2rem',
             background: 'linear-gradient(135deg, var(--color-primary) 0%, #2d1b4e 60%, #1e0a2e 100%)',
           }}
@@ -458,6 +447,7 @@ export default function AccountPage() {
         {isAdmin ? (
           <Link
             href="/admin"
+            className="account-admin-banner"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -467,7 +457,6 @@ export default function AccountPage() {
                 'linear-gradient(135deg, rgba(233,30,140,0.06), rgba(201,168,76,0.06))',
               border: '1px solid rgba(233,30,140,0.15)',
               borderRadius: 'var(--radius-xl)',
-              padding: '1.25rem 1.5rem',
               marginBottom: '2rem',
               textDecoration: 'none',
             }}
@@ -513,7 +502,7 @@ export default function AccountPage() {
                 </p>
               </div>
             </div>
-            <ChevronRight size={18} color="var(--color-text-muted)" />
+            <ChevronRight size={18} color="var(--color-text-muted)" style={{ flexShrink: 0 }} />
           </Link>
         ) : (
         <div
@@ -535,7 +524,6 @@ export default function AccountPage() {
             {
               icon: TrendingUp,
               label: 'Total Spent',
-              // ✅ FIX 5: Use fixed locale for number formatting too
               value: `৳${totalSpent.toLocaleString('en-BD')}`,
               color: 'var(--color-gold)',
             },
@@ -556,15 +544,16 @@ export default function AccountPage() {
             return (
               <div
                 key={stat.label}
+                className="account-stat-card"
                 style={{
                   background: 'white',
                   borderRadius: 'var(--radius-xl)',
                   border: '1px solid rgba(26,26,46,0.06)',
-                  padding: '1.25rem 1.5rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '1rem',
                   transition: 'all 0.2s ease',
+                  minWidth: 0,
                 }}
               >
                 <div
@@ -581,7 +570,7 @@ export default function AccountPage() {
                 >
                   <Icon size={22} color={stat.color} />
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <p
                     style={{
                       fontFamily: 'var(--font-body)',
@@ -598,10 +587,11 @@ export default function AccountPage() {
                   <p
                     style={{
                       fontFamily: 'var(--font-mono)',
-                      fontSize: '1.25rem',
+                      fontSize: '1.1rem',
                       fontWeight: 700,
                       color: stat.color,
                       margin: 0,
+                      overflowWrap: 'anywhere',
                     }}
                   >
                     {stat.value}
@@ -713,7 +703,7 @@ export default function AccountPage() {
                           {item.desc}
                         </p>
                       </div>
-                      <ChevronRight size={16} color="var(--color-text-muted)" />
+                      <ChevronRight size={16} color="var(--color-text-muted)" style={{ flexShrink: 0 }} />
                     </Link>
                   )
                 })}
@@ -771,9 +761,6 @@ export default function AccountPage() {
               </div>
             </div>
 
-            {/* ✅ FIX: Trust badges are storefront marketing copy ("free shipping",
-                "earn rewards") — irrelevant to an admin managing the store, so
-                only render this box for customers. */}
             {!isAdmin && (
               <div
                 style={{
@@ -799,7 +786,7 @@ export default function AccountPage() {
                       gap: '0.75rem',
                     }}
                   >
-                    <Icon size={16} color="var(--color-accent)" />
+                    <Icon size={16} color="var(--color-accent)" style={{ flexShrink: 0 }} />
                     <span
                       style={{
                         fontFamily: 'var(--font-body)',
@@ -828,7 +815,7 @@ export default function AccountPage() {
                   background: 'white',
                   borderRadius: 'var(--radius-xl)',
                   border: '1px solid rgba(26,26,46,0.06)',
-                  padding: '3rem 2rem',
+                  padding: '3rem 1.5rem',
                   textAlign: 'center',
                 }}
               >
@@ -891,6 +878,8 @@ export default function AccountPage() {
                   justifyContent: 'space-between',
                   padding: '1.25rem 1.5rem',
                   borderBottom: '1px solid rgba(26,26,46,0.06)',
+                  gap: '0.75rem',
+                  flexWrap: 'wrap',
                 }}
               >
                 <h2
@@ -915,6 +904,7 @@ export default function AccountPage() {
                     fontSize: '0.82rem',
                     color: 'var(--color-accent)',
                     textDecoration: 'none',
+                    flexShrink: 0,
                   }}
                 >
                   View All <ChevronRight size={14} />
@@ -942,7 +932,7 @@ export default function AccountPage() {
                   ))}
                 </div>
               ) : recentOrders.length === 0 ? (
-                <div style={{ padding: '3rem 2rem', textAlign: 'center' }}>
+                <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
                   <div
                     style={{
                       width: '64px',
@@ -995,6 +985,7 @@ export default function AccountPage() {
                     return (
                       <div
                         key={order._id}
+                        className="account-order-row"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -1074,7 +1065,6 @@ export default function AccountPage() {
                           >
                             {order.items.length} item
                             {order.items.length !== 1 ? 's' : ''} ·{' '}
-                            {/* ✅ FIX 6: Guard date render behind mounted flag */}
                             {mounted ? formatDate(order.createdAt) : '—'}
                           </p>
                         </div>
@@ -1129,12 +1119,6 @@ export default function AccountPage() {
             </div>
             )}
 
-            {/* ✅ FIX: Quick Actions is entirely redundant for admins — Admin Panel
-                is already reachable from the top nav dropdown and the banner
-                card above, and the remaining actions (Wishlist, Track Orders,
-                Manage Address) are storefront/shopping actions that don't
-                apply to an admin account. So the whole section is hidden for
-                admins instead of shipping a near-empty card. */}
             {!isAdmin && (
             <div
               style={{
@@ -1284,6 +1268,7 @@ export default function AccountPage() {
                 </Link>
               </div>
               <div
+                className="account-info-grid"
                 style={{
                   padding: '1.25rem 1.5rem',
                   display: 'grid',
@@ -1314,6 +1299,7 @@ export default function AccountPage() {
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '0.35rem',
+                      minWidth: 0,
                     }}
                   >
                     <div
@@ -1323,7 +1309,7 @@ export default function AccountPage() {
                         gap: '0.4rem',
                       }}
                     >
-                      <Icon size={13} color="var(--color-text-muted)" />
+                      <Icon size={13} color="var(--color-text-muted)" style={{ flexShrink: 0 }} />
                       <span
                         style={{
                           fontFamily: 'var(--font-body)',
@@ -1343,7 +1329,7 @@ export default function AccountPage() {
                         fontSize: '0.9rem',
                         fontWeight: 600,
                         color: 'var(--color-primary)',
-                        wordBreak: 'break-all',
+                        overflowWrap: 'anywhere',
                       }}
                     >
                       {value}
@@ -1357,6 +1343,84 @@ export default function AccountPage() {
       </div>
 
       <style>{`
+        /* ---- Hero section: stacked on mobile, row from tablet up ---- */
+        .account-hero {
+          padding: 1.75rem 0;
+        }
+        .account-hero-inner {
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+        .account-hero-info {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
+        }
+        .account-hero-name-row,
+        .account-hero-meta-row {
+          justify-content: center;
+        }
+        .account-avatar {
+          width: 72px;
+          height: 72px;
+        }
+        .account-edit-btn {
+          width: 100%;
+        }
+        .account-hero-skeleton {
+          height: 220px;
+        }
+        .account-admin-banner {
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 1.25rem;
+        }
+        .account-info-grid {
+          grid-template-columns: 1fr !important;
+        }
+
+        @media (min-width: 480px) {
+          .account-info-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+
+        @media (min-width: 640px) {
+          .account-hero {
+            padding: 2.5rem 0;
+          }
+          .account-hero-inner {
+            flex-direction: row;
+            align-items: center;
+            text-align: left;
+          }
+          .account-hero-info {
+            align-items: flex-start;
+            width: auto;
+          }
+          .account-hero-name-row,
+          .account-hero-meta-row {
+            justify-content: flex-start;
+          }
+          .account-avatar {
+            width: 80px;
+            height: 80px;
+          }
+          .account-edit-btn {
+            width: auto;
+          }
+          .account-hero-skeleton {
+            height: 140px;
+          }
+          .account-admin-banner {
+            flex-direction: row;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+          }
+        }
+
         @media (min-width: 768px) {
           .account-stats-grid {
             grid-template-columns: repeat(4, 1fr) !important;
@@ -1366,6 +1430,31 @@ export default function AccountPage() {
           .account-layout {
             grid-template-columns: 300px 1fr !important;
           }
+          .account-loading-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+          }
+        }
+        @media (max-width: 1023px) {
+          .account-loading-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+          }
+        }
+
+        /* Stat cards / order rows: keep padding sane on very small screens */
+        .account-stat-card {
+          padding: 1rem 1.1rem;
+        }
+        @media (min-width: 480px) {
+          .account-stat-card {
+            padding: 1.25rem 1.5rem;
+          }
+        }
+        .account-order-row {
+          flex-wrap: wrap;
         }
       `}</style>
     </div>
