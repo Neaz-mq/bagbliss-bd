@@ -51,6 +51,14 @@ const TABLE_COL_GAP   = '14px'
 // instead of a squeezed table.
 const MOBILE_BREAKPOINT = 1180
 
+// ✅ NEW: below this width the status tabs wrap onto a second row
+// instead of relying on horizontal scroll. On a real phone (≤480px)
+// there's only room for 2–3 tabs at a time, so "Delivered" / "Cancelled"
+// were sitting off-screen with only a sliver of their pill visible —
+// easy to miss and easy to mistake for a rendering bug. Wrapping
+// guarantees every tab is always visible with no swipe required.
+const TABS_WRAP_BREAKPOINT = 480
+
 // ✅ NEW: tracks the *actual* viewport width (not just a mobile/desktop
 // boolean). We need the real number now because the search placeholder
 // text needs to shrink in more than one step as the screen narrows
@@ -520,9 +528,16 @@ export default function OrdersPage() {
   const [selectedOrder, setSelected] = useState<Order | null>(null)
 
   // ✅ NEW: real viewport width, not just a mobile/desktop boolean —
-  // needed so the search placeholder can shrink in steps.
+  // needed so the search placeholder can shrink in steps and so the
+  // status tabs know when to switch from horizontal-scroll to wrap.
   const viewportWidth = useViewportWidth()
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
+  // ✅ NEW: on real phones, wrap the status tabs onto multiple rows
+  // instead of horizontal-scrolling them. A scrollable row with no
+  // visible affordance made "Delivered" / "Cancelled" look cut off /
+  // broken rather than just off-screen — wrapping removes the need
+  // for a scroll gesture entirely.
+  const tabsWrap = viewportWidth < TABS_WRAP_BREAKPOINT
 
   // ✅ FIX: the placeholder used to be one fixed string
   // ("Search order #, customer name, phone…"). On a narrow phone
@@ -540,11 +555,13 @@ export default function OrdersPage() {
 
   const limit = 10
 
-  // Scroll-fade state for the status tabs row. On mobile the tabs
-  // overflow horizontally — without a visual cue, "Delivered" /
-  // "Cancelled" just look cut off / broken instead of scrollable.
-  // These fades fade the edge into PAGE_BG and only appear when
-  // there's actually more to scroll to.
+  // Scroll-fade state for the status tabs row. Only relevant when the
+  // tabs are horizontally scrollable (tabsWrap === false) — on
+  // narrower screens they wrap instead, so nothing overflows and no
+  // fade is needed. Without a visual cue on the scrollable variant,
+  // "Delivered" / "Cancelled" just look cut off / broken instead of
+  // scrollable. These fades fade the edge into PAGE_BG and only
+  // appear when there's actually more to scroll to.
   const tabsRef = useRef<HTMLDivElement>(null)
   const [tabsScroll, setTabsScroll] = useState({ left: false, right: false })
 
@@ -559,7 +576,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     const el = tabsRef.current
-    if (!el) return
+    if (!el || tabsWrap) { setTabsScroll({ left: false, right: false }); return }
 
     // ✅ FIX: previously this only recomputed on the 'scroll' and
     // window 'resize' events, plus once on mount. In your screenshots
@@ -586,7 +603,7 @@ export default function OrdersPage() {
       el.removeEventListener('scroll', updateTabsScroll)
       ro.disconnect()
     }
-  }, [updateTabsScroll])
+  }, [updateTabsScroll, tabsWrap])
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
@@ -674,19 +691,25 @@ export default function OrdersPage() {
       </div>
 
       {/* ── Status Tabs ──
-          Wrapped in a relative container with left/right fade overlays
-          that only render while there's actually more content in that
-          direction (tracked via tabsScroll, now backed by a
-          ResizeObserver so it also catches DevTools/initial-load
-          viewports — see the effect above). Extra right padding so the
-          last tab never sits flush against the fade/edge. */}
+          Two layouts depending on viewport:
+          - tabsWrap (≤480px, real phones): flex-wrap onto as many rows
+            as needed. Every tab is always visible, no scroll gesture.
+          - !tabsWrap (tablet/desktop): single horizontally-scrolling
+            row wrapped in a relative container with left/right fade
+            overlays that only render while there's actually more
+            content in that direction (tracked via tabsScroll, backed
+            by a ResizeObserver so it also catches DevTools/initial-load
+            viewports — see the effect above). Extra right padding so
+            the last tab never sits flush against the fade/edge. */}
       <div style={{ position: 'relative' }}>
         <div
           ref={tabsRef}
           style={{
-            display: 'flex', gap: '4px', overflowX: 'auto',
+            display: 'flex', gap: '6px',
+            flexWrap: tabsWrap ? 'wrap' : 'nowrap',
+            overflowX: tabsWrap ? 'visible' : 'auto',
             scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch',
-            paddingRight: '20px',
+            paddingRight: tabsWrap ? 0 : '20px',
           }}
         >
           {STATUS_TABS.map(tab => {
@@ -698,8 +721,8 @@ export default function OrdersPage() {
                 onClick={() => setStatus(tab.key)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '8px 16px', borderRadius: '10px', border: 'none',
-                  cursor: 'pointer', fontSize: '0.82rem', fontWeight: active ? 700 : 500,
+                  padding: tabsWrap ? '7px 12px' : '8px 16px', borderRadius: '10px', border: 'none',
+                  cursor: 'pointer', fontSize: tabsWrap ? '0.78rem' : '0.82rem', fontWeight: active ? 700 : 500,
                   whiteSpace: 'nowrap', flexShrink: 0,
                   background: active ? (cfg ? cfg.bg : 'rgba(15,23,42,0.06)') : 'transparent',
                   color:      active ? (cfg ? cfg.text : '#0f172a') : '#64748b',
@@ -713,14 +736,14 @@ export default function OrdersPage() {
           })}
         </div>
 
-        {tabsScroll.left && (
+        {!tabsWrap && tabsScroll.left && (
           <div style={{
             position: 'absolute', left: 0, top: 0, bottom: 0, width: '28px',
             background: `linear-gradient(to right, ${PAGE_BG}, rgba(248,250,252,0))`,
             pointerEvents: 'none',
           }} />
         )}
-        {tabsScroll.right && (
+        {!tabsWrap && tabsScroll.right && (
           <div style={{
             position: 'absolute', right: 0, top: 0, bottom: 0, width: '28px',
             background: `linear-gradient(to left, ${PAGE_BG}, rgba(248,250,252,0))`,
