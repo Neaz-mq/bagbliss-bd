@@ -20,6 +20,23 @@ const ACCENT_SOFT2   = 'rgba(202,134,93,0.07)'
 const ACCENT_BORDER  = 'rgba(202,134,93,0.2)'
 const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
 
+// ✅ NEW: below this width, elements that assume side-by-side room
+// (the sort toggle row, the best-seller banner's icon+text+button row,
+// the summary-bar's auto-fit grid) need to switch to stacked/narrower
+// layouts instead of squeezing themselves into single-word-wide columns.
+const MOBILE_BREAKPOINT = 640
+
+function useViewportWidth() {
+  const [width, setWidth] = useState(1280)
+  useEffect(() => {
+    const check = () => setWidth(window.innerWidth)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return width
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface CategoryStats {
@@ -61,7 +78,7 @@ function StatPill({
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       gap: '4px', padding: '10px 8px', borderRadius: '10px',
-      background: '#f8fafc', border: '1px solid #f1f5f9', flex: 1,
+      background: '#f8fafc', border: '1px solid #f1f5f9', flex: 1, minWidth: 0,
     }}>
       <Icon size={14} style={{ color }} />
       <p style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1 }}>{value}</p>
@@ -100,8 +117,8 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
         background: `linear-gradient(135deg, ${g.light}, transparent)`,
         borderBottom: `1px solid ${g.border}`,
       }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <div style={{
               width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
               background: `linear-gradient(135deg, ${g.from}, ${g.to})`,
@@ -110,7 +127,7 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
             }}>
               {cat.emoji}
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{cat.label}</p>
               <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '3px 0 0' }}>{cat.description}</p>
             </div>
@@ -164,19 +181,22 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '10px 12px', background: '#f8fafc', borderRadius: '10px',
-            border: '1px solid #f1f5f9', marginBottom: '14px',
+            border: '1px solid #f1f5f9', marginBottom: '14px', gap: '8px',
           }}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: '0.62rem', color: '#94a3b8', margin: '0 0 2px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Price Range</p>
-              <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <p style={{
+                fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
                 ৳{cat.stats.minPrice.toLocaleString('en-US')}
                 {' '}–{' '}
                 ৳{cat.stats.maxPrice.toLocaleString('en-US')}
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <p style={{ fontSize: '0.62rem', color: '#94a3b8', margin: '0 0 2px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Avg Price</p>
-              <p style={{ fontSize: '0.9rem', fontWeight: 800, color: g.from, margin: 0 }}>
+              <p style={{ fontSize: '0.9rem', fontWeight: 800, color: g.from, margin: 0, whiteSpace: 'nowrap' }}>
                 ৳{Math.round(cat.stats.avgPrice).toLocaleString('en-US')}
               </p>
             </div>
@@ -185,11 +205,11 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
 
         {/* Stock + Sold */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          <div style={{ flex: 1, padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+          <div style={{ flex: 1, minWidth: 0, padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
             <p style={{ fontSize: '0.62rem', color: '#94a3b8', margin: '0 0 3px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>In Stock</p>
             <p style={{ fontSize: '1rem', fontWeight: 800, color: '#15803d', margin: 0 }}>{cat.stats.totalStock}</p>
           </div>
-          <div style={{ flex: 1, padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+          <div style={{ flex: 1, minWidth: 0, padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
             <p style={{ fontSize: '0.62rem', color: '#94a3b8', margin: '0 0 3px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Sold</p>
             <p style={{ fontSize: '1rem', fontWeight: 800, color: '#6366f1', margin: 0 }}>{sold}</p>
           </div>
@@ -217,7 +237,7 @@ function CategoryCard({ cat, rank }: { cat: Category; rank: number }) {
 
 // ── Summary Bar ────────────────────────────────────────────────────────────
 
-function SummaryBar({ categories }: { categories: Category[] }) {
+function SummaryBar({ categories, isMobile }: { categories: Category[]; isMobile: boolean }) {
   const totals = categories.reduce((acc, cat) => ({
     products:  acc.products  + cat.stats.total,
     active:    acc.active    + cat.stats.active,
@@ -237,12 +257,15 @@ function SummaryBar({ categories }: { categories: Category[] }) {
   ]
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
+    // ✅ FIX: auto-fit(minmax(130px,1fr)) let the browser cram 2-3
+    // narrow columns on small phones, squeezing icon+number+label into
+    // slivers. A fixed 2-column grid on mobile keeps each stat legible.
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
       {items.map(({ label, value, icon: Icon, gradient }) => (
         <div key={label} style={{
           background: 'white', borderRadius: '16px', padding: '16px',
           border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-          display: 'flex', alignItems: 'center', gap: '12px',
+          display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0,
         }}>
           <div style={{
             width: '38px', height: '38px', borderRadius: '11px', flexShrink: 0,
@@ -250,9 +273,12 @@ function SummaryBar({ categories }: { categories: Category[] }) {
           }}>
             <Icon size={17} color="white" strokeWidth={2} />
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{value}</div>
-            <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px', fontWeight: 500 }}>{label}</div>
+            <div style={{
+              fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px', fontWeight: 500,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{label}</div>
           </div>
         </div>
       ))}
@@ -267,6 +293,10 @@ export default function CategoriesClient() {
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [sortBy,     setSortBy]     = useState<'products' | 'sold' | 'stock' | 'name'>('products')
+
+  // ✅ NEW: drives every mobile-layout switch below.
+  const viewportWidth = useViewportWidth()
+  const isMobile = viewportWidth < MOBILE_BREAKPOINT
 
   const fetchCategories = useCallback(async () => {
     setLoading(true)
@@ -319,18 +349,36 @@ export default function CategoriesClient() {
             {categories.length} categories · Overview of your product catalog
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* ✅ Fix: suppressHydrationWarning on button with onClick */}
+        {/* ✅ FIX: stack the header actions full-width on mobile instead
+            of letting "Manage Products" shrink/wrap awkwardly next to
+            the Refresh button. */}
+        <div style={{
+          display: 'flex', gap: '8px', alignItems: 'center',
+          width: isMobile ? '100%' : 'auto', flexWrap: 'wrap',
+        }}>
           <button
             suppressHydrationWarning
             onClick={fetchCategories}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              padding: '9px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0',
+              background: '#f8fafc', color: '#475569', cursor: 'pointer',
+              fontSize: '0.82rem', fontWeight: 600,
+              flex: isMobile ? '1 1 120px' : 'none',
+            }}
           >
             <RefreshCw size={14} /> Refresh
           </button>
           <Link
             href="/admin/products"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, color: 'white', fontSize: '0.875rem', fontWeight: 700, textDecoration: 'none', boxShadow: `0 4px 14px ${ACCENT_SHADOW}` }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+              padding: '9px 18px', borderRadius: '10px', border: 'none',
+              background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`,
+              color: 'white', fontSize: '0.875rem', fontWeight: 700, textDecoration: 'none',
+              boxShadow: `0 4px 14px ${ACCENT_SHADOW}`,
+              flex: isMobile ? '1 1 160px' : 'none',
+            }}
           >
             <Package size={15} /> Manage Products
           </Link>
@@ -338,7 +386,7 @@ export default function CategoriesClient() {
       </div>
 
       {/* Summary bar */}
-      {!loading && <SummaryBar categories={categories} />}
+      {!loading && <SummaryBar categories={categories} isMobile={isMobile} />}
 
       {/* Top category banner */}
       {!loading && sorted.length > 0 && (() => {
@@ -350,20 +398,36 @@ export default function CategoriesClient() {
             padding: '18px 22px', borderRadius: '16px',
             background: `linear-gradient(135deg, ${g.from}14, ${g.to}0a)`,
             border: `1.5px solid ${g.border}`,
-            display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
+            display: 'flex',
+            // ✅ FIX: this is exactly what broke in the screenshot — the
+            // icon, growing text block, and fixed-width button all tried
+            // to share one row on a 375px screen, so the text column got
+            // crushed to almost nothing and wrapped word-by-word. On
+            // mobile we stack icon+text above a full-width button instead.
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: '14px',
           }}>
-            <span style={{ fontSize: '28px' }}>{top.emoji}</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '0.72rem', fontWeight: 800, color: g.from, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 3px' }}>
-                🏆 Best Selling Category
-              </p>
-              <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                {top.label} — {top.stats.totalSold} units sold · ৳{Math.round(top.stats.avgPrice).toLocaleString('en-US')} avg price
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', width: '100%', minWidth: 0 }}>
+              <span style={{ fontSize: '28px', flexShrink: 0 }}>{top.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '0.72rem', fontWeight: 800, color: g.from, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 3px' }}>
+                  🏆 Best Selling Category
+                </p>
+                <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  {top.label} — {top.stats.totalSold} units sold · ৳{Math.round(top.stats.avgPrice).toLocaleString('en-US')} avg price
+                </p>
+              </div>
             </div>
             <Link
               href={`/admin/products?category=${top.value}`}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '9px', background: `linear-gradient(135deg, ${g.from}, ${g.to})`, color: 'white', fontSize: '0.8rem', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                padding: '8px 16px', borderRadius: '9px',
+                background: `linear-gradient(135deg, ${g.from}, ${g.to})`,
+                color: 'white', fontSize: '0.8rem', fontWeight: 700, textDecoration: 'none',
+                whiteSpace: 'nowrap', width: isMobile ? '100%' : 'auto', flexShrink: 0,
+              }}
             >
               View Products <ArrowRight size={13} />
             </Link>
@@ -375,25 +439,33 @@ export default function CategoriesClient() {
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 200px', background: '#f8fafc', border: '1.5px solid #f1f5f9', borderRadius: '12px', padding: '0 14px', height: '42px' }}>
           <Search size={15} style={{ color: '#94a3b8', flexShrink: 0 }} />
-          {/* ✅ Fix: suppressHydrationWarning on controlled input */}
           <input
             suppressHydrationWarning
             type="text"
             placeholder="Search categories…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
+            style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#334155' }}
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '4px', background: 'white', padding: '4px', borderRadius: '12px', border: '1.5px solid #f1f5f9' }}>
+        {/* ✅ FIX: was nowrap by default, so on narrow screens the four
+            sort buttons ("By Products" / "By Sales" / "By Stock" /
+            "By Name") got squeezed or forced the whole row wider than
+            the viewport. Now wraps onto a second line and each button
+            grows to share the row evenly on mobile. */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: '4px',
+          background: 'white', padding: '4px', borderRadius: '12px',
+          border: '1.5px solid #f1f5f9',
+          width: isMobile ? '100%' : 'auto',
+        }}>
           {([
             { key: 'products', label: 'By Products' },
             { key: 'sold',     label: 'By Sales'    },
             { key: 'stock',    label: 'By Stock'    },
             { key: 'name',     label: 'By Name'     },
           ] as const).map(({ key, label }) => (
-            // ✅ Fix: suppressHydrationWarning on sort buttons (style depends on state)
             <button
               suppressHydrationWarning
               key={key}
@@ -404,6 +476,8 @@ export default function CategoriesClient() {
                 background: sortBy === key ? `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})` : 'transparent',
                 color: sortBy === key ? 'white' : '#64748b',
                 transition: 'all 0.15s', whiteSpace: 'nowrap',
+                flex: isMobile ? '1 1 auto' : 'none',
+                textAlign: 'center',
               }}
             >
               {label}
@@ -422,7 +496,11 @@ export default function CategoriesClient() {
 
       {/* Category Cards Grid */}
       {!loading && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+        // ✅ FIX: auto-fill(minmax(300px,1fr)) could still request a
+        // column wider than very narrow phones (< 320px), forcing the
+        // page itself to scroll horizontally. A single explicit column
+        // on mobile guarantees the card never exceeds the viewport.
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
           {sorted.map(cat => (
             <CategoryCard key={cat.value} cat={cat} rank={rankMap[cat.value] ?? 99} />
           ))}
@@ -435,12 +513,12 @@ export default function CategoriesClient() {
         if (withSales.length === 0) return null
         const max = Math.max(...categories.map(c => c.stats.totalSold))
         return (
-          <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', padding: '24px', overflow: 'hidden' }}>
+          <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', padding: isMobile ? '18px 16px' : '24px', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ACCENT_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: ACCENT_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <BarChart3 size={17} color={ACCENT} />
               </div>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Sales by Category</p>
                 <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Total units sold per category</p>
               </div>
@@ -453,13 +531,17 @@ export default function CategoriesClient() {
                   const pct = max > 0 ? (cat.stats.totalSold / max) * 100 : 0
                   return (
                     <div key={cat.value}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '16px' }}>{cat.emoji}</span>
+                      <div style={{
+                        display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                        justifyContent: 'space-between', marginBottom: '6px', gap: '8px',
+                        flexDirection: isMobile ? 'column' : 'row',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                          <span style={{ fontSize: '16px', flexShrink: 0 }}>{cat.emoji}</span>
                           <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155' }}>{cat.label}</span>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({cat.stats.total} products)</span>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>({cat.stats.total} products)</span>
                         </div>
-                        <span style={{ fontSize: '0.875rem', fontWeight: 800, color: g.from }}>{cat.stats.totalSold} sold</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 800, color: g.from, whiteSpace: 'nowrap' }}>{cat.stats.totalSold} sold</span>
                       </div>
                       <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden' }}>
                         <div style={{
@@ -478,7 +560,7 @@ export default function CategoriesClient() {
 
       {/* Quick actions */}
       {!loading && (
-        <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', padding: '20px 24px' }}>
+        <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', padding: isMobile ? '18px 16px' : '20px 24px' }}>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', margin: '0 0 14px' }}>Quick Actions</p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {[
@@ -490,11 +572,13 @@ export default function CategoriesClient() {
               <Link
                 key={href} href={href}
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                   padding: '9px 16px', borderRadius: '10px', textDecoration: 'none',
                   fontSize: '0.82rem', fontWeight: 700, color,
                   background: `${color}10`, border: `1.5px solid ${color}25`,
                   transition: 'all 0.15s',
+                  flex: isMobile ? '1 1 calc(50% - 5px)' : 'none',
+                  whiteSpace: 'nowrap',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = `${color}18` }}
                 onMouseLeave={e => { e.currentTarget.style.background = `${color}10` }}
