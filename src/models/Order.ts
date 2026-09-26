@@ -38,7 +38,7 @@ const OrderSchema = new Schema({
   subtotal:      { type: Number, required: true },
   discount:      { type: Number, default: 0 },
   total:         { type: Number, required: true },
-  status:        { type: String, enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'], default: 'pending' },
+  status:        { type: String, enum: ['pending', 'processing', 'review', 'shipped', 'delivered', 'cancelled', 'refunded'], default: 'pending' },
   paymentStatus: { type: String, enum: ['unpaid', 'paid', 'failed', 'cancelled', 'refunded'], default: 'unpaid' },
   orderNote:     { type: String, default: '' },
   tranId:        { type: String, default: null, index: true },
@@ -47,6 +47,11 @@ const OrderSchema = new Schema({
   cardType:      { type: String, default: null },
   bankTranId:    { type: String, default: null },
   currency:      { type: String, default: 'BDT' },
+  // ✅ SSLCommerz প্রতিটি ভ্যালিডেটেড ট্রানজেকশনে risk_level (0=safe,
+  // 1=risky) আর risk_title রিটার্ন করে। এটা সংরক্ষণ না করলে ঝুঁকিপূর্ণ
+  // পেমেন্টও নরমাল paid অর্ডারের মতো সরাসরি shipment-এ চলে যায়।
+  riskLevel:     { type: String, default: null },
+  riskTitle:     { type: String, default: null },
 }, { timestamps: true })
 
 // অ্যাডমিন প্যানেলের অর্ডার লিস্ট — status ফিল্টার + তারিখ অনুযায়ী সাজানো

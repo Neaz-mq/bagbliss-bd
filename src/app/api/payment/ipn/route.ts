@@ -29,13 +29,19 @@ export async function POST(req: NextRequest) {
     const validation = await validateSSLPayment(val_id)
 
     if (validation.status === 'VALID' || validation.status === 'VALIDATED') {
+      const isRisky = validation.risk_level === '1'
+      if (isRisky) {
+        console.warn(`[IPN RISK] tran_id ${tran_id} flagged risky:`, validation.risk_title)
+      }
       await Order.findOneAndUpdate(
         { tranId: tran_id },
         {
           paymentStatus: 'paid',
-          status:        'processing',
+          status:        isRisky ? 'review' : 'processing',
           valId:         val_id,
           sslTranId:     validation.bank_tran_id,
+          riskLevel:     validation.risk_level ?? null,
+          riskTitle:     validation.risk_title ?? null,
         }
       )
     }

@@ -64,14 +64,27 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Step 5: Mark order as paid ────────────────────────────────────
+    // ✅ SSLCommerz-এর নিজস্ব নির্দেশনা: risk_level = 1 হলে ট্রানজেকশন
+    // "hold" করে ম্যানুয়ালি কাস্টমার ভেরিফাই করতে হয়। তাই ঝুঁকিপূর্ণ
+    // পেমেন্টে status সরাসরি 'processing' না করে 'review'-তে রাখা হচ্ছে —
+    // টাকা কেটেছে (paymentStatus: paid), কিন্তু শিপমেন্ট শুরুর আগে
+    // অ্যাডমিন প্যানেল থেকে ম্যানুয়ালি চেক করতে হবে।
+    const isRisky = validation.risk_level === '1'
+
     await Order.findByIdAndUpdate(order._id, {
       paymentStatus: 'paid',
-      status:        'processing',
+      status:        isRisky ? 'review' : 'processing',
       sslTranId:     validation.bank_tran_id ?? bank_tran_id,
       valId:         val_id,
       cardType:      card_type,
       bankTranId:    bank_tran_id,
+      riskLevel:     validation.risk_level ?? null,
+      riskTitle:     validation.risk_title ?? null,
     })
+
+    if (isRisky) {
+      console.warn(`[PAYMENT RISK] Order ${order.orderNumber} flagged risky:`, validation.risk_title)
+    }
 
     // ── Step 6: Send confirmation emails (non-blocking) ────────────────
     sendOrderEmails({
