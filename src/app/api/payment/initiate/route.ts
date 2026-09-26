@@ -74,6 +74,16 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
 
+    // ── SSLCommerz গেটওয়ে সিলেকশন পেজ narrow/skip করা ──────────────────
+    // কাস্টমার checkout পেজে যা বেছেছে (bKash/Nagad/Card) তার ভিত্তিতে
+    // SSLCommerz-এর Cards/Mobile Banking/Net Banking ট্যাব narrow করা হয়।
+    const multiCardNameByMethod: Record<string, string> = {
+      bkash: 'bkash',
+      nagad: 'mobilebank',
+      card: 'visacard,mastercard,amexcard',
+    }
+    const multiCardName = multiCardNameByMethod[input.payment]
+
     const sslPayload = {
       tran_id: tranId,
       total_amount: priced.total,          // ✅ সার্ভারের হিসাব
@@ -104,6 +114,7 @@ export async function POST(req: NextRequest) {
       // ✅ orderId ব্যবহার — createdOrderId এর টাইপ `string | null`,
       // কিন্তু SSLInitPayload চায় `string | undefined`
       value_a: orderId,
+      ...(multiCardName ? { multi_card_name: multiCardName } : {}),
     }
 
     const sslResponse = await initiateSSLPayment(sslPayload)
@@ -117,6 +128,28 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // ── নির্দিষ্ট চ্যানেলে সরাসরি রিডাইরেক্ট (selection page স্কিপ) ────
+    // SSLCommerz প্রতিটি সক্রিয় চ্যানেলের জন্য আলাদা redirectGatewayURL
+    // ফেরত দেয় (desc array-তে)। bKash/Nagad সিলেক্ট করা থাকলে, নাম
+    // ম্যাচ করে সরাসরি ওই চ্যানেলের URL-এ পাঠানো হচ্ছে — SSLCommerz-এর
+    // generic Cards/Mobile Banking selection screen আর দেখাতে হবে না।
+    // নোট: sandbox-এর শেয়ার্ড "Demo" স্টোরে এই differentiated URL নাও
+    // থাকতে পারে (শুধু ছোট বাক্সেই থাকে) — সেক্ষেত্রে এটা স্বয়ংক্রিয়ভাবে
+    // সাধারণ GatewayPageURL-এ fallback করবে, ভাঙবে না।
+    const channelNamePattern: Partial<Record<typeof input.payment, RegExp>> = {
+      bkash: /bkash/i,
+      nagad: /nagad/i,
+    }
+    const pattern = channelNamePattern[input.payment]
+    const directChannel = pattern
+      ? sslResponse.desc?.find(
+          (d) => pattern.test(d.name) || pattern.test(d.gw)
+        )
+      : undefined
+
+    const gatewayUrl =
+      directChannel?.redirectGatewayURL || sslResponse.GatewayPageURL
+
     reserved = [] // অর্ডার তৈরি হয়ে গেছে — স্টক ওই অর্ডারের সাথে যুক্ত
     createdOrderId = null // catch ব্লক যেন সফল অর্ডার মুছে না ফেলে
 
@@ -125,7 +158,7 @@ export async function POST(req: NextRequest) {
       orderId,
       orderNumber: order.orderNumber,
       total: priced.total,
-      gatewayUrl: sslResponse.GatewayPageURL,
+      gatewayUrl,
     })
   } catch (err) {
     await releaseStock(reserved)

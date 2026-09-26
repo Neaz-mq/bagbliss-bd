@@ -41,6 +41,16 @@ export interface SSLInitPayload {
   shipping_method: string
   num_of_item:    number
   value_a?:       string  // we store orderId here
+  multi_card_name?: string // narrows SSLCommerz's gateway-selection page
+}
+
+export interface SSLGatewayDesc {
+  name: string
+  type: string
+  logo?: string
+  gw: string
+  r_flag?: string
+  redirectGatewayURL?: string
 }
 
 export interface SSLInitResponse {
@@ -50,6 +60,7 @@ export interface SSLInitResponse {
   gw?:             Record<string, unknown>
   redirectGatewayURL?:     string
   GatewayPageURL?: string
+  desc?:           SSLGatewayDesc[]
 }
 
 export async function initiateSSLPayment(
