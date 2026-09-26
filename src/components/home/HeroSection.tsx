@@ -231,7 +231,7 @@ export default function HeroSection() {
               className="hero-card-image-wrap"
             >
               <motion.img
-                src="https://res.cloudinary.com/dzi3u164c/image/upload/v1778296301/slider_mini_f14602db-1260-4fbd-89a9-3e395ba94f45_bnuhhj.webp"
+                src="https://res.cloudinary.com/dzi3u164c/image/upload/v1790437709/a8e8c5d7-c8a1-46fe-963f-c84f80550737_gqpwsn.webp"
                 alt="Fashion bag"
                 variants={imageKenBurns}
                 initial="hidden"
@@ -379,7 +379,7 @@ export default function HeroSection() {
   .hero-bg {
     position: absolute;
     inset: 0;
-    background-image: url('https://res.cloudinary.com/dzi3u164c/image/upload/v1778296243/slider_dnwgz0.webp');
+    background-image: url('https://res.cloudinary.com/dzi3u164c/image/upload/v1790437088/bag-bg_bk68l2.webp');
     background-size: cover;
     background-position: center;
     opacity: 0.55;
