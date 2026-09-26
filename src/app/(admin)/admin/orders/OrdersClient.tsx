@@ -39,7 +39,7 @@ const PAGE_BG = '#f8fafc'
 // real available width below what the fixed columns needed.
 // Now every column has a sane minimum AND can shrink proportionally.
 const TABLE_GRID_COLS =
-  'minmax(170px,1.6fr) minmax(130px,1fr) minmax(112px,120px) minmax(84px,90px) minmax(80px,90px) 46px'
+  'minmax(170px,1.6fr) minmax(130px,1fr) minmax(112px,120px) minmax(110px,140px) minmax(80px,90px) 46px'
 const TABLE_COL_GAP   = '14px'
 
 // ✅ FIX: raised from 768 → 1180. The desktop grid table needs real room
@@ -118,8 +118,8 @@ const ellipsisStyle: React.CSSProperties = {
   minWidth: 0,
 }
 
-type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled'
-type PaymentMethod = 'bkash' | 'nagad' | 'cod'
+type OrderStatus = 'pending' | 'processing' | 'review' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
+type PaymentMethod = 'bkash' | 'nagad' | 'cod' | 'sslcommerz' | 'card'
 
 interface OrderItem {
   productId: string; name: string; price: number
@@ -135,21 +135,33 @@ interface Order {
   items: OrderItem[]; shipping: Shipping; delivery: string; deliveryFee: number
   payment: PaymentMethod; subtotal: number; total: number; status: OrderStatus
   orderNote?: string; createdAt: string
+  riskLevel?: string | null; riskTitle?: string | null
 }
 
 const STATUS_CONFIG: Record<OrderStatus, {
   label: string; bg: string; text: string; dot: string; border: string; icon: React.ElementType
 }> = {
+  pending:    { label: 'Pending',    bg: 'rgba(100,116,139,0.08)', text: '#475569', dot: '#64748b', border: 'rgba(100,116,139,0.2)', icon: Clock },
   processing: { label: 'Processing', bg: ACCENT_SOFT, text: ACCENT_TEXT, dot: ACCENT, border: ACCENT_BORDER, icon: Clock },
+  // ⚠️ SSLCommerz risk_level=1 (risky/fraud-suspected) পেমেন্টে অর্ডার এই
+  // স্ট্যাটাসে থাকে — normal 'processing' থেকে আলাদা রঙে (লাল/warning)
+  // দেখানো হচ্ছে যাতে শিপ করার আগে চোখে পড়ে ও ম্যানুয়ালি ভেরিফাই করা যায়।
+  review:     { label: 'Needs Review', bg: 'rgba(239,68,68,0.1)', text: '#b91c1c', dot: '#ef4444', border: 'rgba(239,68,68,0.25)', icon: XCircle },
   shipped:    { label: 'Shipped',    bg: 'rgba(59,130,246,0.08)', text: '#1d4ed8', dot: '#3b82f6', border: 'rgba(59,130,246,0.2)', icon: Truck },
   delivered:  { label: 'Delivered',  bg: 'rgba(34,197,94,0.08)',  text: '#15803d', dot: '#22c55e', border: 'rgba(34,197,94,0.2)',  icon: CheckCircle },
   cancelled:  { label: 'Cancelled',  bg: 'rgba(239,68,68,0.08)',  text: '#b91c1c', dot: '#ef4444', border: 'rgba(239,68,68,0.2)',  icon: XCircle },
+  refunded:   { label: 'Refunded',   bg: 'rgba(148,163,184,0.1)', text: '#475569', dot: '#94a3b8', border: 'rgba(148,163,184,0.25)', icon: XCircle },
 }
 
 const PAYMENT_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  bkash: { label: 'bKash', color: '#e2136e', bg: 'rgba(226,19,110,0.1)' },
-  nagad: { label: 'Nagad', color: '#f6a623', bg: 'rgba(246,166,35,0.1)' },
-  cod:   { label: 'COD',   color: '#475569', bg: 'rgba(71,85,105,0.1)'  },
+  bkash:      { label: 'bKash',  color: '#e2136e', bg: 'rgba(226,19,110,0.1)' },
+  nagad:      { label: 'Nagad',  color: '#f6a623', bg: 'rgba(246,166,35,0.1)' },
+  cod:        { label: 'COD',    color: '#475569', bg: 'rgba(71,85,105,0.1)'  },
+  // ✅ SSLCommerz-এর মাধ্যমে হওয়া অনলাইন পেমেন্ট (bKash/Nagad/Card যেকোনো
+  // চ্যানেলেই হোক) order.payment ফিল্ডে 'sslcommerz' হিসেবে সেভ হয়।
+  // এই এন্ট্রি না থাকায় আগে fallback হয়ে ভুলভাবে "COD" দেখাচ্ছিল।
+  sslcommerz: { label: 'Online Payment', color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
+  card:       { label: 'Card',   color: '#1d4ed8', bg: 'rgba(29,78,216,0.1)' },
 }
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -413,6 +425,25 @@ function OrderModal({ order, onClose, onStatusChange }: {
             </div>
           </div>
 
+          {/* ⚠️ SSLCommerz risk warning — শুধু risky (risk_level=1) পেমেন্টে দেখাবে */}
+          {order.riskLevel === '1' && (
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: '10px',
+              background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+              borderRadius: '12px', padding: '12px 14px',
+            }}>
+              <XCircle size={16} color="#b91c1c" style={{ flexShrink: 0, marginTop: '1px' }} />
+              <div>
+                <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#b91c1c', margin: 0 }}>
+                  Flagged risky by SSLCommerz{order.riskTitle ? ` — "${order.riskTitle}"` : ''}
+                </p>
+                <p style={{ fontSize: '0.76rem', color: '#7f1d1d', margin: '2px 0 0' }}>
+                  টাকা কেটেছে, কিন্তু শিপ করার আগে কাস্টমারকে ফোনে ভেরিফাই করে তারপর status "Processing"-এ নিন।
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Items */}
           <div style={{ background: '#f8fafc', borderRadius: '14px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9' }}>
@@ -650,6 +681,7 @@ export default function OrdersPage() {
 
   const STATUS_TABS = [
     { key: '',           label: 'All' },
+    { key: 'review',     label: 'Needs Review' },
     { key: 'processing', label: 'Processing' },
     { key: 'shipped',    label: 'Shipped' },
     { key: 'delivered',  label: 'Delivered' },
@@ -657,10 +689,11 @@ export default function OrdersPage() {
   ]
 
   const PAYMENT_OPTIONS: DropdownOption[] = [
-    { value: '',      label: 'All Payments' },
-    { value: 'bkash', label: 'bKash', dot: PAYMENT_CONFIG.bkash.color },
-    { value: 'nagad', label: 'Nagad', dot: PAYMENT_CONFIG.nagad.color },
-    { value: 'cod',   label: 'COD',   dot: PAYMENT_CONFIG.cod.color },
+    { value: '',           label: 'All Payments' },
+    { value: 'bkash',      label: 'bKash',          dot: PAYMENT_CONFIG.bkash.color },
+    { value: 'nagad',      label: 'Nagad',          dot: PAYMENT_CONFIG.nagad.color },
+    { value: 'sslcommerz', label: 'Online Payment', dot: PAYMENT_CONFIG.sslcommerz.color },
+    { value: 'cod',        label: 'COD',            dot: PAYMENT_CONFIG.cod.color },
   ]
 
   return (
@@ -1008,7 +1041,7 @@ export default function OrdersPage() {
                       display: 'inline-flex', alignItems: 'center', gap: '5px',
                       fontSize: '0.72rem', fontWeight: 700, padding: '4px 9px',
                       borderRadius: '7px', background: pay.bg, color: pay.color,
-                      width: 'fit-content', maxWidth: '100%', whiteSpace: 'nowrap',
+                      width: 'fit-content', maxWidth: '100%', ...ellipsisStyle,
                     }}>
                       {pay.label}
                     </span>
