@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 import { invalidate, CACHE_KEYS } from '@/lib/redis'
 import { uniqueSlug } from '@/lib/slug'
+import { sumColorStock } from '@/lib/stock'
 
 async function guard() {
   const session = await auth()
@@ -66,9 +67,16 @@ export async function POST(req: NextRequest) {
 
   const slug = await uniqueSlug(body.name)
 
+  // When color variants exist, total stock is always their sum.
+  const totalStock =
+    Array.isArray(body.colors) && body.colors.length > 0
+      ? sumColorStock(body.colors)
+      : Number(body.totalStock) || 0
+
   const product = await Product.create({
     ...body,
     slug,
+    totalStock,
   })
 
   await invalidate(

@@ -132,14 +132,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function FInput({ placeholder, value, onChange, type = 'text' }: {
-  placeholder: string; value: string; onChange: (v: string) => void; type?: string
+function FInput({ placeholder, value, onChange, type = 'text', disabled = false }: {
+  placeholder: string; value: string; onChange: (v: string) => void; type?: string; disabled?: boolean
 }) {
   return (
     <input suppressHydrationWarning
-      type={type} placeholder={placeholder} value={value}
+      type={type} placeholder={placeholder} value={value} disabled={disabled}
       onChange={e => onChange(e.target.value)}
-      style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: '#fafbfc', boxSizing: 'border-box' }}
+      style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #e8edf5', borderRadius: '10px', fontSize: '0.875rem', color: '#1e293b', outline: 'none', background: disabled ? '#f1f5f9' : '#fafbfc', cursor: disabled ? 'not-allowed' : 'text', boxSizing: 'border-box' }}
       onFocus={e => (e.target.style.borderColor = ACCENT)}
       onBlur={e  => (e.target.style.borderColor = '#e8edf5')}
     />
@@ -381,6 +381,10 @@ function ProductModal({ product, onClose, onSaved }: {
   const rmColor   = (i: number) => set('colors', form.colors.filter((_, idx) => idx !== i))
   const updColor  = (i: number, f: string, v: string) => set('colors', form.colors.map((c, idx) => idx === i ? { ...c, [f]: v } : c))
 
+  // Total stock is auto-calculated from color variants when any exist.
+  const hasColors  = form.colors.length > 0
+  const colorTotal = form.colors.reduce((sum, c) => sum + (Number(c.stock) > 0 ? Math.floor(Number(c.stock)) : 0), 0)
+
   const handleSave = async () => {
     if (!form.name.trim() || !form.price) { toast.error('Name and price are required'); return }
     setSaving(true)
@@ -390,7 +394,7 @@ function ProductModal({ product, onClose, onSaved }: {
         description: form.description.trim(), price: Number(form.price),
         originalPrice: Number(form.originalPrice) || 0, category: form.category,
         images: form.images, colors: form.colors.map(c => ({ name: c.name, hex: c.hex, stock: Number(c.stock) || 0 })),
-        totalStock: Number(form.totalStock) || 0, isActive: form.isActive,
+        totalStock: hasColors ? colorTotal : (Number(form.totalStock) || 0), isActive: form.isActive,
         isFeatured: form.isFeatured, isFlashSale: form.isFlashSale,
         flashSalePrice: Number(form.flashSalePrice) || 0,
         tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
@@ -551,8 +555,10 @@ function ProductModal({ product, onClose, onSaved }: {
                 </div>
             }
             <div style={{ marginTop: '12px' }}>
-              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', margin: '0 0 6px' }}>Total Stock (overall count)</p>
-              <FInput placeholder="e.g. 50" value={form.totalStock} onChange={v => set('totalStock', v)} type="number" />
+              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', margin: '0 0 6px' }}>
+                Total Stock {hasColors ? '(auto-calculated from colors)' : '(overall count)'}
+              </p>
+              <FInput placeholder="e.g. 50" value={hasColors ? String(colorTotal) : form.totalStock} onChange={v => set('totalStock', v)} type="number" disabled={hasColors} />
             </div>
           </section>
 

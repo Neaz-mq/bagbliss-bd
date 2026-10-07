@@ -5,18 +5,56 @@ import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 import { invalidate, CACHE_KEYS } from '@/lib/redis'
 import { uniqueSlug } from '@/lib/slug'
+import { sumColorStock } from '@/lib/stock'
 
 async function guard() {
   const session = await auth()
   return !session || session.user?.role !== 'admin'
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
+export async function GET(req: NextRequest) {
+  if (await guard())
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  await connectDB()
+
+  const sp        = new URL(req.url).searchParams
+  const page      = parseInt(sp.get('page') ?? '1')
+  const limit     = parseInt(sp.get('limit') ?? '12')
+  const search    = sp.get('search') ?? ''
+  const category  = sp.get('category') ?? ''
+  const sort      = sp.get('sort') ?? 'newest'
+  const featured  = sp.get('featured') ?? ''
+  const flashSale = sp.get('flashSale') ?? ''
+  const status    = sp.get('status') ?? '' // 'active' | 'inactive' | ''
+
+  // Admin view: no forced isActive filter — admin should see everything by default.
+  const q: Record<string, unknown> = {}
+  if (status === 'active')   q.isActive = true
+  if (status === 'inactive') q.isActive = false
+  if (search) q.$or = [{ name: { $regex: search, $options: 'i' } }, { tags: { $in: [new RegExp(search, 'i')] } }]
+  if (category) q.category = category
+  if (featured === 'true') q.isFeatured = true
+  if (flashSale === 'true') q.isFlashSale = true
+
+  const sortMap: Record<string, [string, 1 | -1][]> = {
+    newest:     [['createdAt', -1]],
+    price_asc:  [['price', 1]],
+    price_desc: [['price', -1]],
+    popular:    [['soldCount', -1]],
+    rating:     [['rating', -1]],
+  }
+  const sortObj = sortMap[sort] ?? sortMap.newest
+
+  const [products, total] = await Promise.all([
+    Product.find(q).sort(sortObj).skip((page - 1) * limit).limit(limit).lean(),
+    Product.countDocuments(q),
+  ])
+
+  return NextResponse.json({ products, total, pages: Math.ceil(total / limit), page })
+}
+
+export async function POST(req: NextRequest) {
   if (await guard())
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -24,83 +62,29 @@ export async function PATCH(
 
   const body = await req.json()
 
-  // Slug is always derived from the name on the server — never trust a client-sent slug.
-  delete body.slug
+  if (!body?.name?.trim() || body?.price === undefined || body?.price === null)
+    return NextResponse.json({ error: 'Name and price are required' }, { status: 400 })
 
-  const existing = await Product.findById(id).select('name slug').lean()
-  if (!existing)
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const slug = await uniqueSlug(body.name)
 
-  const oldSlug = existing.slug as string
-  let newSlug = oldSlug
+  // When color variants exist, total stock is always their sum.
+  const totalStock =
+    Array.isArray(body.colors) && body.colors.length > 0
+      ? sumColorStock(body.colors)
+      : Number(body.totalStock) || 0
 
-  // Only regenerate when the name actually changed (toggles like isActive send no name).
-  if (typeof body.name === 'string' && body.name.trim() && body.name.trim() !== existing.name) {
-    newSlug   = await uniqueSlug(body.name, id)
-    body.slug = newSlug
-  }
-
-  const product = await Product.findByIdAndUpdate(
-    id,
-    { $set: body },
-    { new: true }
-  ).lean()
-
-  if (!product)
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const product = await Product.create({
+    ...body,
+    slug,
+    totalStock,
+  })
 
   await invalidate(
     CACHE_KEYS.products,
     CACHE_KEYS.featuredProducts,
     CACHE_KEYS.flashSale,
     CACHE_KEYS.adminStats,
-    CACHE_KEYS.product(oldSlug),
-    ...(newSlug !== oldSlug ? [CACHE_KEYS.product(newSlug)] : []),
   )
 
-  return NextResponse.json({ product })
-}
-
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-
-  if (await guard())
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  await connectDB()
-
-  const product = await Product.findByIdAndDelete(id)
-  if (!product)
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
-  await invalidate(
-    CACHE_KEYS.products,
-    CACHE_KEYS.featuredProducts,
-    CACHE_KEYS.flashSale,
-    CACHE_KEYS.adminStats,
-    CACHE_KEYS.product(product.slug),
-  )
-
-  return NextResponse.json({ success: true })
-}
-
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-
-  if (await guard())
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  await connectDB()
-
-  const product = await Product.findById(id).lean()
-  if (!product)
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
-  return NextResponse.json({ product })
+  return NextResponse.json({ product }, { status: 201 })
 }
