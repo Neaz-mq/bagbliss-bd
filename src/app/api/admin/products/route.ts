@@ -4,30 +4,11 @@ import { auth } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 import { invalidate, CACHE_KEYS } from '@/lib/redis'
+import { uniqueSlug } from '@/lib/slug'
 
 async function guard() {
   const session = await auth()
   return !session || session.user?.role !== 'admin'
-}
-
-function slugify(name: string) {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-async function uniqueSlug(name: string) {
-  const base = slugify(name) || 'product'
-  let slug = base
-  let i = 1
-  // Keep trying until we find a slug that isn't taken (handles duplicate product names)
-  while (await Product.exists({ slug })) {
-    slug = `${base}-${i}`
-    i++
-  }
-  return slug
 }
 
 export async function GET(req: NextRequest) {
