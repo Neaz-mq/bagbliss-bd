@@ -2511,6 +2511,13 @@ select:focus-visible {
   }
 }
 
+@media (min-width: 1360px) {
+  .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.75rem;
+  }
+}
+
 /* ============================================
    CART DRAWER
    ============================================ */
@@ -6182,16 +6189,21 @@ select:focus-visible {
 .shop-grid-img-wrap {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1 / 1;
   display: block;
   background: #f3ede6;
-  border-radius: 0.75rem;
+  border-radius: 1.1rem;
 }
 
 
 /* next/image fill renders as absolute; object-fit via className */
 .shop-grid-img {
-  object-fit: cover;
+  /* show the whole bag (no cropping); white photo backgrounds blend
+     into the card colour, padding keeps straps off the edges */
+  object-fit: contain;
+  padding: 7%;
+  box-sizing: border-box;
+  mix-blend-mode: multiply;
   transition: transform 0.5s ease;
 }
 
@@ -6358,12 +6370,15 @@ select:focus-visible {
   height: 130px;
   border-radius: 1rem;
   overflow: hidden;
-  background: #fafafa;
+  background: #f3ede6;
   display: block;
 }
 
 .shop-list-img {
-  object-fit: cover;
+  object-fit: contain;
+  padding: 6%;
+  box-sizing: border-box;
+  mix-blend-mode: multiply;
 }
 
 /* Sale badge inside list image */

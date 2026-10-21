@@ -1209,19 +1209,20 @@ export default function FeaturedProducts() {
         .fp-card {
           flex-shrink: 0;
           background: #f4f2ef;
-          border-radius: 6px;
-          padding: 22px 22px 0;
+          border-radius: 22px;
+          padding: 18px;
           display: flex;
           flex-direction: column;
           position: relative;
-          height: 420px;
+          height: auto;
           box-sizing: border-box;
           overflow: hidden;
-          transition: box-shadow 0.3s ease;
+          transition: box-shadow 0.35s ease, transform 0.35s ease;
         }
 
         .fp-card:hover {
-          box-shadow: 0 10px 36px rgba(23, 23, 47, 0.09);
+          box-shadow: 0 16px 40px rgba(23, 23, 47, 0.12);
+          transform: translateY(-4px);
         }
 
         .fp-card-top {
@@ -1229,7 +1230,8 @@ export default function FeaturedProducts() {
           align-items: flex-start;
           justify-content: space-between;
           gap: 12px;
-          margin-bottom: 18px;
+          margin-bottom: 14px;
+          min-height: 78px; /* same start line for every image, 1 or 2 line names */
           flex-shrink: 0;
         }
 
@@ -1310,31 +1312,32 @@ export default function FeaturedProducts() {
           background: #17172f;
         }
 
+        /* Image tile: fixed square, image fills it edge to edge —
+           no empty band between the text and the photo */
         .fp-img-wrap {
-          flex: 1;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
+          flex: none;
+          width: 100%;
+          aspect-ratio: 1 / 1;
+          border-radius: 16px;
+          background: transparent;
           overflow: hidden;
-          min-height: 0;
-          transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .fp-card:hover .fp-img-wrap {
-          transform: translateY(-8px);
+          position: relative;
         }
 
         .fp-img {
+          display: block;
           width: 100%;
           height: 100%;
           object-fit: contain;
-          object-position: center bottom;
-          transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+          object-position: center;
+          /* white photo background melts into the card colour */
+          mix-blend-mode: multiply;
+          transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
           pointer-events: none;
         }
 
         .fp-card:hover .fp-img {
-          transform: scale(1.05) translateY(-4px);
+          transform: scale(1.06);
         }
 
         .fp-img-placeholder {
@@ -1346,9 +1349,9 @@ export default function FeaturedProducts() {
 
         .fp-cart-hover {
           position: absolute;
-          left: 16px;
-          right: 16px;
-          bottom: 16px;
+          left: 28px;
+          right: 28px;
+          bottom: 28px;
           z-index: 4;
           opacity: 0;
           transform: translateY(24px);
@@ -1443,7 +1446,7 @@ export default function FeaturedProducts() {
           height: 100%;
           background: linear-gradient(90deg, #e8e4df 25%, #dedad4 50%, #e8e4df 75%);
           background-size: 200% 100%;
-          border-radius: 4px;
+          border-radius: 16px;
           animation: fp-shimmer 1.4s infinite;
         }
 
@@ -1519,12 +1522,12 @@ export default function FeaturedProducts() {
           flex-shrink: 0;
           background: #f4f2ef;
           border-radius: 0;
-          padding: 22px 16px 0;
+          padding: 20px 16px 16px;
           display: flex;
           flex-direction: column;
           align-items: center;
           position: relative;
-          height: 360px;
+          height: auto;
           box-sizing: border-box;
           overflow: hidden;
         }
@@ -1541,6 +1544,10 @@ export default function FeaturedProducts() {
           text-align: center;
           word-break: break-word;
           width: 100%;
+          min-height: 2.6em; /* keeps every card's image on the same line */
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         /* Centered price row */
@@ -1584,7 +1591,7 @@ export default function FeaturedProducts() {
           align-items: center;
           justify-content: center;
           gap: 12px;
-          margin-bottom: 18px;
+          margin-bottom: 14px;
           flex-shrink: 0;
         }
 
@@ -1622,20 +1629,21 @@ export default function FeaturedProducts() {
 
         /* Product image area — fills remaining space */
         .fpm-img-wrap {
-          flex: 1;
+          flex: none;
           width: 100%;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
+          aspect-ratio: 1 / 1;
+          border-radius: 16px;
+          background: transparent;
           overflow: hidden;
-          min-height: 0;
         }
 
         .fpm-img {
+          display: block;
           width: 100%;
           height: 100%;
           object-fit: contain;
-          object-position: center bottom;
+          object-position: center;
+          mix-blend-mode: multiply;
           pointer-events: none;
         }
 
@@ -1706,7 +1714,7 @@ export default function FeaturedProducts() {
           /* NOTE: no padding override here — fp-container keeps the same
              clamp(4.6rem, 4vw, 4rem) padding as CategoryStrip (.cs-container)
              so both sections stay perfectly aligned across all tablet widths */
-          .fp-card { height: 380px; border-radius: 6px; }
+          .fp-card { height: auto; border-radius: 20px; padding: 16px; }
           .fp-track { gap: 20px; }
           .fp-cta-wrap { margin-top: 36px; }
           .fp-add-to-cart-btn { height: 50px; }
@@ -1763,7 +1771,7 @@ export default function FeaturedProducts() {
           .fp-section { padding: 32px 0 44px; }
           .fp-container { padding: 0 0.85rem; }
 
-          .fpm-card { height: 320px; padding: 16px 12px 0; }
+          .fpm-card { height: auto; padding: 16px 12px 12px; }
           .fpm-name { font-size: 0.92rem; }
           .fpm-price { font-size: 0.92rem; }
           .fpm-icon-btn { width: 40px; height: 40px; }
