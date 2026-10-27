@@ -4,7 +4,15 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 // ── Static reviewer data (avatars, names, ratings, comments) ─────────────
-const REVIEWERS = [
+// `pinnedSlug` (optional): always show THIS product's photo on that review,
+// instead of whichever product happens to be at that position in the list.
+const REVIEWERS: {
+  name: string
+  avatar: string
+  rating: number
+  comment: string
+  pinnedSlug?: string
+}[] = [
   {
     name: 'Emily Wilson',
     avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
@@ -22,6 +30,7 @@ const REVIEWERS = [
     avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
     rating: 5,
     comment: "She absolutely loves it! Premium feel and beautiful color.",
+    pinnedSlug: 'velvet-bow-evening-bag',
   },
   {
     name: 'Brittany Jones',
@@ -172,12 +181,41 @@ export default function CustomerReview() {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()
       })
-      .then((data) => {
+      .then(async (data) => {
         const products: Record<string, unknown>[] = data.products ?? []
+
+        // Load the pinned products (reuse the list if it already has them,
+        // otherwise fetch by slug)
+        const pinned = new Map<string, Record<string, unknown>>()
+        const pinnedSlugs = [
+          ...new Set(
+            REVIEWERS.map((r) => r.pinnedSlug).filter((x): x is string => !!x)
+          ),
+        ]
+        await Promise.all(
+          pinnedSlugs.map(async (slug) => {
+            const inList = products.find((p) => p.slug === slug)
+            if (inList) {
+              pinned.set(slug, inList)
+              return
+            }
+            try {
+              const res = await fetch(`/api/products/slug/${slug}`)
+              if (!res.ok) return
+              const json = await res.json()
+              if (json?.data) pinned.set(slug, json.data)
+            } catch {
+              /* fall back to the list below */
+            }
+          })
+        )
 
         // Map each reviewer to a DIFFERENT product image
         const built: Review[] = REVIEWERS.map((reviewer, i) => {
-          const product = products[i % products.length] ?? {}
+          const product =
+            (reviewer.pinnedSlug && pinned.get(reviewer.pinnedSlug)) ||
+            products[i % products.length] ||
+            {}
           const { image, name, slug } = extractProductInfo(product)
           return {
             id: i + 1,
