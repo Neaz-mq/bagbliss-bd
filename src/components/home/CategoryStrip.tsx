@@ -210,21 +210,42 @@ export default function CategoryStrip() {
 
   useEffect(() => {
     if (categories.length <= visibleCount) return
-    const timer = setInterval(() => setCurrent((prev) => prev + 1), 4500)
+    const timer = setInterval(
+      () => setCurrent((prev) => Math.min(prev + 1, categories.length)),
+      4500
+    )
     return () => clearInterval(timer)
   }, [categories.length, visibleCount])
 
-  const goNext = () => setCurrent((prev) => prev + 1)
+  // The track holds [all slides + `visibleCount` clones of the first slides].
+  // `current` may therefore never go past categories.length (the clone of
+  // slide 0) — beyond that there are no cards left and the right side of the
+  // slider would be empty. Quick repeated clicks used to push it past that
+  // point (and also kept restarting the "jump back to start" timer).
+  const canSlide = categories.length > visibleCount
+
+  const goNext = () => {
+    if (!canSlide) return
+    // Clamp: while the slider is sitting on the cloned tail, extra clicks
+    // are ignored until the (invisible) jump back to the start has happened.
+    setCurrent((prev) => Math.min(prev + 1, categories.length))
+  }
 
   const goPrev = () => {
+    if (!canSlide) return
     if (current === 0) {
+      // Silently jump to the clone of slide 0 (looks identical), then slide
+      // back one step — a smooth wrap instead of an abrupt jump.
       setEnableTransition(false)
-      setCurrent(categories.length - 1)
+      setCurrent(categories.length)
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => setEnableTransition(true))
+        requestAnimationFrame(() => {
+          setEnableTransition(true)
+          setCurrent((prev) => (prev === categories.length ? prev - 1 : prev))
+        })
       })
     } else {
-      setCurrent((prev) => prev - 1)
+      setCurrent((prev) => Math.max(prev - 1, 0))
     }
   }
 
@@ -726,6 +747,10 @@ export default function CategoryStrip() {
             <div
               className="cs-track"
               style={{
+                // Same GAP the slide maths uses — the CSS media queries had
+                // 20px on tablets while the maths assumed 24px, which made the
+                // track drift further off with every step.
+                gap: `${GAP}px`,
                 transform: `translate3d(calc(-${current * moveSize}px + ${dragOffset}px),0,0)`,
                 transition: isDragging
                   ? 'transform 0.05s linear'
