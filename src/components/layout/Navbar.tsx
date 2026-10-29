@@ -5,7 +5,7 @@ import { useHydrated } from '@/hooks/useHydrated'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { motion, useScroll, useMotionValueEvent } from 'framer-motion'
+import { useScroll, useMotionValueEvent } from 'framer-motion'
 import {
   ShoppingBag,
   Heart,
@@ -68,26 +68,18 @@ function NavbarInner() {
   const wishlistCount = useWishlistStore((s) => s.getCount())
   const openCart = useCartStore((s) => s.openCart)
 
-  // ── Scroll-aware nav state ────────────────────────────────────────────
-  const [navState, setNavState] = useState<'top' | 'hidden' | 'visible'>('top')
+  // ── Scroll state ──────────────────────────────────────────────────────
+  // The Topbar + Navbar are now pinned together by a single sticky wrapper
+  // in ClientLayout, so they stay fixed at all times (no hide-on-scroll).
+  // We only track whether the page has scrolled, to add the blur/shadow.
+  // setState bails out when the value is unchanged, so this does not
+  // re-render on every scroll tick.
+  const [isScrolled, setIsScrolled] = useState(false)
   const { scrollY } = useScroll()
-  const lastScrollY = useRef(0)
 
   useMotionValueEvent(scrollY, 'change', (y) => {
-    const diff = y - lastScrollY.current
-
-    if (y < 60) {
-      setNavState('top')
-    } else if (diff > 4) {
-      setNavState('hidden')
-    } else if (diff < -4) {
-      setNavState('visible')
-    }
-
-    lastScrollY.current = y
+    setIsScrolled(y > 10)
   })
-
-  const isScrolled = navState !== 'top'
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -448,25 +440,14 @@ function NavbarInner() {
         }
       `}</style>
 
-      <motion.div
-        animate={navState === 'hidden' ? { y: '-100%' } : { y: 0 }}
-        transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8,
-        }}
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          willChange: 'transform',
-        }}
-      >
+      {/* Plain wrapper: stickiness is handled by ClientLayout's wrapper that
+          holds both Topbar and Navbar. No transform here, so fixed-position
+          children (search overlay) are not trapped inside it. */}
+      <div>
         {/* ── Header ─────────────────────────────────────────────────── */}
         <header
           suppressHydrationWarning
-          className={`border-b transition-[background,box-shadow,border-color] duration-300 ${
+          className={`relative border-b transition-[background,box-shadow,border-color] duration-300 ${
             isScrolled
               ? 'border-[rgba(26,26,46,0.09)] bg-[rgba(244,240,235,0.95)] shadow-[0_2px_20px_rgba(26,26,46,0.06)] backdrop-blur-[18px]'
               : 'border-[rgba(26,26,46,0.07)] bg-[#F4F0EB]'
@@ -662,7 +643,7 @@ function NavbarInner() {
           {isMobileMenuOpen && (
             <div
               suppressHydrationWarning
-              className="mobile-dropdown flex flex-col border-t border-[rgba(26,26,46,0.07)] lg:hidden"
+              className="mobile-dropdown absolute inset-x-0 top-full flex max-h-[calc(100vh-110px)] flex-col overflow-y-auto border-t border-b border-[rgba(26,26,46,0.07)] shadow-[0_12px_24px_rgba(26,26,46,0.08)] lg:hidden"
               style={{ background: BG }}
             >
               <div style={{ padding: '0.75rem 1rem 0' }}>
@@ -803,7 +784,7 @@ function NavbarInner() {
             </div>
           )}
         </header>
-      </motion.div>
+      </div>
 
       {/* ── Search Overlay + Modal (desktop nav-link AND mobile bottom-nav
           both open this same overlay now, so search behaves identically

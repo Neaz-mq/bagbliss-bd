@@ -14,7 +14,6 @@ import { ROUTES } from '@/constants'
 
 const ACCOUNT_LINKS = [
   { label: 'My Cart', href: ROUTES.cart },
-  { label: 'Track Order', href: ROUTES.trackOrder },
   { label: 'My Account', href: ROUTES.account },
   { label: 'Wishlist', href: ROUTES.wishlist },
   { label: 'My Orders', href: ROUTES.orders },
@@ -28,12 +27,14 @@ const PRODUCT_LINKS = [
   { label: 'New Arrivals', href: ROUTES.newArrivals },
 ]
 
-const COMPANY_LINKS = [
-  { label: 'About Us', href: '/about' },
-  { label: 'Return Policy', href: '/returns' },
-  { label: 'Privacy Policy', href: '/privacy' },
-  { label: 'Payment Policy', href: '/payment-policy' },
-  { label: 'Terms & Condition', href: '/terms' },
+// Every href below points to a page that exists in the project
+// (app/(shop)/*, app/(auth)/login) and to real SHOP_CATEGORIES values.
+const QUICK_LINKS = [
+  { label: 'Home', href: ROUTES.home },
+  { label: 'Flash Sale', href: ROUTES.flashSale },
+  { label: 'Canvas Bags', href: '/shop?category=canvas' },
+  { label: 'Party & Evening', href: '/shop?category=party' },
+  { label: 'Sign In', href: ROUTES.login },
 ]
 
 function SocialLink({
@@ -585,7 +586,7 @@ export default function Footer() {
 
                 <FooterColumn title="My Account" links={ACCOUNT_LINKS} />
                 <FooterColumn title="Product" links={PRODUCT_LINKS} />
-                <FooterColumn title="Our Company" links={COMPANY_LINKS} />
+                <FooterColumn title="Quick Links" links={QUICK_LINKS} />
               </div>
 
               <button
@@ -604,11 +605,6 @@ export default function Footer() {
           <div className="container-bagbliss footer-bottom-inner">
             <p className="footer-copyright" suppressHydrationWarning>
               &copy; {currentYear} BagBliss BD. All rights reserved.
-            </p>
-            <p className="footer-bottom-links">
-              <Link href="/payment-policy">Payment policy</Link>
-              <span className="footer-bottom-sep">|</span>
-              <Link href="/terms">Terms &amp; condition</Link>
             </p>
           </div>
         </div>

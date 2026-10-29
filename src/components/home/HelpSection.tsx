@@ -1,22 +1,19 @@
 'use client'
 
-import { AlertCircle, Phone, Mail } from 'lucide-react'
+import { Phone, Mail } from 'lucide-react'
 
 const CONTACT_ITEMS = [
   {
-    icon: AlertCircle,
-    title: 'Help centre',
-    value: 'help.isabel.com',
-  },
-  {
     icon: Phone,
     title: 'Phone',
-    value: '(+63) 0123 456 789',
+    value: '+8801303660481',
+    href: 'tel:+8801303660481',
   },
   {
     icon: Mail,
     title: 'Email support',
-    value: 'demo@demo.com',
+    value: 'neazmorshed.cse@gmail.com',
+    href: 'mailto:neazmorshed.cse@gmail.com',
   },
 ]
 
@@ -124,6 +121,14 @@ export default function HelpSection() {
           color: #ffffff;
         }
 
+        .hs-contact-link {
+          color: inherit;
+          text-decoration: none;
+        }
+        .hs-contact-link:hover {
+          text-decoration: underline;
+        }
+
         .hs-contact-value {
           margin: 0;
           font-family: 'Poppins', sans-serif;
@@ -228,7 +233,11 @@ export default function HelpSection() {
                   </div>
                   <div>
                     <p className="hs-contact-title">{item.title}</p>
-                    <p className="hs-contact-value">{item.value}</p>
+                    <p className="hs-contact-value">
+                      <a href={item.href} className="hs-contact-link">
+                        {item.value}
+                      </a>
+                    </p>
                   </div>
                 </div>
               )
