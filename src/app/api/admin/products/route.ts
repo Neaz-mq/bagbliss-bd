@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
-import { invalidate, CACHE_KEYS } from '@/lib/redis'
+import { invalidate, invalidatePattern, CACHE_KEYS } from '@/lib/redis'
 import { uniqueSlug } from '@/lib/slug'
 import { sumColorStock } from '@/lib/stock'
 
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
     CACHE_KEYS.flashSale,
     CACHE_KEYS.adminStats,
   )
+  await invalidatePattern('shop:*')
 
   return NextResponse.json({ product }, { status: 201 })
 }

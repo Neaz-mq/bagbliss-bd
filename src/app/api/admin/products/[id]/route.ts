@@ -4,7 +4,7 @@ import mongoose from 'mongoose'
 import { auth } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
-import { invalidate, CACHE_KEYS } from '@/lib/redis'
+import { invalidate, invalidatePattern, CACHE_KEYS } from '@/lib/redis'
 import { sumColorStock } from '@/lib/stock'
 
 type Ctx = { params: Promise<{ id: string }> }
@@ -27,6 +27,7 @@ async function bust(slug?: string) {
   ]
   if (slug) keys.push(CACHE_KEYS.product(slug))
   await invalidate(...keys).catch((e) => console.error('[CACHE]', e))
+  await invalidatePattern('shop:*')
 }
 
 // Only these fields can be changed from the admin form.

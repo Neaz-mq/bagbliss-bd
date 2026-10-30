@@ -43,6 +43,29 @@ export async function invalidate(...keys: string[]) {
   }
 }
 
+// Delete every key matching a glob pattern (e.g. 'shop:*').
+// Uses SCAN (non-blocking), never KEYS.
+export async function invalidatePattern(pattern: string) {
+  try {
+    let cursor: string | number = 0
+    let total = 0
+    do {
+      const [next, keys]: [string | number, string[]] = await redis.scan(cursor, {
+        match: pattern,
+        count: 100,
+      })
+      cursor = next
+      if (keys.length) {
+        await redis.del(...keys)
+        total += keys.length
+      }
+    } while (String(cursor) !== '0')
+    console.warn(`[CACHE INVALIDATED] ${pattern} (${total} keys)`)
+  } catch (err) {
+    console.warn('[CACHE] Pattern invalidation failed:', err)
+  }
+}
+
 export const CACHE_KEYS = {
   products:        'products:all',
   featuredProducts:'products:featured',
