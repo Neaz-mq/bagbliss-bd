@@ -1,8 +1,12 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { Fragment, useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
+import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Send, RotateCcw, MessageCircle, ShoppingBag } from 'lucide-react'
+import { X, Send, RotateCcw, MessageCircle, ShoppingBag, Check, ExternalLink } from 'lucide-react'
+import { useCartStore } from '@/store/cartStore'
+import type { IProduct } from '@/types'
 
 // ── Config ────────────────────────────────────────────────────────────────
 const WHATSAPP_NUMBER = '8801303660481'
@@ -27,7 +31,25 @@ const QUICK_WA_MESSAGES = [
 
 const QUICK_AI = ['Under ৳1,000', 'New Arrivals', 'Sale Bags']
 
-interface Message { role: 'user' | 'assistant'; content: string }
+// Product card payload returned by /api/ai/chat (validated + priced on the server)
+interface ChatProduct {
+  _id: string
+  name: string
+  slug: string
+  category: string
+  price: number
+  originalPrice?: number
+  isFlashSale: boolean
+  image: string
+  colors: { name: string; hex: string; stock: number }[]
+  stock: number
+  tags: string[]
+  rating: number
+  reviewCount: number
+  createdAt: string
+}
+
+interface Message { role: 'user' | 'assistant'; content: string; products?: ChatProduct[] }
 
 const WELCOME: Message = {
   role: 'assistant',
@@ -184,6 +206,204 @@ function WhatsAppPanel({ onClose, isMobile }: { onClose: () => void; isMobile: b
   )
 }
 
+// ── Chat → cart helpers ───────────────────────────────────────────────────
+// Same shape ShopProductCard builds, so the cart drawer / checkout treat a
+// product added from the chat exactly like one added from the shop page.
+function toIProduct(p: ChatProduct): IProduct {
+  return {
+    _id:              p._id,
+    name:             p.name,
+    slug:             p.slug,
+    description:      p.name,
+    shortDescription: p.name,
+    price:            p.originalPrice ?? p.price,
+    discountPrice:    p.originalPrice ? p.price : undefined,
+    category:         p.category,
+    tags:             p.tags ?? [],
+    colors: (p.colors ?? []).map((c) => ({
+      name:   c.name,
+      hex:    c.hex,
+      images: [],
+      stock:  c.stock,
+    })),
+    mainImage: { url: p.image ?? '', cloudinaryId: '', alt: p.name },
+    status:          'active',
+    isFeatured:      false,
+    isFlashSale:     p.isFlashSale,
+    flashSalePrice:  p.isFlashSale ? p.price : undefined,
+    soldCount:       p.reviewCount ?? 0,
+    stock:           p.stock,
+    ratings:         { average: p.rating ?? 0, count: p.reviewCount ?? 0 },
+    createdAt:       p.createdAt,
+    updatedAt:       p.createdAt,
+  }
+}
+
+const fmtPrice = (n: number) => `৳${n.toLocaleString('en-BD')}`
+
+// ── Product card shown inside the chat ────────────────────────────────────
+function ChatProductCard({ product, onCloseChat }: { product: ChatProduct; onCloseChat: () => void }) {
+  const addItem  = useCartStore((s) => s.addItem)
+  const openCart = useCartStore((s) => s.openCart)
+
+  const colors = product.colors
+  // Start on the first colour that is actually in stock
+  const firstAvail = Math.max(0, colors.findIndex((c) => c.stock > 0))
+  const [colorIdx, setColorIdx] = useState(firstAvail)
+  const [added, setAdded]       = useState(false)
+  const [imgError, setImgError] = useState(false)
+
+  const selected   = colors[colorIdx]
+  const colorName  = selected?.name ?? 'Default'
+  const available  = colors.length ? (selected?.stock ?? 0) : product.stock
+  const outOfStock = product.stock <= 0 || available <= 0
+  const discount   = product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0
+
+  const handleAdd = () => {
+    if (outOfStock) { toast.error('Out of stock'); return }
+
+    // Don't let the cart go above what's in stock for this colour
+    const inCart = useCartStore.getState().items
+      .filter((i) => i.product._id === product._id && i.selectedColor === colorName)
+      .reduce((n, i) => n + i.quantity, 0)
+    if (inCart >= available) {
+      toast.error(`Only ${available} in stock`)
+      return
+    }
+
+    addItem({
+      product:       toIProduct(product),
+      quantity:      1,
+      selectedColor: colorName,
+      price:         product.price,
+    })
+    toast.success(`🛍️ ${product.name} added to cart!`)
+    setAdded(true)
+    setTimeout(() => setAdded(false), 2200)
+  }
+
+  const handleViewCart = () => {
+    onCloseChat()
+    openCart()
+  }
+
+  return (
+    <div style={{
+      display: 'flex', gap: 10, padding: 10, background: '#fff',
+      borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      {/* Image */}
+      <Link href={`/product/${product.slug}`} style={{
+        position: 'relative', width: 78, height: 98, flexShrink: 0,
+        borderRadius: 12, overflow: 'hidden', background: '#f3efea',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {product.image && !imgError ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={product.image}
+            alt={product.name}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <ShoppingBag size={24} color="#c9b8a8" strokeWidth={1.5} />
+        )}
+        {discount > 0 && (
+          <span style={{
+            position: 'absolute', top: 5, left: 5, background: '#e11d48', color: '#fff',
+            fontSize: 9, fontWeight: 800, padding: '2px 5px', borderRadius: 6,
+          }}>-{discount}%</span>
+        )}
+      </Link>
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <Link href={`/product/${product.slug}`} style={{
+          fontSize: 12.5, fontWeight: 700, color: '#1a1a1a', lineHeight: 1.3,
+          textDecoration: 'none',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>{product.name}</Link>
+
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: BRAND }}>{fmtPrice(product.price)}</span>
+          {discount > 0 && product.originalPrice && (
+            <span style={{ fontSize: 11, color: '#9ca3af', textDecoration: 'line-through' }}>
+              {fmtPrice(product.originalPrice)}
+            </span>
+          )}
+        </div>
+
+        {/* Colours */}
+        {colors.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5, flexWrap: 'wrap' }}>
+            {colors.map((c, i) => (
+              <button
+                key={`${c.name}-${i}`}
+                type="button"
+                title={c.stock > 0 ? c.name : `${c.name} (out of stock)`}
+                aria-label={c.name}
+                disabled={c.stock <= 0}
+                onClick={() => setColorIdx(i)}
+                style={{
+                  width: 16, height: 16, borderRadius: '50%', padding: 0,
+                  background: c.hex, cursor: c.stock > 0 ? 'pointer' : 'not-allowed',
+                  border: '1px solid rgba(0,0,0,0.18)',
+                  outline: i === colorIdx ? `2px solid ${BRAND}` : 'none',
+                  outlineOffset: 2,
+                  opacity: c.stock > 0 ? 1 : 0.35,
+                }}
+              />
+            ))}
+            <span style={{ fontSize: 10.5, color: '#6b7280', marginLeft: 2 }}>{colorName}</span>
+          </div>
+        )}
+
+        <p style={{
+          margin: '4px 0 0', fontSize: 10.5, fontWeight: 600,
+          color: outOfStock ? '#dc2626' : available <= 5 ? '#d97706' : '#16a34a',
+        }}>
+          {outOfStock ? 'Out of stock' : available <= 5 ? `Only ${available} left` : 'In stock'}
+        </p>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 6, marginTop: 'auto', paddingTop: 7 }}>
+          {added ? (
+            <button type="button" onClick={handleViewCart} style={{
+              flex: 1, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer',
+              background: '#16a34a', color: '#fff', fontSize: 11.5, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            }}>
+              <Check size={13} /> Added · View cart
+            </button>
+          ) : (
+            <button type="button" onClick={handleAdd} disabled={outOfStock} style={{
+              flex: 1, height: 32, borderRadius: 10, border: 'none',
+              cursor: outOfStock ? 'not-allowed' : 'pointer',
+              background: outOfStock ? '#e5e7eb' : `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`,
+              color: outOfStock ? '#9ca3af' : '#fff', fontSize: 11.5, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            }}>
+              <ShoppingBag size={13} /> Add to cart
+            </button>
+          )}
+          <Link href={`/product/${product.slug}`} title="View product" aria-label="View product" style={{
+            width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+            border: '1.5px solid #e5e5e5', background: '#fff', color: '#555',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <ExternalLink size={13} />
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── AI Shopping Panel ─────────────────────────────────────────────────────
 function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean }) {
   const [msgs, setMsgs] = useState<Message[]>([WELCOME])
@@ -203,7 +423,9 @@ function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean
     setInput('')
     setLoading(true)
     try {
-      const apiMessages = [...msgs, userMsg].filter(m => m !== WELCOME)
+      const apiMessages = [...msgs, userMsg]
+        .filter(m => m !== WELCOME)
+        .map(({ role, content }) => ({ role, content }))
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +433,11 @@ function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      setMsgs(p => [...p, { role: 'assistant', content: data.message ?? 'Sorry, try again!' }])
+      setMsgs(p => [...p, {
+        role: 'assistant',
+        content: data.message ?? 'Sorry, try again!',
+        products: Array.isArray(data.products) ? data.products : [],
+      }])
     } catch {
       setMsgs(p => [...p, { role: 'assistant', content: 'Connection issue. Please try again.' }])
     } finally {
@@ -275,7 +501,8 @@ function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean
       {/* Messages */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10, background: 'linear-gradient(180deg, #faf8f6 0%, #f5f2ef 100%)' }}>
         {msgs.map((m, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 6 }}>
+          <Fragment key={i}>
+          <div style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 6 }}>
             {m.role === 'assistant' && (
               <div style={{ width: 24, height: 24, borderRadius: 8, flexShrink: 0, background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShoppingBag size={13} color="#fff" strokeWidth={2} /></div>
             )}
@@ -290,6 +517,14 @@ function AIPanel({ onClose, isMobile }: { onClose: () => void; isMobile: boolean
               {m.role === 'assistant' ? renderMessage(m.content) : m.content}
             </div>
           </div>
+          {m.role === 'assistant' && m.products && m.products.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 30 }}>
+              {m.products.map((p) => (
+                <ChatProductCard key={p._id} product={p} onCloseChat={onClose} />
+              ))}
+            </div>
+          )}
+          </Fragment>
         ))}
 
         {loading && (

@@ -387,7 +387,7 @@ export default function CategoryStrip() {
           position: relative;
           flex-shrink: 0;
           aspect-ratio: 1.06 / 1;
-          border-radius: 0;
+          border-radius: 6px;
           overflow: hidden;
           background: #f7f7f7;
           transform: translateZ(0);

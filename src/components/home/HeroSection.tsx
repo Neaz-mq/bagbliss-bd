@@ -155,6 +155,7 @@ export default function HeroSection() {
         textTransform: 'uppercase',
         textDecoration: 'none',
         padding: '0.95rem 1.9rem',
+        borderRadius: 6,
         transition: 'all 220ms ease',
         whiteSpace: 'nowrap',
         ...extraStyle,
@@ -489,6 +490,7 @@ export default function HeroSection() {
     width: 100%;
     padding: 1.1rem;
     border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 6px;
     background: rgba(255,255,255,0.03);
     backdrop-filter: blur(5px);
   }
@@ -497,6 +499,7 @@ export default function HeroSection() {
     overflow: hidden;
     width: 100%;
     aspect-ratio: 5 / 6;
+    border-radius: 4px;
     box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
   }
 
@@ -516,6 +519,7 @@ export default function HeroSection() {
     padding: 1rem 1.25rem;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
     backdrop-filter: blur(10px);
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   }
@@ -588,6 +592,7 @@ export default function HeroSection() {
     align-items: center;
     gap: 10px;
     background: #fff;
+    border-radius: 6px;
     box-shadow: 0 18px 60px rgba(0,0,0,0.18);
   }
 
@@ -607,6 +612,7 @@ export default function HeroSection() {
     overflow: hidden;
     flex-shrink: 0;
     display: block;
+    border-radius: 4px;
     background: #f4f2ef;
   }
 

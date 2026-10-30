@@ -4,9 +4,9 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   ShoppingBag,
-  Facebook,
-  Instagram,
-  Youtube,
+  Phone,
+  Mail,
+  Truck,
   ArrowUp,
   ChevronDown,
 } from 'lucide-react'
@@ -36,28 +36,6 @@ const QUICK_LINKS = [
   { label: 'Party & Evening', href: '/shop?category=party' },
   { label: 'Sign In', href: ROUTES.login },
 ]
-
-function SocialLink({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string
-  icon: React.ElementType
-  label: string
-}) {
-  return (
-    <Link
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      className="footer-social-btn"
-    >
-      <Icon size={16} />
-    </Link>
-  )
-}
 
 /**
  * Desktop: static column, always expanded, header not clickable.
@@ -221,31 +199,45 @@ export default function Footer() {
           text-align: left;
         }
 
-        .footer-social {
+        .footer-info {
           display: flex;
-          justify-content: flex-start;
+          flex-direction: column;
+          align-items: flex-start;
           gap: 10px;
         }
 
-        .footer-social-btn {
-          width: 36px;
-          height: 36px;
+        .footer-info-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 0.86rem;
+          line-height: 1.4;
+          color: #6b6b6b;
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+
+        .footer-info-icon {
+          width: 32px;
+          height: 32px;
           border-radius: 999px;
           border: 1px solid #e3ddd5;
           display: flex;
           align-items: center;
           justify-content: center;
           color: #d08a60;
-          background: transparent;
-          transition: all 0.25s ease;
           flex-shrink: 0;
+          transition: all 0.25s ease;
         }
 
-        .footer-social-btn:hover {
+        a.footer-info-item:hover {
+          color: #d08a60;
+        }
+
+        a.footer-info-item:hover .footer-info-icon {
           background: #d08a60;
           color: #ffffff;
           border-color: #d08a60;
-          transform: translateY(-2px);
         }
 
         .footer-column-title {
@@ -338,12 +330,15 @@ export default function Footer() {
         .footer-bottom-inner {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           flex-wrap: wrap;
           gap: 12px;
           padding-top: 20px;
           padding-bottom: 20px;
-          padding-left: var(--floating-widget-w);
+          /* Equal safe zone on both sides so the copyright sits in the
+             true centre of the page while still clearing the floating
+             chat button. */
+          padding-left: 90px;
           padding-right: 90px;
           box-sizing: border-box;
           width: 100%;
@@ -353,7 +348,7 @@ export default function Footer() {
           margin: 0;
           font-size: 0.82rem;
           color: #17172f;
-          text-align: left;
+          text-align: center;
         }
 
         .footer-bottom-links {
@@ -446,8 +441,8 @@ export default function Footer() {
             text-align: center;
           }
 
-          .footer-social {
-            justify-content: center;
+          .footer-info {
+            align-items: center;
           }
 
           .footer-links-list {
@@ -524,20 +519,20 @@ export default function Footer() {
 
           .footer-bottom-inner {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
             padding-top: 18px;
             padding-bottom: calc(
               var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px) + 20px
             );
             padding-left: var(--floating-widget-w);
             padding-right: var(--floating-widget-w);
-            text-align: left;
+            text-align: center;
             gap: 10px;
           }
 
           .footer-copyright,
           .footer-bottom-links {
-            text-align: left;
+            text-align: center;
           }
         }
 
@@ -565,22 +560,31 @@ export default function Footer() {
                     Premium imported bags at prices you&apos;ll love.
                   </p>
 
-                  <div className="footer-social">
-                    <SocialLink
-                      href="https://facebook.com"
-                      icon={Facebook}
-                      label="Facebook"
-                    />
-                    <SocialLink
-                      href="https://instagram.com"
-                      icon={Instagram}
-                      label="Instagram"
-                    />
-                    <SocialLink
-                      href="https://youtube.com"
-                      icon={Youtube}
-                      label="YouTube"
-                    />
+                  <div className="footer-info">
+                    <span className="footer-info-item">
+                      <span className="footer-info-icon">
+                        <Truck size={15} />
+                      </span>
+                      Cash on Delivery all over Bangladesh
+                    </span>
+                    <a
+                      href="tel:+8801303660481"
+                      className="footer-info-item"
+                    >
+                      <span className="footer-info-icon">
+                        <Phone size={15} />
+                      </span>
+                      +8801303660481
+                    </a>
+                    <a
+                      href="mailto:neazmorshed.cse@gmail.com"
+                      className="footer-info-item"
+                    >
+                      <span className="footer-info-icon">
+                        <Mail size={15} />
+                      </span>
+                      neazmorshed.cse@gmail.com
+                    </a>
                   </div>
                 </div>
 

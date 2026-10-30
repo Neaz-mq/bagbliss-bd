@@ -1209,7 +1209,7 @@ export default function FeaturedProducts() {
         .fp-card {
           flex-shrink: 0;
           background: #f4f2ef;
-          border-radius: 22px;
+          border-radius: 6px;
           padding: 18px;
           display: flex;
           flex-direction: column;
@@ -1318,7 +1318,7 @@ export default function FeaturedProducts() {
           flex: none;
           width: 100%;
           aspect-ratio: 1 / 1;
-          border-radius: 16px;
+          border-radius: 4px;
           background: transparent;
           overflow: hidden;
           position: relative;
@@ -1446,7 +1446,7 @@ export default function FeaturedProducts() {
           height: 100%;
           background: linear-gradient(90deg, #e8e4df 25%, #dedad4 50%, #e8e4df 75%);
           background-size: 200% 100%;
-          border-radius: 16px;
+          border-radius: 4px;
           animation: fp-shimmer 1.4s infinite;
         }
 
@@ -1632,7 +1632,7 @@ export default function FeaturedProducts() {
           flex: none;
           width: 100%;
           aspect-ratio: 1 / 1;
-          border-radius: 16px;
+          border-radius: 4px;
           background: transparent;
           overflow: hidden;
         }
@@ -1714,7 +1714,7 @@ export default function FeaturedProducts() {
           /* NOTE: no padding override here — fp-container keeps the same
              clamp(4.6rem, 4vw, 4rem) padding as CategoryStrip (.cs-container)
              so both sections stay perfectly aligned across all tablet widths */
-          .fp-card { height: auto; border-radius: 20px; padding: 16px; }
+          .fp-card { height: auto; border-radius: 6px; padding: 16px; }
           .fp-track { gap: 20px; }
           .fp-cta-wrap { margin-top: 36px; }
           .fp-add-to-cart-btn { height: 50px; }
