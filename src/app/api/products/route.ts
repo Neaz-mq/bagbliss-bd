@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import type { SortOrder } from 'mongoose'
+import type { PipelineStage } from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 import { PUBLIC_FIELDS } from '@/features/products/api/getProductBySlug'
@@ -9,6 +9,46 @@ import { cached, CACHE_KEYS } from '@/lib/redis'
 /** ReDoS ঠেকাতে regex special chars escape */
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * ✅ NEW — কার্ডে ইউজার যে দাম দেখে (flash sale চললে flashSalePrice,
+ * নইলে price) — price ফিল্টার ও sort ঠিক সেই দামের ওপরেই চলবে।
+ * ShopClient.normalizeProduct() এর লজিকের সাথে হুবহু মেলানো:
+ *   isFlashSale && flashSalePrice (truthy) ? flashSalePrice : price
+ */
+const EFFECTIVE_PRICE = {
+  $cond: [
+    {
+      $and: [
+        { $eq: ['$isFlashSale', true] },
+        { $gt: ['$flashSalePrice', 0] },
+      ],
+    },
+    '$flashSalePrice',
+    '$price',
+  ],
+}
+
+/** PUBLIC_FIELDS ("name slug ...") কে $project এর object এ রূপান্তর */
+const PROJECTION: Record<string, 1> = Object.fromEntries(
+  PUBLIC_FIELDS.split(' ').filter(Boolean).map((f) => [f, 1 as const])
+)
+
+const SORT_MAP: Record<string, Record<string, 1 | -1>> = {
+  newest:     { createdAt: -1 },
+  oldest:     { createdAt: 1 },
+  price_asc:  { effectivePrice: 1 },   // ✅ আগে ছিল { price: 1 }
+  price_desc: { effectivePrice: -1 },  // ✅ আগে ছিল { price: -1 }
+  popular:    { soldCount: -1 },
+  rating:     { rating: -1 },
+}
+
+/** query param থেকে বৈধ সংখ্যা বের করে; খালি/ভুল হলে null */
+function parsePrice(v: string): number | null {
+  if (v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) && n >= 0 ? n : null
 }
 
 export async function GET(req: NextRequest) {
@@ -65,31 +105,40 @@ export async function GET(req: NextRequest) {
         q.createdAt = { $gte: cutoff }
       }
 
-      if (priceMin || priceMax) {
-        const priceQuery: Record<string, number> = {}
-        if (priceMin) priceQuery.$gte = Number(priceMin)
-        if (priceMax) priceQuery.$lte = Number(priceMax)
-        q.price = priceQuery
+      // ✅ FIX — price ফিল্টার আগে শুধু রেগুলার `price` ফিল্ডে চলত, ফলে
+      // flash sale চলা প্রোডাক্ট (যেমন ৳850 দেখাচ্ছে) ৳999–৳1,499 ফিল্টারেও
+      // দেখাত। এখন computed `effectivePrice` এর ওপর ফিল্টার হয়।
+      const min = parsePrice(priceMin)
+      const max = parsePrice(priceMax)
+
+      const base: PipelineStage[] = [
+        { $match: q },
+        { $addFields: { effectivePrice: EFFECTIVE_PRICE } },
+      ]
+
+      if (min !== null || max !== null) {
+        const range: Record<string, number> = {}
+        if (min !== null) range.$gte = min
+        if (max !== null) range.$lte = max
+        base.push({ $match: { effectivePrice: range } })
       }
 
-      const sortMap: Record<string, Record<string, SortOrder>> = {
-        newest:     { createdAt: -1 },
-        oldest:     { createdAt: 1 },
-        price_asc:  { price: 1 },
-        price_desc: { price: -1 },
-        popular:    { soldCount: -1 },
-        rating:     { rating: -1 },
-      }
+      // _id tie-breaker: একই দামের প্রোডাক্ট থাকলে pagination এ
+      // একই আইটেম দুই পেজে আসা বা বাদ পড়া ঠেকায়।
+      const sortStage = { ...(SORT_MAP[sort] ?? SORT_MAP.newest), _id: 1 as const }
 
-      const [products, total] = await Promise.all([
-        Product.find(q)
-          .select(PUBLIC_FIELDS)          // ✅ শুধু পাবলিক ফিল্ড
-          .sort(sortMap[sort] ?? sortMap.newest)
-          .skip((page - 1) * limit)
-          .limit(limit)
-          .lean(),
-        Product.countDocuments(q),
+      const [products, countRows] = await Promise.all([
+        Product.aggregate([
+          ...base,
+          { $sort: sortStage },
+          { $skip: (page - 1) * limit },
+          { $limit: limit },
+          { $project: PROJECTION },    // ✅ শুধু পাবলিক ফিল্ড (effectivePrice বাদ)
+        ]),
+        Product.aggregate([...base, { $count: 'total' }]),
       ])
+
+      const total: number = countRows[0]?.total ?? 0
 
       return {
         products,

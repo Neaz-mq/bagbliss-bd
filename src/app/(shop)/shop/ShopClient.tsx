@@ -16,7 +16,7 @@ import {
 import ShopFilters from './ShopFilters'
 import ShopActiveFilters from './ShopActiveFilters'
 import ShopProductCard from './ShopProductCard'
-import { getColorFamily, matchPaletteColor } from './colorPalette'
+import { getColorFamily } from './colorPalette'
 import { SHOP_CATEGORIES, categoryLabelToValue } from '@/constants/shopCategories'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -305,24 +305,12 @@ export default function ShopClient({
       return
     }
 
-    if (searchParams.get('stock') === 'in-stock') {
-      // Syncs filter state from the URL on mount/navigation — a legitimate
-      // one-time sync from an external source (the URL), not derived state.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setInStockOnly(true)
-    }
-
     const categoryParam = searchParams.get('category')
     if (categoryParam) {
       const match = CATEGORIES.find(
         (c) => c !== 'All' && slugifyCategory(c) === categoryParam
       )
       if (match) setSelectedCategories([match])
-    }
-
-    const colorsParam = searchParams.get('colors')
-    if (colorsParam) {
-      setSelectedColors(colorsParam.split(',').filter(Boolean))
     }
 
     const searchParam = searchParams.get('search')
@@ -446,16 +434,6 @@ export default function ShopClient({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    const paletteMatch = matchPaletteColor(localSearch)
-    if (paletteMatch) {
-      setLocalSearch('')
-      setSearchQuery('')
-      const newColors = filters.colors.includes(paletteMatch.hex)
-        ? filters.colors
-        : [...filters.colors, paletteMatch.hex]
-      handleFilterChange({ ...filters, colors: newColors })
-      return
-    }
     setSearchQuery(localSearch)
     if (mode === 'shop') setNewOnly(false)
     syncUrl(sort, filters, localSearch)
@@ -879,7 +857,7 @@ export default function ShopClient({
                   <div
                     key={i}
                     className="skeleton product-skeleton-card"
-                    style={{ height: '360px', borderRadius: '1.25rem' }}
+                    style={{ height: '360px', borderRadius: '6px' }}
                   />
                 ))}
               </div>

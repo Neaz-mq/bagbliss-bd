@@ -4760,7 +4760,7 @@ select:focus-visible {
   display: flex;
   gap: 1.25rem;
   background: white;
-  border-radius: var(--radius-xl);
+  border-radius: 6px;
   overflow: hidden;
   border: 1px solid rgba(26, 26, 46, 0.06);
   transition: all var(--transition-base);
@@ -6192,7 +6192,7 @@ select:focus-visible {
   aspect-ratio: 1 / 1;
   display: block;
   background: #f3ede6;
-  border-radius: 1.1rem;
+  border-radius: 6px;
 }
 
 
@@ -6368,7 +6368,7 @@ select:focus-visible {
   flex-shrink: 0;
   width: 130px;
   height: 130px;
-  border-radius: 1rem;
+  border-radius: 4px;
   overflow: hidden;
   background: #f3ede6;
   display: block;
@@ -6507,7 +6507,7 @@ select:focus-visible {
   display: flex;
   gap: 1.25rem;
   background: white;
-  border-radius: var(--radius-xl);
+  border-radius: 6px;
   overflow: hidden;
   border: 1px solid rgba(26, 26, 46, 0.06);
   transition: all var(--transition-base);

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { FilterState } from './ShopClient'
-import { COLOR_PALETTE } from './colorPalette'
 
 interface Props {
   filters: FilterState
@@ -29,11 +28,6 @@ const PRICE_RANGES = [
   { label: '৳1,500 – ৳1,999', min: 1500, max: 1999 },
   { label: '৳2,000 & Above', min: 2000, max: null },
 ]
-
-// ✅ FIX: local COLORS array removed — it was a second, independent copy of
-// the swatch palette. ShopClient's matching logic and this render list now
-// both import from the same COLOR_PALETTE (see ./colorPalette.ts), so they
-// can never drift out of sync.
 
 function FilterSection({
   title,
@@ -64,11 +58,7 @@ function FilterSection({
   )
 }
 
-export default function ShopFilters({
-  filters,
-  onChange,
-  hideOnSaleFilter = false,
-}: Props) {
+export default function ShopFilters({ filters, onChange }: Props) {
   // ✅ FIX: single-select category, matching ShopClient's URL/API which
   // only supports one active category (`?category=slug`). Previously this
   // pushed into an array, so selecting a 2nd category made
@@ -88,14 +78,6 @@ export default function ShopFilters({
       ...filters,
       priceMin: alreadySet ? null : min,
       priceMax: alreadySet ? null : max,
-    })
-  }
-
-  const toggleColor = (hex: string) => {
-    const has = filters.colors.includes(hex)
-    onChange({
-      ...filters,
-      colors: has ? filters.colors.filter((c) => c !== hex) : [...filters.colors, hex],
     })
   }
 
@@ -162,52 +144,6 @@ export default function ShopFilters({
             className="shop-price-input"
             suppressHydrationWarning
           />
-        </div>
-      </FilterSection>
-
-      {/* Colors */}
-      <FilterSection title="Color">
-        <div className="shop-color-grid">
-          {COLOR_PALETTE.map(({ hex, name }) => (
-            <button
-              key={hex}
-              type="button"
-              onClick={() => toggleColor(hex)}
-              title={name}
-              className={`shop-color-btn ${filters.colors.includes(hex) ? 'shop-color-btn-active' : ''}`}
-              style={{ backgroundColor: hex }}
-              aria-label={name}
-              suppressHydrationWarning
-            />
-          ))}
-        </div>
-      </FilterSection>
-
-      {/* Availability */}
-      <FilterSection title="Availability" defaultOpen={false}>
-        <div className="shop-filter-list">
-          {!hideOnSaleFilter && (
-            <label className="shop-filter-checkbox">
-              <input
-                type="checkbox"
-                checked={filters.onSaleOnly}
-                onChange={() => onChange({ ...filters, onSaleOnly: !filters.onSaleOnly })}
-                className="shop-filter-check-input"
-                suppressHydrationWarning
-              />
-              <span className="shop-filter-check-label">On Sale Only</span>
-            </label>
-          )}
-          <label className="shop-filter-checkbox">
-            <input
-              type="checkbox"
-              checked={filters.inStockOnly}
-              onChange={() => onChange({ ...filters, inStockOnly: !filters.inStockOnly })}
-              className="shop-filter-check-input"
-              suppressHydrationWarning
-            />
-            <span className="shop-filter-check-label">In Stock Only</span>
-          </label>
         </div>
       </FilterSection>
 

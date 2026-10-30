@@ -1,3 +1,4 @@
+import type { PipelineStage } from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 
@@ -68,11 +69,35 @@ export type ProductQuery = {
   limit?: number
 }
 
+/**
+ * ✅ FIX — কার্ডে ইউজার যে দাম দেখে (flash sale চললে flashSalePrice, নইলে
+ * price) price ফিল্টার ও sort সেই দামের ওপরেই চলবে। আগে শুধু রেগুলার `price`
+ * ধরা হত, ফলে ৳850 flash দামের প্রোডাক্ট ৳999–৳1,499 রেঞ্জেও দেখাত।
+ * ShopClient.normalizeProduct() ও /api/products এর লজিকের সাথে মেলানো।
+ */
+const EFFECTIVE_PRICE = {
+  $cond: [
+    {
+      $and: [
+        { $eq: ['$isFlashSale', true] },
+        { $gt: ['$flashSalePrice', 0] },
+      ],
+    },
+    '$flashSalePrice',
+    '$price',
+  ],
+}
+
+/** PUBLIC_FIELDS ("name slug ...") কে $project এর object এ রূপান্তর */
+const PROJECTION: Record<string, 1> = Object.fromEntries(
+  PUBLIC_FIELDS.split(' ').filter(Boolean).map((f) => [f, 1 as const])
+)
+
 const SORT_MAP: Record<string, Record<string, 1 | -1>> = {
   newest: { createdAt: -1 },
   oldest: { createdAt: 1 },
-  price_asc: { price: 1 },
-  price_desc: { price: -1 },
+  price_asc: { effectivePrice: 1 },
+  price_desc: { effectivePrice: -1 },
   popular: { soldCount: -1 },
   rating: { rating: -1 },
 }
@@ -85,12 +110,7 @@ function buildFilter(q: ProductQuery): Record<string, unknown> {
   if (q.filter === 'featured') filter.isFeatured = true
   if (q.search) filter.$text = { $search: q.search }
 
-  if (q.minPrice != null || q.maxPrice != null) {
-    filter.price = {
-      ...(q.minPrice != null && { $gte: q.minPrice }),
-      ...(q.maxPrice != null && { $lte: q.maxPrice }),
-    }
-  }
+  // price রেঞ্জ এখানে নেই — getProducts() এ effectivePrice এর ওপর প্রয়োগ হয়।
 
   // 'new' ফিল্টার — গত ৩০ দিনে যোগ হওয়া
   if (q.filter === 'new') {
@@ -111,16 +131,37 @@ export async function getProducts(q: ProductQuery = {}) {
   const page = Math.max(1, q.page ?? 1)
   const skip = (page - 1) * limit
 
+  const base: PipelineStage[] = [
+    { $match: filter }, // $text থাকলে সেটা অবশ্যই প্রথম stage হতে হবে
+    { $addFields: { effectivePrice: EFFECTIVE_PRICE } },
+  ]
+
+  if (q.minPrice != null || q.maxPrice != null) {
+    const range: Record<string, number> = {}
+    if (q.minPrice != null) range.$gte = q.minPrice
+    if (q.maxPrice != null) range.$lte = q.maxPrice
+    base.push({ $match: { effectivePrice: range } })
+  }
+
+  // _id tie-breaker: একই দামের প্রোডাক্টে pagination স্থির রাখে
+  const sortStage = {
+    ...(SORT_MAP[q.sort ?? 'newest'] ?? SORT_MAP.newest),
+    _id: 1 as const,
+  }
+
   // দুটো query একসাথে — একটা রাউন্ড ট্রিপে
-  const [docs, total] = await Promise.all([
-    Product.find(filter)
-      .select(PUBLIC_FIELDS)
-      .sort(SORT_MAP[q.sort ?? 'newest'] ?? SORT_MAP.newest)
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    Product.countDocuments(filter),
+  const [docs, countRows] = await Promise.all([
+    Product.aggregate([
+      ...base,
+      { $sort: sortStage },
+      { $skip: skip },
+      { $limit: limit },
+      { $project: PROJECTION }, // শুধু পাবলিক ফিল্ড (effectivePrice বাদ)
+    ]),
+    Product.aggregate([...base, { $count: 'total' }]),
   ])
+
+  const total: number = countRows[0]?.total ?? 0
 
   return {
     products: serializeMany(docs),
