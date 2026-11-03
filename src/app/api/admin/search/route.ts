@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import Product from '@/models/Product'
 import Order from '@/models/Order'
@@ -16,18 +17,20 @@ interface SearchResult {
 }
 
 export async function GET(req: NextRequest) {
+  // 🔒 শুধু admin — আগে কোনো auth চেক ছিল না, customer-এর নাম/ইমেইল ফাঁস হত
+  const session = await auth()
+  if (!session || session.user?.role !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    console.log('Search API called')
-    
-    const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
-    console.log('Search query:', q)
-    
+    const q = (req.nextUrl.searchParams.get('q')?.trim() ?? '').slice(0, 100)
+
     if (q.length < 2) {
       return NextResponse.json({ success: true, data: [] })
     }
 
     await connectDB()
-    console.log('Connected to MongoDB')
 
     // Create regex for search
     const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
@@ -44,11 +47,12 @@ export async function GET(req: NextRequest) {
       Order.find({
         $or: [
           { orderNumber: regex },
-          { 'customer.name': regex },
-          { 'customer.email': regex },
+          { 'shipping.fullName': regex },
+          { 'shipping.phone': regex },
+          { guestEmail: regex },
         ],
       })
-        .select('orderNumber status total customer')
+        .select('orderNumber status total shipping.fullName')
         .limit(LIMIT_PER_TYPE)
         .lean(),
       
@@ -56,12 +60,10 @@ export async function GET(req: NextRequest) {
         role: 'user',
         $or: [{ name: regex }, { email: regex }],
       })
-        .select('name email image')
+        .select('name email avatar')
         .limit(LIMIT_PER_TYPE)
         .lean(),
     ])
-
-    console.log(`Found: ${products.length} products, ${orders.length} orders, ${customers.length} customers`)
 
     // Format results
     const results: SearchResult[] = [
@@ -78,7 +80,7 @@ export async function GET(req: NextRequest) {
         type: 'order' as const,
         id: String(o._id),
         title: o.orderNumber ? `Order #${o.orderNumber}` : `Order ${String(o._id).slice(-6)}`,
-        subtitle: [o.customer?.name, o.status].filter(Boolean).join(' · '),
+        subtitle: [o.shipping?.fullName, o.status].filter(Boolean).join(' · '),
         href: `/admin/orders/${o._id}`,
       })),
 
@@ -87,12 +89,11 @@ export async function GET(req: NextRequest) {
         id: String(c._id),
         title: c.name ?? c.email,
         subtitle: c.email,
-        image: c.image,
+        image: c.avatar || undefined,
         href: `/admin/customers/${c._id}`,
       })),
     ]
 
-    console.log('Returning results:', results)
     return NextResponse.json({ success: true, data: results })
 
   } catch (err) {
@@ -100,8 +101,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { 
         success: false, 
-        error: err instanceof Error ? err.message : 'Search failed',
-        statusCode: 500 
+        error: 'Search failed',
       },
       { status: 500 }
     )

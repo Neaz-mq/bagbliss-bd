@@ -1,119 +1,45 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import connectDB from '@/lib/mongodb'
-import Order from '@/models/Order'
-import { validateSSLPayment } from '@/lib/sslcommerz'
-import { sendOrderEmails } from '@/lib/email'
+import { confirmSSLPayment } from '@/lib/paymentFlow'
 
 export async function POST(req: NextRequest) {
   const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
+  const fail = (reason: string) =>
+    NextResponse.redirect(`${baseUrl}/payment/fail?reason=${reason}`, 303)
 
   try {
     await connectDB()
 
-    const form         = await req.formData()
-    const val_id       = form.get('val_id')       as string
-    const tran_id      = form.get('tran_id')      as string
-    const card_type    = form.get('card_type')    as string
-    const bank_tran_id = form.get('bank_tran_id') as string
-    const status       = form.get('status')       as string
+    const form    = await req.formData()
+    const val_id  = String(form.get('val_id')  ?? '')
+    const tran_id = String(form.get('tran_id') ?? '')
+    const status  = String(form.get('status')  ?? '')
 
-    // ── Step 1: Check status from SSLCommerz ───────────────────────────
-    if (status !== 'VALID' && status !== 'VALIDATED') {
-      return NextResponse.redirect(`${baseUrl}/payment/fail?reason=invalid_status`)
-    }
+    if (status !== 'VALID' && status !== 'VALIDATED') return fail('invalid_status')
+    if (!val_id || !tran_id) return fail('missing_params')
 
-    if (!val_id || !tran_id) {
-      return NextResponse.redirect(`${baseUrl}/payment/fail?reason=missing_params`)
-    }
-
-    // ── Step 2: Validate with SSLCommerz server ────────────────────────
-    const validation = await validateSSLPayment(val_id)
-
-    if (
-      validation.status !== 'VALID' &&
-      validation.status !== 'VALIDATED'
-    ) {
-      return NextResponse.redirect(`${baseUrl}/payment/fail?reason=validation_failed`)
-    }
-
-    // ── Step 3: Find order ─────────────────────────────────────────────
-    const order = await Order.findOne({ tranId: tran_id })
-    if (!order) {
-      return NextResponse.redirect(`${baseUrl}/payment/fail?reason=order_not_found`)
-    }
-
-    // ── Step 3b: Idempotency ───────────────────────────────────────────
-    // SSLCommerz একই callback দুবার পাঠাতে পারে, আর IPN রুটও
-    // সমান্তরালে অর্ডারটা paid করে দিতে পারে। ইতিমধ্যে paid হলে
-    // আবার ইমেইল না পাঠিয়ে সরাসরি success পেজে পাঠাই।
-    if (order.paymentStatus === 'paid') {
-      return NextResponse.redirect(
-        `${baseUrl}/order-success/${order._id}?t=${order.accessToken ?? ''}`
-      )
-    }
-
-    // ── Step 4: Verify amount ──────────────────────────────────────────
-    const paidAmount = parseFloat(validation.amount ?? '0')
-    if (Math.abs(paidAmount - order.total) > 1) {
-      await Order.findByIdAndUpdate(order._id, {
-        paymentStatus: 'failed',
-        status:        'cancelled',
-      })
-      return NextResponse.redirect(`${baseUrl}/payment/fail?reason=amount_mismatch`)
-    }
-
-    // ── Step 5: Mark order as paid ────────────────────────────────────
-    // ✅ SSLCommerz-এর নিজস্ব নির্দেশনা: risk_level = 1 হলে ট্রানজেকশন
-    // "hold" করে ম্যানুয়ালি কাস্টমার ভেরিফাই করতে হয়। তাই ঝুঁকিপূর্ণ
-    // পেমেন্টে status সরাসরি 'processing' না করে 'review'-তে রাখা হচ্ছে —
-    // টাকা কেটেছে (paymentStatus: paid), কিন্তু শিপমেন্ট শুরুর আগে
-    // অ্যাডমিন প্যানেল থেকে ম্যানুয়ালি চেক করতে হবে।
-    const isRisky = validation.risk_level === '1'
-
-    await Order.findByIdAndUpdate(order._id, {
-      paymentStatus: 'paid',
-      status:        isRisky ? 'review' : 'processing',
-      sslTranId:     validation.bank_tran_id ?? bank_tran_id,
-      valId:         val_id,
-      cardType:      card_type,
-      bankTranId:    bank_tran_id,
-      riskLevel:     validation.risk_level ?? null,
-      riskTitle:     validation.risk_title ?? null,
+    const result = await confirmSSLPayment({
+      tran_id,
+      val_id,
+      card_type: String(form.get('card_type') ?? '') || undefined,
+      bank_tran_id: String(form.get('bank_tran_id') ?? '') || undefined,
     })
 
-    if (isRisky) {
-      console.warn(`[PAYMENT RISK] Order ${order.orderNumber} flagged risky:`, validation.risk_title)
-    }
+    if (!result.ok) return fail(result.reason)
 
-    // ── Step 6: Send confirmation emails (non-blocking) ────────────────
-    sendOrderEmails({
-      orderNumber:   order.orderNumber,
-      customerName:  order.shipping.fullName,
-      customerEmail: order.shipping.email ?? order.guestEmail ?? '',
-      items:         order.items,
-      shipping:      order.shipping,
-      subtotal:      order.subtotal,
-      deliveryFee:   order.deliveryFee,
-      total:         order.total,
-      payment:       order.payment,
-      delivery:      order.delivery,
-      orderNote:     order.orderNote ?? '',
-      createdAt:     order.createdAt.toISOString(),
-    }).catch(err => console.error('[EMAIL] SSL payment email failed:', err))
-
-    // ── Step 7: Redirect to success page ──────────────────────────────
-    // ✅ accessToken ছাড়া order-success পেজ খুলবে না। আগে
-    // `?payment=success&order=...` পাঠানো হত — ওগুলো পেজে
-    // ব্যবহারই হয় না, আর orderNumber URL এ থাকা অনাবশ্যক।
     return NextResponse.redirect(
-      `${baseUrl}/order-success/${order._id}?t=${order.accessToken ?? ''}`
+      `${baseUrl}/order-success/${result.orderId}?t=${result.accessToken ?? ''}`,
+      303
     )
-
   } catch (err) {
     console.error('[PAYMENT SUCCESS]', err)
-    return NextResponse.redirect(`${baseUrl}/payment/fail?reason=server_error`)
+    return fail('server_error')
   }
 }
 
-export { POST as GET }
+// ব্রাউজারে সরাসরি GET করলে formData() ফেটে যেত — এখন শুধু রিডাইরেক্ট
+export async function GET() {
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
+  return NextResponse.redirect(`${baseUrl}/cart`, 303)
+}

@@ -39,6 +39,16 @@ export async function POST(req: NextRequest) {
     }
     const input = parsed.data
 
+    // 🔒 এই রুট শুধু Cash on Delivery-র জন্য। অনলাইন পেমেন্ট শুধু
+    // /api/payment/initiate দিয়ে হবে — নইলে কেউ সরাসরি API কল করে
+    // `payment: 'bkash'` পাঠিয়ে টাকা না দিয়েই অর্ডার বানাতে পারত।
+    if (input.payment !== 'cod') {
+      return NextResponse.json(
+        { success: false, error: 'Online payments must go through the payment gateway' },
+        { status: 400 }
+      )
+    }
+
     // ── ২. সার্ভারে দাম হিসাব ─────────────────────────────────────────
     const priced = await priceOrder(input)
 
@@ -55,7 +65,7 @@ export async function POST(req: NextRequest) {
       shipping: input.shipping,
       delivery: input.delivery,
       deliveryFee: priced.deliveryFee,
-      payment: input.payment,
+      payment: 'cod',
       subtotal: priced.subtotal,
       total: priced.total,
       orderNote: input.orderNote,

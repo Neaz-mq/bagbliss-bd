@@ -28,18 +28,30 @@ const INVALID_CREDENTIALS_MSG = 'Invalid email or password'
 const RATE_LIMITED_MSG = 'Too many login attempts. Please try again later.'
 
 // ── helper: verify Google ID token with Google's public endpoint ──────────
+// 🔒 শুধু `aud` মেলালে যথেষ্ট নয় — issuer, মেয়াদ আর email_verified-ও দেখতে হয়।
 async function verifyGoogleToken(idToken: string) {
   const res = await fetch(
-    `https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
+    { cache: 'no-store' }
   )
   if (!res.ok) return null
   const payload = await res.json()
+
   if (payload.aud !== process.env.GOOGLE_CLIENT_ID) return null
+  if (
+    payload.iss !== 'accounts.google.com' &&
+    payload.iss !== 'https://accounts.google.com'
+  ) return null
+  if (Number(payload.exp) * 1000 < Date.now()) return null
+  // email যাচাই না হলে সেই email দিয়ে অন্যের অ্যাকাউন্টে ঢোকা সম্ভব
+  if (payload.email_verified !== 'true' && payload.email_verified !== true) return null
+  if (!payload.email || !payload.sub) return null
+
   return {
-    id: payload.sub,
-    name: payload.name,
-    email: payload.email,
-    image: payload.picture,
+    id: payload.sub as string,
+    name: (payload.name as string) ?? payload.email,
+    email: String(payload.email).toLowerCase(),
+    image: payload.picture as string | undefined,
   }
 }
 
@@ -163,21 +175,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const db = await clientPromise
         const users = db.db('bagbliss').collection('users')
 
-        // Upsert: create if not exists, always update name/image/provider
+        // Upsert: নতুন হলে তৈরি। 🔒 existing user-এর name/avatar/provider
+        // overwrite করা হয় না (credentials ইউজারের তথ্য নষ্ট হত) —
+        // শুধু googleId যোগ হয়।
         await users.updateOne(
           { email: googleUser.email },
           {
             $setOnInsert: {
-              createdAt: new Date(),
-              role: 'user',
-              emailVerified: new Date(),
-            },
-            $set: {
               name: googleUser.name,
               image: googleUser.image,
+              avatar: '',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              role: 'user',
+              isVerified: true,
               provider: 'google',
-              googleId: googleUser.id,
+              emailVerified: new Date(),
+              addresses: [],
+              wishlist: [],
             },
+            $set: { googleId: googleUser.id },
           },
           { upsert: true }
         )
