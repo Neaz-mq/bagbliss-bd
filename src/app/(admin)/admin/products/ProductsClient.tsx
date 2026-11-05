@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Plus, Search, RefreshCw, Edit2, Trash2, X, Upload,
   ChevronDown, ChevronLeft, ChevronRight, Package,
-  AlertTriangle, Loader2, Eye, Check,
+  AlertTriangle, Loader2,  Check,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -23,9 +23,6 @@ const ACCENT_SOFT3   = 'rgba(202,134,93,0.06)'
 const ACCENT_BORDER2 = 'rgba(202,134,93,0.25)'
 const ACCENT_BORDER3 = 'rgba(202,134,93,0.3)'
 const ACCENT_SHADOW  = 'rgba(202,134,93,0.35)'
-
-// Page background the tab-row / pagination blend into.
-const PAGE_BG = '#f8fafc'
 
 // ✅ NEW (parity with OrdersClient): the desktop grid table needs real
 // room — thumbnail + name/slug, category badge, price, stock badge,
