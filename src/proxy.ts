@@ -1,9 +1,11 @@
 import NextAuth from 'next-auth'
-import { authConfig } from './src/auth.config'
+import { authConfig } from './auth.config'
 import { NextResponse } from 'next/server'
 
 const { auth } = NextAuth(authConfig)
 
+// Next 16: `middleware.ts` এর নতুন নাম `proxy.ts`।
+// ফাইলটা অবশ্যই `src/` ফোল্ডারের ভেতরে থাকবে (প্রজেক্টে src/app আছে বলে)।
 export default auth((req) => {
   const { pathname } = req.nextUrl
 

@@ -7,6 +7,11 @@ import User from '@/models/User'
 
 export const dynamic = 'force-dynamic'
 
+// .lean() এর রেজাল্ট `any` না রেখে স্পষ্ট টাইপ — select() এ যা আনছি শুধু তাই
+type ProductRow  = { _id: unknown; name: string; price?: number; images?: string[] }
+type OrderRow    = { _id: unknown; orderNumber?: string; status?: string; shipping?: { fullName?: string } }
+type CustomerRow = { _id: unknown; name?: string; email: string; avatar?: string }
+
 interface SearchResult {
   type: 'product' | 'order' | 'customer'
   id: string
@@ -42,7 +47,7 @@ export async function GET(req: NextRequest) {
       Product.find({ name: regex })
         .select('name images price slug')
         .limit(LIMIT_PER_TYPE)
-        .lean(),
+        .lean<ProductRow[]>(),
       
       Order.find({
         $or: [
@@ -54,7 +59,7 @@ export async function GET(req: NextRequest) {
       })
         .select('orderNumber status total shipping.fullName')
         .limit(LIMIT_PER_TYPE)
-        .lean(),
+        .lean<OrderRow[]>(),
       
       User.find({
         role: 'user',
@@ -62,12 +67,12 @@ export async function GET(req: NextRequest) {
       })
         .select('name email avatar')
         .limit(LIMIT_PER_TYPE)
-        .lean(),
+        .lean<CustomerRow[]>(),
     ])
 
     // Format results
     const results: SearchResult[] = [
-      ...products.map((p: any) => ({
+      ...products.map((p) => ({
         type: 'product' as const,
         id: String(p._id),
         title: p.name,
@@ -76,7 +81,7 @@ export async function GET(req: NextRequest) {
         href: `/admin/products/${p._id}`,
       })),
 
-      ...orders.map((o: any) => ({
+      ...orders.map((o) => ({
         type: 'order' as const,
         id: String(o._id),
         title: o.orderNumber ? `Order #${o.orderNumber}` : `Order ${String(o._id).slice(-6)}`,
@@ -84,7 +89,7 @@ export async function GET(req: NextRequest) {
         href: `/admin/orders/${o._id}`,
       })),
 
-      ...customers.map((c: any) => ({
+      ...customers.map((c) => ({
         type: 'customer' as const,
         id: String(c._id),
         title: c.name ?? c.email,
