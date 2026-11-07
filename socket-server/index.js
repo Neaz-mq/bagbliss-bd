@@ -9,7 +9,18 @@ const jwt        = require('jsonwebtoken')
 const app    = express()
 const server = http.createServer(app)
 
-const ALLOWED_ORIGIN    = process.env.CLIENT_URL || 'http://localhost:3000'
+// অনুমোদিত ডোমেইন env থেকে — কমা দিয়ে একাধিক দেওয়া যায়:
+//   CLIENT_URL=https://bagbliss-bd.vercel.app,https://www.yourdomain.com
+// ডোমেইন বদলালে কোড ছুঁতে হবে না, শুধু env বদলে রিস্টার্ট দিলেই হবে।
+const ALLOWED_ORIGINS = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean)
+
+// লোকাল ডেভেলপমেন্টের জন্য localhost — প্রোডাকশনে বাদ
+if (process.env.NODE_ENV !== 'production') {
+  ALLOWED_ORIGINS.push('http://localhost:3000')
+}
 const PORT               = process.env.PORT        || 4000
 const EMIT_SECRET        = process.env.EMIT_SECRET
 const SOCKET_JWT_SECRET  = process.env.SOCKET_JWT_SECRET
@@ -19,15 +30,15 @@ if (!EMIT_SECRET || !SOCKET_JWT_SECRET) {
   console.error('❌ EMIT_SECRET and SOCKET_JWT_SECRET must be set in env. Exiting.')
   process.exit(1)
 }
+if (ALLOWED_ORIGINS.length === 0) {
+  console.error('❌ CLIENT_URL must be set in env (e.g. https://bagbliss-bd.vercel.app). Exiting.')
+  process.exit(1)
+}
 
 // ── Socket.IO setup ───────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: [
-      'http://localhost:3000',
-      'https://bagbliss-bd.vercel.app',
-      ALLOWED_ORIGIN,
-    ],
+    origin: ALLOWED_ORIGINS,
     methods:     ['GET', 'POST'],
     credentials: true,
   },
@@ -40,7 +51,7 @@ const onlineVisitors = new Map()  // socketId → { page, joinedAt }
 const adminSockets   = new Set()  // socketIds that passed admin-token verification
 
 // ── Middleware ────────────────────────────────────────────────────────────
-app.use(cors({ origin: ALLOWED_ORIGIN }))
+app.use(cors({ origin: ALLOWED_ORIGINS }))
 app.use(express.json())
 
 // ── Health check ─────────────────────────────────────────────────────────
