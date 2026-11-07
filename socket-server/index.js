@@ -99,11 +99,25 @@ io.on('connection', (socket) => {
     socket.emit('visitors:update', { count: onlineVisitors.size })
   })
 
-  socket.on('join:customer', ({ orderId }) => {
-    if (orderId) {
-      socket.join(`order:${orderId}`)
-      console.log(`[CUSTOMER] ${socket.id} tracking order ${orderId}`)
+  // 🔒 কাস্টমার রুমে ঢুকতে Next.js-এর দেওয়া সই-করা টোকেন লাগে।
+  // সরাসরি orderId পাঠালে আর ঢোকা যাবে না (অন্যের অর্ডার স্ট্যাটাস দেখা ঠেকাতে)।
+  socket.on('join:customer', (payload) => {
+    const token = payload && typeof payload.token === 'string' ? payload.token : ''
+    let decoded
+    try {
+      decoded = jwt.verify(token, SOCKET_JWT_SECRET)
+    } catch (err) {
+      socket.emit('error', { message: 'Invalid or expired order token' })
+      return
     }
+
+    if (decoded.scope !== 'order-socket' || typeof decoded.orderId !== 'string') {
+      socket.emit('error', { message: 'Invalid token scope' })
+      return
+    }
+
+    socket.join(`order:${decoded.orderId}`)
+    console.log(`[CUSTOMER] ${socket.id} tracking order ${decoded.orderId}`)
   })
 
   socket.on('visitor:page', ({ page }) => {

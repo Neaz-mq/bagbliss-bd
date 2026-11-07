@@ -3,15 +3,35 @@
 import { useEffect, useState } from 'react'
 import { useSocket }            from './useSocket'
 
-export function useOrderTracking(orderId: string | null) {
+/**
+ * orderId + accessToken (order-success লিংকের `?t=`) দুটোই লাগে।
+ * accessToken দিয়ে সার্ভার থেকে ছোট-মেয়াদী টোকেন নিয়ে তবেই রুমে ঢোকা যায়।
+ */
+export function useOrderTracking(orderId: string | null, accessToken: string | null) {
   const { socket, connected } = useSocket()
   const [status, setStatus]   = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!connected || !orderId) return
-    socket.emit('join:customer', { orderId })
-  }, [connected, orderId, socket])
+    if (!connected || !orderId || !accessToken) return
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const res = await fetch(
+          `/api/orders/socket-token?id=${encodeURIComponent(orderId)}&t=${encodeURIComponent(accessToken)}`,
+          { cache: 'no-store' }
+        )
+        if (!res.ok) return
+        const { token } = (await res.json()) as { token?: string }
+        if (!cancelled && token) socket.emit('join:customer', { token })
+      } catch (err) {
+        console.error('[order-tracking]', err)
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [connected, orderId, accessToken, socket])
 
   useEffect(() => {
     if (!orderId) return
