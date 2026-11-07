@@ -168,12 +168,13 @@ const PAYMENT_CONFIG: Record<string, { label: string; color: string; bg: string 
 // অনলাইন পেমেন্টে paid/unpaid আলাদা করে বোঝানোর লেবেল
 function payLabel(order: Order, base: string): string {
   if (order.payment === 'cod') return base
+  const short = order.payment === 'sslcommerz' ? 'Online' : base
   switch (order.paymentStatus) {
-    case 'paid':      return `${base} · Paid ✓`
-    case 'failed':    return `${base} · Failed`
-    case 'cancelled': return `${base} · Cancelled`
-    case 'refunded':  return `${base} · Refunded`
-    default:          return `${base} · Unpaid`
+    case 'paid':      return `${short} · Paid`
+    case 'failed':    return `${short} · Failed`
+    case 'cancelled': return `${short} · Cancelled`
+    case 'refunded':  return `${short} · Refunded`
+    default:          return `${short} · Unpaid`
   }
 }
 
