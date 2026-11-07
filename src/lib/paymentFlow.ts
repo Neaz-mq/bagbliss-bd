@@ -1,7 +1,7 @@
 import Order from '@/models/Order'
 import { validateSSLPayment } from '@/lib/sslcommerz'
 import { sendOrderEmails } from '@/lib/email'
-import { releaseStock, reserveStock, type PricedItem } from '@/features/orders/buildOrder'
+import { releaseStock, reserveStock, adjustSold, type PricedItem } from '@/features/orders/buildOrder'
 
 /**
  * পেমেন্ট নিশ্চিত/ব্যর্থ করার একমাত্র জায়গা।
@@ -80,6 +80,9 @@ export async function confirmSSLPayment(input: ConfirmInput): Promise<ConfirmRes
       console.error(`[PAYMENT] late payment on cancelled order ${order.orderNumber} — stock unavailable, needs manual review/refund`)
     }
   }
+  // পেমেন্ট নিশ্চিত হলেই "বিক্রি" হিসেবে গণ্য
+  adjustSold(updated.items as { productId: string; quantity: number }[], 1)
+
   if (isRisky) console.warn(`[PAYMENT RISK] ${order.orderNumber}:`, v.risk_title)
 
   sendOrderEmails({
@@ -116,9 +119,10 @@ export async function cancelUnpaidOrder(
   if (!prev) return false
 
   await releaseStock(
-    (prev.items as { productId: string; quantity: number }[]).map((i) => ({
+    (prev.items as { productId: string; quantity: number; color?: string }[]).map((i) => ({
       id: i.productId,
       qty: i.quantity,
+      color: i.color || '',
     }))
   )
   return true

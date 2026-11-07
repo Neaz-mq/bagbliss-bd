@@ -98,7 +98,7 @@ export async function priceOrder(input: OrderInput): Promise<PricedOrder> {
   const ids = [...new Set(input.items.map((i) => i.productId))]
 
   const docs = await Product.find({ _id: { $in: ids }, isActive: true })
-    .select('name price originalPrice isFlashSale flashSalePrice totalStock images')
+    .select('name price originalPrice isFlashSale flashSalePrice totalStock images colors')
     .lean()
 
   const byId = new Map(
@@ -117,6 +117,7 @@ export async function priceOrder(input: OrderInput): Promise<PricedOrder> {
           flashSalePrice?: number
           totalStock?: number
           images?: string[]
+          colors?: { name?: string; stock?: number }[]
         }
       | undefined
 
@@ -124,7 +125,17 @@ export async function priceOrder(input: OrderInput): Promise<PricedOrder> {
       throw new OrderError('One or more products are no longer available', 400)
     }
 
-    if ((p.totalStock ?? 0) < quantity) {
+    // রংভিত্তিক স্টক: প্রোডাক্টে রং থাকলে নির্দিষ্ট রঙের স্টকই আসল সত্য।
+    const colors = p.colors ?? []
+    if (colors.length > 0) {
+      const c = colors.find((x) => x.name === color)
+      if (!color || !c) {
+        throw new OrderError(`Please choose a valid color for "${p.name}"`, 400)
+      }
+      if ((c.stock ?? 0) < quantity) {
+        throw new OrderError(`Only ${c.stock ?? 0} left of "${p.name}" (${color})`, 409)
+      }
+    } else if ((p.totalStock ?? 0) < quantity) {
       throw new OrderError(
         `Only ${p.totalStock ?? 0} left of "${p.name}"`,
         409
@@ -150,37 +161,82 @@ export async function priceOrder(input: OrderInput): Promise<PricedOrder> {
   return { items, subtotal, deliveryFee, total: subtotal + deliveryFee }
 }
 
-export type Reserved = { id: string; qty: number }
+export type Reserved = { id: string; qty: number; color?: string }
 
 /**
- * Atomic স্টক রিজার্ভ। `totalStock: { $gte: qty }` শর্ত থাকায়
+ * Atomic স্টক রিজার্ভ।
+ * - প্রোডাক্টে ওই রং থাকলে: `colors[].stock` আর `totalStock` দুটোই একসাথে কমে
+ *   (শর্ত: ওই রঙের স্টক >= qty) — ফলে admin পরে edit করলেও বিক্রি হওয়া স্টক ফিরে আসে না।
+ * - রং না থাকলে: শুধু `totalStock`।
  * দুজন একসাথে শেষ ব্যাগ কিনতে চাইলে একজনই পাবে।
  */
 export async function reserveStock(items: PricedItem[]): Promise<Reserved[]> {
   const reserved: Reserved[] = []
 
   for (const item of items) {
-    const res = await Product.updateOne(
-      { _id: item.productId, totalStock: { $gte: item.quantity } },
-      { $inc: { totalStock: -item.quantity } }
-    )
+    const color = item.color || ''
 
-    if (res.modifiedCount !== 1) {
+    // ১) রংভিত্তিক রিজার্ভ
+    let ok = false
+    let colorExists = false
+    if (color) {
+      const res = await Product.updateOne(
+        {
+          _id: item.productId,
+          colors: { $elemMatch: { name: color, stock: { $gte: item.quantity } } },
+        },
+        { $inc: { 'colors.$.stock': -item.quantity, totalStock: -item.quantity } }
+      )
+      ok = res.modifiedCount === 1
+      if (!ok) {
+        colorExists = !!(await Product.exists({ _id: item.productId, 'colors.name': color }))
+      }
+    }
+
+    // ২) রং নেই (বা 'Default') — সাধারণ totalStock
+    if (!ok && !colorExists) {
+      const res = await Product.updateOne(
+        { _id: item.productId, totalStock: { $gte: item.quantity } },
+        { $inc: { totalStock: -item.quantity } }
+      )
+      ok = res.modifiedCount === 1
+    }
+
+    if (!ok) {
       await releaseStock(reserved)
       throw new OrderError(`"${item.name}" just went out of stock`, 409)
     }
-    reserved.push({ id: item.productId, qty: item.quantity })
+    reserved.push({ id: item.productId, qty: item.quantity, color })
   }
 
   return reserved
 }
 
-/** রিজার্ভ করা স্টক ফিরিয়ে দেওয়া */
+/** রিজার্ভ করা স্টক ফিরিয়ে দেওয়া (রংসহ) */
 export async function releaseStock(reserved: Reserved[]) {
   if (reserved.length === 0) return
   await Promise.all(
-    reserved.map((r) =>
-      Product.updateOne({ _id: r.id }, { $inc: { totalStock: r.qty } })
-    )
+    reserved.map(async (r) => {
+      if (r.color) {
+        const res = await Product.updateOne(
+          { _id: r.id, 'colors.name': r.color },
+          { $inc: { 'colors.$.stock': r.qty, totalStock: r.qty } }
+        )
+        if (res.matchedCount === 1) return
+      }
+      await Product.updateOne({ _id: r.id }, { $inc: { totalStock: r.qty } })
+    })
   ).catch((err) => console.error('[STOCK RELEASE]', err))
+}
+
+/** বিক্রি হওয়া সংখ্যা (soldCount) বাড়ানো/কমানো — sign: 1 বা -1 */
+export async function adjustSold(
+  items: { productId: string; quantity: number }[],
+  sign: 1 | -1 = 1
+) {
+  await Promise.all(
+    items.map((i) =>
+      Product.updateOne({ _id: i.productId }, { $inc: { soldCount: sign * i.quantity } })
+    )
+  ).catch((err) => console.error('[SOLD COUNT]', err))
 }

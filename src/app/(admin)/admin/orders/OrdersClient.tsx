@@ -136,6 +136,7 @@ interface Order {
   payment: PaymentMethod; subtotal: number; total: number; status: OrderStatus
   orderNote?: string; createdAt: string
   riskLevel?: string | null; riskTitle?: string | null
+  paymentStatus?: string
 }
 
 const STATUS_CONFIG: Record<OrderStatus, {
@@ -162,6 +163,18 @@ const PAYMENT_CONFIG: Record<string, { label: string; color: string; bg: string 
   // এই এন্ট্রি না থাকায় আগে fallback হয়ে ভুলভাবে "COD" দেখাচ্ছিল।
   sslcommerz: { label: 'Online Payment', color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
   card:       { label: 'Card',   color: '#1d4ed8', bg: 'rgba(29,78,216,0.1)' },
+}
+
+// অনলাইন পেমেন্টে paid/unpaid আলাদা করে বোঝানোর লেবেল
+function payLabel(order: Order, base: string): string {
+  if (order.payment === 'cod') return base
+  switch (order.paymentStatus) {
+    case 'paid':      return `${base} · Paid ✓`
+    case 'failed':    return `${base} · Failed`
+    case 'cancelled': return `${base} · Cancelled`
+    case 'refunded':  return `${base} · Refunded`
+    default:          return `${base} · Unpaid`
+  }
 }
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -366,7 +379,7 @@ function OrderModal({ order, onClose, onStatusChange }: {
               borderRadius: '8px', background: payment.bg, color: payment.color,
             }}>
               <CreditCard size={11} />
-              {payment.label}
+              {payLabel(order, payment.label)}
             </span>
 
             <div style={{ marginLeft: isMobile ? 0 : 'auto', position: 'relative', width: isMobile ? '100%' : 'auto' }}>
@@ -512,7 +525,7 @@ function OrderModal({ order, onClose, onStatusChange }: {
                 {[
                   { label: 'Subtotal', value: `৳${order.subtotal.toLocaleString()}` },
                   { label: 'Delivery', value: `৳${order.deliveryFee.toLocaleString()}` },
-                  { label: 'Payment',  value: payment.label },
+                  { label: 'Payment',  value: payLabel(order, payment.label) },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
                     <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{label}</span>
@@ -921,7 +934,7 @@ export default function OrdersPage() {
                     fontSize: '0.7rem', fontWeight: 700, padding: '4px 9px',
                     borderRadius: '7px', background: pay.bg, color: pay.color, width: 'fit-content', flexShrink: 0,
                   }}>
-                    {pay.label}
+                    {payLabel(order, pay.label)}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
                     <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0, whiteSpace: 'nowrap' }}>
@@ -1043,7 +1056,7 @@ export default function OrdersPage() {
                       borderRadius: '7px', background: pay.bg, color: pay.color,
                       width: 'fit-content', maxWidth: '100%', ...ellipsisStyle,
                     }}>
-                      {pay.label}
+                      {payLabel(order, pay.label)}
                     </span>
                   </div>
 

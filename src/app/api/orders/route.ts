@@ -8,6 +8,7 @@ import {
   priceOrder,
   reserveStock,
   releaseStock,
+  adjustSold,
   newAccessToken,
   OrderError,
   type Reserved,
@@ -74,6 +75,9 @@ export async function POST(req: NextRequest) {
     })
 
     reserved = [] // সফল — রোলব্যাক দরকার নেই
+
+    // COD অর্ডার তৈরি হলেই বিক্রি গণ্য (cancel হলে admin রুটে কমে যাবে)
+    adjustSold(priced.items, 1)
 
     // ── ৫. Socket + ইমেইল (blocking নয়) ──────────────────────────────
     serverEmit(
