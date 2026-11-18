@@ -7,6 +7,11 @@ import { invalidate, invalidatePattern, CACHE_KEYS } from '@/lib/redis'
 import { uniqueSlug } from '@/lib/slug'
 import { sumColorStock } from '@/lib/stock'
 
+// ইউজারের সার্চ টেক্সটে `(` `[` `*` ইত্যাদি থাকলে RegExp ভেঙে ৫০০ এরর হতো
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 async function guard() {
   const session = await auth()
   return !session || session.user?.role !== 'admin'
@@ -19,9 +24,9 @@ export async function GET(req: NextRequest) {
   await connectDB()
 
   const sp        = new URL(req.url).searchParams
-  const page      = parseInt(sp.get('page') ?? '1')
-  const limit     = parseInt(sp.get('limit') ?? '12')
-  const search    = sp.get('search') ?? ''
+  const page      = Math.max(1, parseInt(sp.get('page') ?? '1') || 1)
+  const limit     = Math.min(100, Math.max(1, parseInt(sp.get('limit') ?? '12') || 12))
+  const search    = (sp.get('search') ?? '').slice(0, 100)
   const category  = sp.get('category') ?? ''
   const sort      = sp.get('sort') ?? 'newest'
   const featured  = sp.get('featured') ?? ''
@@ -32,7 +37,10 @@ export async function GET(req: NextRequest) {
   const q: Record<string, unknown> = {}
   if (status === 'active')   q.isActive = true
   if (status === 'inactive') q.isActive = false
-  if (search) q.$or = [{ name: { $regex: search, $options: 'i' } }, { tags: { $in: [new RegExp(search, 'i')] } }]
+  if (search) {
+    const re = new RegExp(escapeRegex(search), 'i')
+    q.$or = [{ name: { $regex: re } }, { tags: { $in: [re] } }]
+  }
   if (category) q.category = category
   if (featured === 'true') q.isFeatured = true
   if (flashSale === 'true') q.isFlashSale = true
