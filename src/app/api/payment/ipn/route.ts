@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import connectDB from '@/lib/mongodb'
-import { confirmSSLPayment, cancelUnpaidOrder } from '@/lib/paymentFlow'
+import { confirmSSLPayment } from '@/lib/paymentFlow'
 
 // IPN = Instant Payment Notification — server-to-server।
 // এই রুট login ছাড়া খোলা, তাই এখানে পাঠানো কোনো মানই বিশ্বাস করা হয় না;
@@ -20,8 +20,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (status !== 'VALID' && status !== 'VALIDATED') {
-      // paid অর্ডার ছোঁয়া হবে না; শুধু unpaid বাতিল + stock ফেরত
-      await cancelUnpaidOrder(tran_id, 'failed')
+      // 🔒 এই রুট login ছাড়া খোলা — শুধু `status=FAILED` পাঠিয়ে কেউ যেন
+      // অন্যের unpaid অর্ডার বাতিল করতে না পারে। তাই এখানে কিছু বদলানো হয় না।
+      // কাস্টমার নিজে ফেল/ক্যানসেল করলে /api/payment/fail|cancel রুট বাতিল করে,
+      // আর ছেড়ে চলে গেলে cron (expire-orders) ৩০ মিনিট পর স্টক ফেরত দেয়।
       return NextResponse.json({ received: true })
     }
 
