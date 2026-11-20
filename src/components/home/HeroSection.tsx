@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { HERO_IMAGE_SRC, HERO_BG_SRC } from './heroAssets'
 import Link from 'next/link'
 import { ArrowRight, X } from 'lucide-react'
 import { AnimatePresence, motion, Variants } from 'framer-motion'
@@ -232,7 +233,9 @@ export default function HeroSection() {
               className="hero-card-image-wrap"
             >
               <motion.img
-                src="https://res.cloudinary.com/dzi3u164c/image/upload/v1790437709/a8e8c5d7-c8a1-46fe-963f-c84f80550737_gqpwsn.webp"
+                src={HERO_IMAGE_SRC}
+                fetchPriority="high"
+                decoding="async"
                 alt="Fashion bag"
                 variants={imageKenBurns}
                 initial="hidden"
@@ -361,8 +364,6 @@ export default function HeroSection() {
       </div>
 
       <style>{`
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; overflow-x: hidden; }
 
@@ -380,7 +381,7 @@ export default function HeroSection() {
   .hero-bg {
     position: absolute;
     inset: 0;
-    background-image: url('https://res.cloudinary.com/dzi3u164c/image/upload/v1790437088/bag-bg_bk68l2.webp');
+    background-image: url('${HERO_BG_SRC}');
     background-size: cover;
     background-position: center;
     opacity: 0.55;

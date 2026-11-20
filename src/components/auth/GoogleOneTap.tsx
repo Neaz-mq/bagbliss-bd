@@ -133,6 +133,8 @@ export default function GoogleOneTap() {
     }
 
     const SCRIPT_ID = 'google-gsi'
+    // ⚡ পেজ ইন্টারঅ্যাকটিভ হওয়ার ৩ সেকেন্ড পরে Google স্ক্রিপ্ট লোড (প্রথম লোড দ্রুত রাখতে)
+    const start = () => {
     if (!document.getElementById(SCRIPT_ID)) {
       const script = document.createElement('script')
       script.id    = SCRIPT_ID
@@ -150,8 +152,11 @@ export default function GoogleOneTap() {
       }, 100)
       setTimeout(() => clearInterval(iv), 5000)
     }
+    }
+    const timer = setTimeout(start, 3000)
 
     return () => {
+      clearTimeout(timer)
       window.google?.accounts.id.cancel()
     }
   }, [shouldShow, update, router])
