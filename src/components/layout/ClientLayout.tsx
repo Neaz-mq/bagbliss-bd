@@ -5,10 +5,13 @@ import { usePathname } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/cart/CartDrawer'
-import VisitorTracker from '@/components/VisitorTracker'
-import GoogleOneTap from '@/components/auth/GoogleOneTap'
-import ChatLauncher from '@/components/ui/ChatLauncher'
+import dynamic from 'next/dynamic'
 import Topbar from './Topbar'
+
+// ⚡ প্রথম পেজ লোডে লাগে না — আলাদা chunk-এ, হাইড্রেশনের পরে লোড হবে
+const VisitorTracker = dynamic(() => import('@/components/VisitorTracker'), { ssr: false })
+const GoogleOneTap   = dynamic(() => import('@/components/auth/GoogleOneTap'), { ssr: false })
+const ChatLauncher   = dynamic(() => import('@/components/ui/ChatLauncher'), { ssr: false })
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()

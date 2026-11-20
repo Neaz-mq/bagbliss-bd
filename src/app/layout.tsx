@@ -3,7 +3,6 @@ import { Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import ClientLayout from '@/components/layout/ClientLayout'
-import VisitorTracker from '@/components/VisitorTracker'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -45,9 +44,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* ⚡ ফন্ট ও ছবির সার্ভারে আগেই সংযোগ — CSS @import চেইনের বদলে সরাসরি লোড */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        />
+      </head>
       <body suppressHydrationWarning>
         <SessionProvider>
-          <VisitorTracker />
           <Suspense fallback={null}>
             {/*
               ClientLayout checks the pathname:

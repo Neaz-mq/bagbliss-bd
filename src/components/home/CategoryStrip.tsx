@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useEffect, useMemo } from 'react'
+import { cld } from '@/utils/cloudinary'
 
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 
@@ -37,19 +38,6 @@ function getFallback(slug: string) {
     if (lower.includes(key)) return UNSPLASH[key]
   }
   return UNSPLASH.default
-}
-
-function extractImageUrl(product: Record<string, unknown>): string {
-  const images = product.images
-  if (Array.isArray(images) && images.length > 0) {
-    const first = images[0]
-    if (typeof first === 'string') return first
-    if (typeof first === 'object' && first !== null) {
-      const obj = first as Record<string, unknown>
-      return (obj.url || obj.secure_url || '') as string
-    }
-  }
-  return ''
 }
 
 function useVisibleCount() {
@@ -129,40 +117,25 @@ export default function CategoryStrip() {
   const [current, setCurrent] = useState(0)
 
   useEffect(() => {
-    fetch('/api/products?limit=300')
+    fetch('/api/categories')
       .then((r) => r.json())
       .then((data) => {
-        const products: Array<Record<string, unknown>> | [] =
-          data.products ?? []
+        const rows: Array<{ category: string; count: number; image: string }> =
+          data.categories ?? []
 
-        if (!products.length) {
+        if (!rows.length) {
           setCategories(demoCategories())
           return
         }
 
-        const map = new Map<string, { count: number; image: string }>()
-
-        for (const p of products) {
-          const cat = ((p.category as string) || '').trim()
-          if (!cat) continue
-          const img = extractImageUrl(p)
-          if (map.has(cat)) {
-            map.get(cat)!.count += 1
-          } else {
-            map.set(cat, { count: 1, image: img || getFallback(cat) })
-          }
-        }
-
-        const result: Category[] = Array.from(map.entries()).map(
-          ([label, value]) => ({
-            label,
-            value: label,
-            count: `${value.count}+ Items`,
-            image: value.image || getFallback(label),
-          })
+        setCategories(
+          rows.map((r) => ({
+            label: r.category,
+            value: r.category,
+            count: `${r.count}+ Items`,
+            image: cld(r.image, 600) || getFallback(r.category),
+          }))
         )
-
-        setCategories(result)
       })
       .catch(() => setCategories(demoCategories()))
   }, [])
@@ -279,8 +252,6 @@ export default function CategoryStrip() {
   return (
     <>
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-
         * {
           box-sizing: border-box;
         }

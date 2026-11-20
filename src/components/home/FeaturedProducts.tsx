@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { cld } from '@/utils/cloudinary'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Heart, Eye, ChevronLeft, ChevronRight, ArrowRight, ShoppingBag, X, Minus, Plus } from 'lucide-react'
@@ -612,7 +613,7 @@ function QuickViewModal({
           <div className="qv-img-panel">
             {product.mainImage?.url ? (
               <img
-                src={product.mainImage.url}
+                src={cld(product.mainImage.url, 800)}
                 alt={product.mainImage.alt}
                 className="qv-img"
                 draggable={false}
@@ -856,7 +857,7 @@ function FpCard({
       <div className="fp-img-wrap">
         {product.mainImage?.url ? (
           <img
-            src={product.mainImage.url}
+            src={cld(product.mainImage.url, 600)}
             alt={product.mainImage.alt}
             className="fp-img"
             draggable={false}
@@ -967,7 +968,7 @@ function FpCardMobile({
       <div className="fpm-img-wrap">
         {product.mainImage?.url ? (
           <img
-            src={product.mainImage.url}
+            src={cld(product.mainImage.url, 600)}
             alt={product.mainImage.alt}
             className="fpm-img"
             draggable={false}
@@ -1101,8 +1102,6 @@ export default function FeaturedProducts() {
   return (
     <>
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
         /* ── SECTION ── */
         .fp-section {
           padding: 60px 0 80px;

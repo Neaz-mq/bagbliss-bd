@@ -150,5 +150,10 @@ export async function GET(req: NextRequest) {
     ttl
   )
 
-  return NextResponse.json(result)
+  // ⚡ Vercel edge-এ ৬০ সেকেন্ড cache (তারপর ব্যাকগ্রাউন্ডে রিফ্রেশ) — সার্চে নয়
+  return NextResponse.json(result, {
+    headers: search
+      ? { 'Cache-Control': 'no-store' }
+      : { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+  })
 }
