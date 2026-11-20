@@ -111,12 +111,8 @@ export default function AdminTopbar({ onMenuClick }: Props) {
 
     const trimmed = query.trim()
 
-    if (trimmed.length < 2) {
-      setResults([])
-      setLoading(false)
-      setError(null)
-      return
-    }
+    // ছোট query হলে রিসেট handleChange/goToResult-এ হয়; effect-এ setState নয়
+    if (trimmed.length < 2) return
 
     debounceRef.current = setTimeout(() => runSearch(trimmed), 300)
 
@@ -128,6 +124,12 @@ export default function AdminTopbar({ onMenuClick }: Props) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setQuery(value)
+    if (value.trim().length < 2) {
+      abortRef.current?.abort()
+      setResults([])
+      setLoading(false)
+      setError(null)
+    }
     setSearchOpen(true)
     setActiveIndex(-1)
   }
@@ -135,7 +137,10 @@ export default function AdminTopbar({ onMenuClick }: Props) {
   const goToResult = (result: SearchResult) => {
     setSearchOpen(false)
     setQuery('')
+    abortRef.current?.abort()
     setResults([])
+    setLoading(false)
+    setError(null)
     router.push(result.href)
   }
 
@@ -254,7 +259,7 @@ export default function AdminTopbar({ onMenuClick }: Props) {
 
               {!loading && results.length === 0 && !error && (
                 <div style={{ padding: '18px 16px', fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
-                  No results for "{query}"
+                  No results for &quot;{query}&quot;
                 </div>
               )}
 
