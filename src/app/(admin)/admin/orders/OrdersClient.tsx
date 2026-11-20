@@ -452,7 +452,7 @@ function OrderModal({ order, onClose, onStatusChange }: {
                   Flagged risky by SSLCommerz{order.riskTitle ? ` — "${order.riskTitle}"` : ''}
                 </p>
                 <p style={{ fontSize: '0.76rem', color: '#7f1d1d', margin: '2px 0 0' }}>
-                  টাকা কেটেছে, কিন্তু শিপ করার আগে কাস্টমারকে ফোনে ভেরিফাই করে তারপর status "Processing"-এ নিন।
+                  টাকা কেটেছে, কিন্তু শিপ করার আগে কাস্টমারকে ফোনে ভেরিফাই করে তারপর status &quot;Processing&quot;-এ নিন।
                 </p>
               </div>
             </div>

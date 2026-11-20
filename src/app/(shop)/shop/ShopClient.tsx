@@ -293,6 +293,8 @@ export default function ShopClient({
   )
 
   // ── On mount: read incoming query params into state ───────────────────
+  // URL → state এর এই এককালীন সিঙ্ক ইচ্ছাকৃত, তাই নিয়মটি এখানে বন্ধ রাখা হয়েছে
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (mode !== 'shop') return
 
@@ -329,6 +331,7 @@ export default function ShopClient({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, searchParams.toString()])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // ── Fetch ──────────────────────────────────────────────────────────────
   const abortRef = useRef<AbortController | null>(null)
